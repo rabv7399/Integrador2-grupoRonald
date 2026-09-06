@@ -1,0 +1,98 @@
+<?php
+include("db.php");
+$con = connection();
+
+$sql = "SELECT * FROM clientes";
+$query = mysqli_query($con, $sql);
+?>
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="shortcut icon" href="resources/icons/logo.png" />
+    <link rel="stylesheet" href="css/normalize.css"/>
+    <link rel="stylesheet" href="css/style.css">
+    <link href="CSS/" rel="stylesheet">
+    <title>Clientes CRUD</title>
+</head>
+</head>
+<header>
+    <div class="cabecera-izq">
+        <nav>
+            <ul class="menu">
+                <li><a  target="_self" href="reservas.html">RESERVAS</a></li>
+                <li>
+                    <a  href="#">MENÚ</a>
+                    <ul class="submenu">
+                        <li><a target="_self" href="Almuerzo.html">Almuerzo</a></li>
+                        <li><a target="_self" href="Cena.html">Cena</a></li>
+                        <li><a target="_self" href="Bebidas.html">Bebidas</a></li>
+                    </ul>
+                </li>
+            </ul>
+        </nav>
+    </div>  
+    <div class="logo_image">
+        <a href="index.html" target="_self" class="logo">
+            <img src="resources/icons/logo.png" alt="logo"/> 
+            <h1 class="nombreEmpresa"><strong>DELICIAS PERUANAS</strong></h1>    
+        </a>
+    </div>
+    <nav >
+        <a target="_self" href="index.html" class="nav-link">INICIO</a>
+        <a target="_self" href="promocion.html" class="nav-link">PROMOCIÓN</a>
+        <a target="_self" href="nosotros.html" class="nav-link">NOSOTROS</a>
+        <a target="_self" href="contacto.html" class="nav-link">CONTACTO</a>
+        <a target="_self" href="registrece.html" class="nav-link">REGISTRECE</a>
+    </nav>
+</header>
+<body>
+<body>
+    <div class="clientes-form">
+        <h1>Crear cliente</h1>
+        <form action="insert_cliente.php" method="POST">
+            <input type="text" name="nombre" placeholder="Nombre" required>
+            <input type="text" name="correoElectronico" placeholder="Correo Electrónico" required>
+            <input type="text" name="telefono" placeholder="Teléfono">
+            <textarea name="direccion" placeholder="Dirección"></textarea>
+
+            <input type="submit" value="Agregar">
+        </form>
+    </div>
+
+    <div class="clientes-table">
+        <h2>Clientes registrados</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Nombre</th>
+                    <th>Correo Electrónico</th>
+                    <th>Teléfono</th>
+                    <th>Dirección</th>
+                    <th></th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                <?php while ($row = mysqli_fetch_array($query)): ?>
+                    <tr>
+                        <th><?= $row['ID'] ?></th>
+                        <th><?= $row['Nombre'] ?></th>
+                        <th><?= $row['CorreoElectronico'] ?></th>
+                        <th><?= $row['Telefono'] ?></th>
+                        <th><?= $row['Direccion'] ?></th>
+                        <th><a href="update.php?id=<?= $row['ID'] ?>" class="clientes-table--edit">Editar</a></th>
+                        <th><a href="delete_cliente.php?id=<?= $row['ID'] ?>" class="clientes-table--delete">Eliminar</a></th>
+                    </tr>
+                <?php endwhile; ?>
+            </tbody>
+        </table>
+    </div>
+
+</body>
+
+</html>

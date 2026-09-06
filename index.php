@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <link rel="shortcut icon" href="resources/icons/logo.png" />
+    <link rel="stylesheet" href="css/normalize.css"/>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/IndexEstilos.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pagina Principal Restaurant</title>
+    <script src="/js/archivo.js" defer></script>
+</head>
+<header>
+    <div class="cabecera-izq">
+        <nav>
+            <ul class="menu">
+                <li><a  target="_self" href="reservas.html">RESERVAS</a></li>
+                <li>
+                    <a  href="#">MENÚ</a>
+                    <ul class="submenu">
+                        <li><a target="_self" href="Almuerzo.html">Almuerzo</a></li>
+                        <li><a target="_self" href="Cena.html">Cena</a></li>
+                        <li><a target="_self" href="Bebidas.html">Bebidas</a></li>
+                    </ul>
+                </li>
+            </ul>
+        </nav>
+    </div>  
+    <div class="logo_image">
+        <a href="index.html" target="_self" class="logo">
+            <img src="resources/icons/logo.png" alt="logo"/> 
+            <h1 class="nombreEmpresa"><strong>DELICIAS PERUANAS</strong></h1>    
+        </a>
+    </div>
+    <nav >
+        <a target="_self" href="index.html" class="nav-link">INICIO</a>
+        <a target="_self" href="promocion.html" class="nav-link">PROMOCIÓN</a>
+        <a target="_self" href="nosotros.html" class="nav-link">NOSOTROS</a>
+        <a target="_self" href="contacto.html" class="nav-link">CONTACTO</a>
+        <a target="_self" href="registrece.html" class="nav-link">REGISTRECE</a>
+    </nav>
+</header>
+<body>
+    <div class="contenedor">
+        <br>
+        <h1  id="ejemplo">BIENVENIDO</h1>
+        <p class="parrafo-mensaje">Somos la empresa que se preocupa por tus necedidades alimentarias. Cuidamos tu salud con productos de calidad.</p>
+        <br>
+        <button class="boton"><a href="reservas.html">RESERVA UNA MESA</a></button>
+    </div>
+
+    <section class="title">
+            <h2 class="title_1">SABOR AUTENTICO DE LA COSTA, SIERRA Y SELVA DE PERU EN CADA BOCADO</h2>
+            <p class="descripcion_larga">
+                "Nuestro menú es una cara de amor a la diversidad culinaria de Perú. Desde el ceviche que te hará sentir la brisa marina hasta el lomo saltado que te abrazará con la calidez de os Andes, os platos exóticos de la selva que desperarán tus sentidos, cada bocado es 
+                una aventura que vale la pena explorar"
+            </p>
+    </section>
+    <section class="galeria_section">
+        <div class="galeria">
+            <div>
+                <img src="resources/LOMOSALTADO.jpg" alt="Lomo Saltado">
+            </div>
+            <div>
+                <img src="resources/restaurant.jpg" alt="Restaurant">
+            </div>
+            <div>
+                <img src="resources/platos.jpg" alt="Platos">
+            </div>
+            <div>
+                <img src="resources/anticucho.jpg" alt="Anticucho">
+            </div>
+            <div>
+                <img src="resources/ceviche.jpg" alt="Ceviche">
+            </div>
+            <div>
+                <img src="resources/pisco-per.jpg" alt="Pisco">
+            </div>
+        </div>
+    </section>
+    <div class="contenedor_subtitulo">
+        <h2 class="title_1">A big title</h2>
+    </div>
+    <section class="platos">
+        <div class="platos1">
+            <div class="imagen1">
+                <img src="resources/rocoto relleno.jpg" alt="Rocoto Relleno">
+            </div>
+            <div class="texto1">
+                <br><br><br><br><br><br><br>
+                <span class="texto_titulo">Rocoto Relleno</span>
+                <p>Lorem ipsum dolor sit amet consectetur adipisicing elit. Assumenda facere laudantium modi nostrum eos incidunt facilis ratione odio autem aut ducimus aspernatur, itaque commodi, maiores nisi aperiam ad, culpa explicabo.</p>
+            </div>
+        </div>
+        <div class="platos2">
+            <div class="texto2">
+                <br><br><br><br><br><br><br>
+                <span class="texto_titulo">Papa A La Huancaina</span>
+                <p>Lorem ipsum dolor sit amet consectetur adipisicing elit. Assumenda facere laudantium modi nostrum eos incidunt facilis ratione odio autem aut ducimus aspernatur, itaque commodi, maiores nisi aperiam ad, culpa explicabo.</p>
+            </div>
+            <div class="imagen2">
+                <img src="resources/papahuancaina.jpg" alt="Papa a la Huancaina">
+            </div>
+            <?php 
+            db.php;
+            ?>
+        </div>
+            
+        
+    </section>
+    <section class="boletin">
+        <h1>UNETE HOY A DELICIAS PERUANAS</h1>
+        <br>
+        <br>
+        <p>Nuestro boletín mensual te da acceso exclusivo a ocasiones
+            especiales, fechas importantes, premios y más. ¡No te lo pierdas! Tu privacidad es nuestra prioridad: nunca compartiremos tus datos.</p>
+        <br><br><br>
+        <button > <a href="boletin.html"><span><strong>UNETE AQUÍ</strong></span></a></button>
+        </section>
+
+</body>
+<footer>
+    <ul class="listaf">
+        <li>
+            <span>ACERCA DE</span>
+            <ul class="sub_listaf">
+                <li><a target="_self" href="nosotros.html">NUESTRA HISTORIA</a></li>
+                <li><a target="_self" href="">EL EQUIPO</a></li>
+             </ul>
+        </li>
+        <li>
+            <span>MENUS<span>
+                <ul class="sub_listaf">
+                <li><a target="_self" href="Almuerzo.html">ALMUERZO</a></li>
+                <li><a target="_self" href="Cena.html">CENA</a></li>
+                <li><a target="_self" href="Bebidas.html">BEBIDAS</a></li>
+            </ul>
+        </li>
+        <li>
+            <span>CONTACTENOS<span>
+                <ul class="sub_listaf">
+                <li><a target="_self" href="contacto.html">CONTACTENOS</a></li>
+                <li><a target="_self" href="reservas.html">RESERVAS</a></li>
+                </ul>
+        </li>
+        <li>
+            <div class="listafd">
+                <span>LLAMENOS</span>
+                <ul>
+                    <li>(999) 000 9999</li>
+                    <li><input class="botonfooter" type="button" value="RESERVA UNA MESA"></li>
+                    <li>SÍGUENOS</li>
+                    <li><div class="action">
+                        <button><img src="resources/icons/fb.png" alt="boton de facebook"></button>
+                        <button><img src="resources/icons/tw.png" alt="boton de twiter"></button>
+                        <button><img src="resources/icons/ms.png" alt="boton de message_correo"></button>
+                    </div></li>
+                </ul>
+            </div>
+        </li>
+    </ul>
+    <span class="derechos">@ 2023 - Todos los derechos reservados.</span>
+</footer>
+</html>
