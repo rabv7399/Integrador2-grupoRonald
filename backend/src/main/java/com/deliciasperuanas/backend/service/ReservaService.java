@@ -90,7 +90,7 @@ public class ReservaService {
 
             throw new ResponseStatusException(
                     HttpStatus.CONFLICT,
-                    "La mesa no está disponible para el horario solicitado"
+                    "La mesa no esta disponible para el horario solicitado"
             );
         }
 
