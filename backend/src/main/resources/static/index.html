@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Delicias Peruanas | APF2</title>
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+  <header class="hero">
+    <div class="hero__overlay">
+      <p class="eyebrow">Sistema Web · APF2</p>
+      <h1>Delicias Peruanas</h1>
+      <p class="hero__text">Demostración en vivo del backend Java Spring Boot desplegado en Render y conectado a MySQL en Aiven.</p>
+      <div class="badges">
+        <span>Java 21</span>
+        <span>Spring Boot</span>
+        <span>JWT</span>
+        <span>MySQL Aiven</span>
+      </div>
+    </div>
+  </header>
+
+  <main class="container">
+    <section class="card" id="loginSection">
+      <div class="section-heading">
+        <div>
+          <p class="kicker">Paso 1</p>
+          <h2>Iniciar sesión</h2>
+        </div>
+        <span class="status status--idle" id="authStatus">Sin autenticar</span>
+      </div>
+
+      <form id="loginForm" class="form-grid">
+        <label>
+          Correo
+          <input id="correo" type="email" autocomplete="username" required placeholder="usuario@correo.com">
+        </label>
+        <label>
+          Contraseña
+          <input id="password" type="password" autocomplete="current-password" required placeholder="••••••••">
+        </label>
+        <button class="btn btn--primary" type="submit">Ingresar al sistema</button>
+      </form>
+      <p class="helper">La autenticación se realiza contra <code>/api/auth/login</code> y el backend devuelve un JWT firmado.</p>
+      <div class="message" id="loginMessage" aria-live="polite"></div>
+    </section>
+
+    <section class="card hidden" id="dashboardSection">
+      <div class="section-heading">
+        <div>
+          <p class="kicker">Sesión activa</p>
+          <h2>Panel de demostración</h2>
+        </div>
+        <button class="btn btn--ghost" type="button" id="logoutButton">Cerrar sesión</button>
+      </div>
+
+      <div class="session-grid">
+        <div class="metric">
+          <span>Usuario</span>
+          <strong id="sessionEmail">—</strong>
+        </div>
+        <div class="metric">
+          <span>Rol</span>
+          <strong id="sessionRole">—</strong>
+        </div>
+        <div class="metric">
+          <span>Seguridad</span>
+          <strong>JWT activo</strong>
+        </div>
+        <div class="metric">
+          <span>API</span>
+          <strong>Render HTTPS</strong>
+        </div>
+      </div>
+
+      <div class="actions">
+        <button class="btn btn--primary" type="button" id="loadDataButton">Consultar datos protegidos</button>
+      </div>
+
+      <div class="two-columns">
+        <article>
+          <h3>Categorías</h3>
+          <div id="categoriesList" class="list-box empty">Aún no consultadas.</div>
+        </article>
+        <article>
+          <h3>Productos</h3>
+          <div id="productsList" class="list-box empty">Aún no consultados.</div>
+        </article>
+      </div>
+      <div class="message" id="dataMessage" aria-live="polite"></div>
+    </section>
+
+    <section class="card hidden" id="reservationSection">
+      <div class="section-heading">
+        <div>
+          <p class="kicker">Paso 3</p>
+          <h2>Registrar una reserva</h2>
+        </div>
+        <span class="status status--idle">Regla de negocio 201 / 409</span>
+      </div>
+
+      <form id="reservationForm" class="form-grid form-grid--reservation">
+        <label>
+          Cliente
+          <input id="cliente" required maxlength="150" placeholder="Nombre del cliente">
+        </label>
+        <label>
+          Fecha
+          <input id="fecha" type="date" required>
+        </label>
+        <label>
+          Hora inicio
+          <input id="horaInicio" type="time" required value="19:00">
+        </label>
+        <label>
+          Hora fin
+          <input id="horaFin" type="time" required value="20:00">
+        </label>
+        <label>
+          Personas
+          <input id="cantidadPersonas" type="number" min="1" max="20" required value="2">
+        </label>
+        <label>
+          ID de mesa
+          <input id="mesaId" type="number" min="1" required value="1">
+        </label>
+        <button class="btn btn--primary" type="submit">Crear reserva</button>
+      </form>
+
+      <p class="helper">Para demostrar la regla de negocio, registra una reserva y vuelve a enviar el mismo horario y mesa: el backend debe responder <strong>409 Conflict</strong>.</p>
+      <div class="message" id="reservationMessage" aria-live="polite"></div>
+      <pre class="response-box hidden" id="reservationResponse"></pre>
+    </section>
+
+    <section class="architecture">
+      <p class="kicker">Arquitectura demostrada</p>
+      <div class="flow">
+        <span>Frontend</span>
+        <b>→</b>
+        <span>Render / Spring Boot</span>
+        <b>→</b>
+        <span>JWT + Spring Security</span>
+        <b>→</b>
+        <span>JPA / Hibernate</span>
+        <b>→</b>
+        <span>Aiven MySQL</span>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    Proyecto académico · Curso Integrador II: Sistemas · Delicias Peruanas
+  </footer>
+
+  <script src="/app.js"></script>
+</body>
+</html>

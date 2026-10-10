@@ -49,10 +49,19 @@ public class SecurityConfig {
 
                         .requestMatchers("/error").permitAll()
 
-                        // Registro y login pÃºblicos
+                        // Frontend público de demostración APF2
+                        .requestMatchers(
+                                "/",
+                                "/index.html",
+                                "/styles.css",
+                                "/app.js",
+                                "/favicon.ico"
+                        ).permitAll()
+
+                        // Registro y login públicos
                         .requestMatchers("/api/auth/**").permitAll()
 
-                        // CategorÃ­as
+                        // Categorías
                         .requestMatchers(
                                 HttpMethod.GET,
                                 "/api/categorias/**"
