@@ -1,0 +1,47 @@
+name: APF3 - k6 concurrencia controlada
+
+on:
+  push:
+    branches: [apf3-capacidad]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  k6-lectura:
+    name: Dos usuarios virtuales - GET publico
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - name: Obtener codigo
+        uses: actions/checkout@v4
+
+      - name: Preparar k6
+        uses: grafana/setup-k6-action@v1
+        with:
+          k6-version: "1.0.0"
+
+      - name: Comprobar disponibilidad antes de medir
+        shell: bash
+        run: |
+          curl --fail --silent --show-error --location \
+            --max-time 90 --retry 2 --retry-delay 10 --retry-max-time 220 \
+            --output /dev/null --write-out "Preflight HTTP %{http_code}, total %{time_total}s\n" \
+            https://delicias-peruanas-api.onrender.com/
+
+      - name: Ejecutar sondeo k6 y guardar resumen
+        shell: bash
+        run: |
+          mkdir -p evidencias-apf3
+          set -o pipefail
+          k6 run --summary-export=evidencias-apf3/k6-summary.json \
+            performance/k6_sondeo_apf3.js | tee evidencias-apf3/k6-console.txt
+
+      - name: Adjuntar evidencias k6
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: apf3-k6-concurrencia-controlada
+          path: evidencias-apf3/
+          if-no-files-found: warn
