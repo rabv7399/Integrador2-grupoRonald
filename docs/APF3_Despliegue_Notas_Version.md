@@ -38,6 +38,7 @@ El frontend está servido por la misma aplicación Spring Boot desde `backend/sr
 | Verificación | Resultado observado | Alcance |
 |---|---|---|
 | Estado de Render | `Live` | Estado mostrado por la plataforma, no garantiza disponibilidad continua |
+| Integración continua del candidato APF3 | `mvnw clean verify`: 8 pruebas ejecutadas, 0 fallos, 0 errores, 0 omitidas; `BUILD SUCCESS` | Verificado en GitHub Actions [41580869865](https://github.com/rabv7399/Integrador2-grupoRonald/actions/runs/41580869865), no sustituye pruebas funcionales en producción |
 | HTTPS y página principal | La página Delicias Peruanas se abrió en el navegador | Accesibilidad del frontend |
 | Documento `GET /` | HTTP 200; 173 ms | Una medición con Chrome DevTools |
 | Carga de la página | 589 ms | Una medición de carga, no un promedio |
@@ -83,6 +84,15 @@ El frontend está servido por la misma aplicación Spring Boot desde `backend/sr
 - **Gestión del servicio:** solicitudes REQ-INFO-01, REQ-ACC-01 y REQ-ACC-02 documentadas en GitHub Issues y tablero de seguimiento.
 - **Documentación de despliegue:** registro de arquitectura, incidente, verificaciones, restricciones y procedimiento de publicación en este archivo.
 
+### Evaluación técnica previa a la integración
+
+- **Alcance del cambio:** dos archivos de GitHub Actions y un documento; no se modifican controladores, servicios, entidades ni scripts de base de datos en este PR.
+- **Validación de CI:** 8 pruebas automatizadas correctas en el último commit revisado, sin fallos ni errores. Esto no equivale a cobertura completa de las funcionalidades.
+- **Riesgo operativo:** Render sigue `develop`; integrar el PR puede provocar una reconstrucción/despliegue aun cuando los cambios sean de CI y documentación. En el plan Free existe riesgo de arranque en frío y dependencia de Aiven.
+- **Condiciones de aprobación:** revisión y autorización humana del PR, verificación de checks del commit final, disponibilidad de MySQL y comprobación de la configuración de despliegue de Render.
+- **Verificación posterior:** constatar el nuevo commit `Live` y probar HTTPS, frontend y endpoints autorizados. Si falla, consultar logs y aplicar el procedimiento de reversión del apartado 6.
+- **Estado:** revisión técnica documentada; no existe aprobación humana registrada ni integración a `develop`.
+
 **Sin cambios funcionales confirmados en producción:** las funcionalidades APF2 de autenticación, productos, categorías, mesas y reservas siguen siendo la base funcional publicada. No se anuncia una API Swagger/OpenAPI como implementada ni una corrección funcional no verificada.
 
 ## 5. Lista de control para la publicación APF3
@@ -91,7 +101,8 @@ El frontend está servido por la misma aplicación Spring Boot desde `backend/sr
 - [x] Comprobar acceso HTTPS a la interfaz y respuesta del endpoint de login.
 - [x] Confirmar recuperación de MySQL en Aiven.
 - [x] Registrar evidencias de integración continua y gestión de cambios.
-- [ ] Revisar el contenido completo del PR #39 y registrar aprobación humana.
+- [x] Realizar revisión técnica del contenido del PR #39 y comprobar CI (8 pruebas satisfactorias).
+- [ ] Registrar aprobación humana antes de integrar el PR #39.
 - [x] Obtener un sondeo HTTP exitoso posterior a la recuperación (11/11 respuestas); conservar los intentos fallidos como antecedente del incidente.
 - [ ] Ejecutar pruebas de carga representativas con cuentas autorizadas y condiciones controladas, si se exige una validación de capacidad sostenida.
 - [ ] Decidir si se requiere incorporar SpringDoc/OpenAPI antes de la entrega; actualmente no está integrado.
@@ -129,5 +140,6 @@ El frontend está servido por la misma aplicación Spring Boot desde `backend/sr
 - **Figura 21:** CPU de MySQL en Aiven.
 - **Figura 22:** almacenamiento de MySQL en Aiven.
 - **Figura 23:** memoria de MySQL en Aiven.
+- **Figura 24:** sondeo HTTP ligero exitoso de GitHub Actions, con once respuestas y latencias desglosadas.
 
 Las figuras se integrarán al informe final con sus capturas originales. La numeración no significa que una validación pendiente haya sido completada.
