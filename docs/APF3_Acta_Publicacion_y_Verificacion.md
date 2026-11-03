@@ -23,7 +23,7 @@
 | Inicio de sesión válido | Requiere cuenta autorizada y prueba controlada | **Pendiente** |
 | Consulta autenticada de productos, categorías y mesas | Requiere JWT de cuenta autorizada | **Pendiente** |
 | Reserva de prueba y validación de conflicto | Requiere entorno/datos controlados | **Pendiente** |
-| Estado `Live` y SHA en cabecera de Render | Captura posterior del encabezado del servicio | **Pendiente de captura**; el historial sí confirma despliegue exitoso |
+| Estado `Live` y SHA en cabecera de Render | Captura del encabezado de Render > Deploys, Figura 38 | **Verificado:** `Live` en `develop`, SHA `d5818f4` |
 | Configuración efectiva HikariCP en ejecución | Propiedades en repositorio y prueba H2; métricas reales del pool no medidas | **Configuración integrada, observabilidad runtime pendiente** |
 
 ## 2. Alcance del cambio publicado
@@ -47,7 +47,7 @@
 - [x] CI del commit fusionado satisfactoria (9 pruebas).
 - [x] Despliegue automático exitoso de `d5818f4` en Render (Figura 36).
 - [x] Página principal HTTPS visible en navegador (Figura 37, comprobación visual).
-- [ ] Obtener captura de Render con estado `Live` y SHA `d5818f4` en cabecera.
+- [x] Obtener captura de Render con estado `Live` y SHA `d5818f4` en cabecera (Figura 38).
 - [ ] Autenticación satisfactoria con cuenta de prueba autorizada, sin exponer contraseña ni token.
 - [ ] Consultar categorías, productos y mesas autenticadas; registrar códigos de respuesta y resultado esperado.
 - [ ] Ejecutar una reserva de prueba controlada y verificar rechazo de conflicto, sin afectar reservas reales.
@@ -72,5 +72,6 @@
 - **Figura 35:** `APF3_E35_Auto_Deploy_On_Commit_Render.png` — despliegue automático habilitado.
 - **Figura 36:** `APF3_E36_Despliegue_Version_APF3_Render.png` — revisión `d5818f4` desplegada exitosamente.
 - **Figura 37:** `APF3_E37_Frontend_HTTPS_Delicias_Peruanas.png` — interfaz web accesible por HTTPS.
+- **Figura 38:** `APF3_E38_Render_Live_Commit_APF3.png` — servicio `delicias-peruanas-api` en estado `Live` con revisión `d5818f4` en `develop`.
 
 **Estado global:** publicación técnica APF3 verificada; aceptación funcional completa pendiente. No cerrar el cambio RFC hasta terminar las verificaciones de la sección 4.
