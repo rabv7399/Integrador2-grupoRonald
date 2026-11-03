@@ -20,7 +20,7 @@
 | Despliegue Render | Captura del historial Render > Deploys, Figura 36 | **Exitoso**, `Auto-Deploy`, revisión `d5818f4`, duración 3 min 26 s |
 | Revisión anterior | Figura 33, `be949ef` | Conservada como referencia histórica de reversión |
 | HTTPS y frontend | Captura del navegador, Figura 37 | Interfaz y formulario de autenticación visibles; **no se identificó el SHA desde el navegador** |
-| Inicio de sesión válido | Requiere cuenta autorizada y prueba controlada | **Pendiente** |
+| Inicio de sesión válido | Captura del frontend autenticado por HTTPS, Figura 39 | **Verificado:** estado `Autenticado`, mensaje `JWT recibido desde el backend` y sección `Sesión activa` |
 | Consulta autenticada de productos, categorías y mesas | Requiere JWT de cuenta autorizada | **Pendiente** |
 | Reserva de prueba y validación de conflicto | Requiere entorno/datos controlados | **Pendiente** |
 | Estado `Live` y SHA en cabecera de Render | Captura del encabezado de Render > Deploys, Figura 38 | **Verificado:** `Live` en `develop`, SHA `d5818f4` |
@@ -48,7 +48,7 @@
 - [x] Despliegue automático exitoso de `d5818f4` en Render (Figura 36).
 - [x] Página principal HTTPS visible en navegador (Figura 37, comprobación visual).
 - [x] Obtener captura de Render con estado `Live` y SHA `d5818f4` en cabecera (Figura 38).
-- [ ] Autenticación satisfactoria con cuenta de prueba autorizada, sin exponer contraseña ni token.
+- [x] Autenticación satisfactoria con cuenta de prueba autorizada, sin exponer contraseña ni token (Figura 39, campos ocultos).
 - [ ] Consultar categorías, productos y mesas autenticadas; registrar códigos de respuesta y resultado esperado.
 - [ ] Ejecutar una reserva de prueba controlada y verificar rechazo de conflicto, sin afectar reservas reales.
 - [ ] Inspeccionar logs de Render tras despliegue, sin exponer secretos.
@@ -73,5 +73,6 @@
 - **Figura 36:** `APF3_E36_Despliegue_Version_APF3_Render.png` — revisión `d5818f4` desplegada exitosamente.
 - **Figura 37:** `APF3_E37_Frontend_HTTPS_Delicias_Peruanas.png` — interfaz web accesible por HTTPS.
 - **Figura 38:** `APF3_E38_Render_Live_Commit_APF3.png` — servicio `delicias-peruanas-api` en estado `Live` con revisión `d5818f4` en `develop`.
+- **Figura 39:** `APF3_E39_Login_Exitoso_Produccion.png` — autenticación exitosa de una cuenta autorizada, recepción de JWT y sesión activa; campos de correo y contraseña ocultos en la copia para informe.
 
-**Estado global:** publicación técnica APF3 verificada; aceptación funcional completa pendiente. No cerrar el cambio RFC hasta terminar las verificaciones de la sección 4.
+**Estado global:** publicación técnica APF3 verificada y login real con JWT satisfactorio; aceptación funcional de consultas protegidas y reservas pendiente. No cerrar el cambio RFC hasta terminar las verificaciones de la sección 4.
