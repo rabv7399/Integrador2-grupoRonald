@@ -3,6 +3,22 @@
 **Servicio:** Delicias Peruanas · **Marco:** ITIL 4 / ISO/IEC 20000-1 · **Corte de evidencias:** 03/11/2026.  
 **Enfoque:** diferenciar capacidad asignada, métricas observadas, supuestos de negocio y pruebas pendientes. Este plan no certifica un SLA de producción.
 
+## Estado actualizado del criterio 5 — cierre técnico 03/11/2026
+
+**Prevalece sobre las referencias históricas a ramas en preparación que permanecen más abajo.**
+
+| Control | Estado final verificable | Evidencia |
+|---|---|---|
+| HikariCP | **Integrado y desplegado**: valores por defecto de máximo 5 conexiones, mínimo 1 inactiva, timeout 30 000 ms, sobreescribibles por variables de entorno | [PR #42](https://github.com/rabv7399/Integrador2-grupoRonald/pull/42), Render `develop` / `8b07733` / `Live` (Figura 41), test H2 de integración con CI verde |
+| Validación funcional del backend después del despliegue | **Verificada para login y lectura protegida**; no equivale a medición de carga | Figuras 43 (JWT) y 44 (categorías/productos HTTP 200) |
+| Inspección de índices y tres `EXPLAIN` en MySQL Aiven | **Completados** con planes `ref`, `ref` y `const`, usando índices existentes; no se ejecutó DDL | Figuras 28–31 y sección 4 del presente plan |
+| k6 de concurrencia | **Sondeo ligero completado**: 2 VUs × 12 s, 24/24 HTTP 200, 0 % errores, media 69,04 ms, p95 127,26 ms, 1,857 RPS en `GET /` | [GitHub Actions #41581904824](https://github.com/rabv7399/Integrador2-grupoRonald/actions/runs/41581904824) |
+| CPU/RAM real del backend Render Free | **No medido ni disponible mediante el panel Free en la evidencia reunida** | No inventar porcentajes ni métricas de aplicación |
+| Capacidad proyectada 20 usuarios / 6 RPS | **Hipótesis de dimensionamiento sin validar** por carga representativa | Sección 1; prueba de 2 VUs no permite extrapolar |
+| Conexiones Hikari activas en producción | **No medidas**; se verificaron propiedades en código/CI y que la aplicación operó con autenticación y lectura | No equiparar configuración con observabilidad del pool |
+
+**Hallazgo crítico para la rúbrica:** se dispone de medición de p95 real de **frontend público**, tres planes MySQL reales y configuración de pool desplegada, pero **aún falta demostrar una carga controlada sobre endpoints autenticados y obtener métricas operativas reales de conexiones/CPU/RAM**. No se representa el sondeo ligero como prueba de estrés ni se atribuyen recursos no medidos. La muestra de k6 es exploratoria y no certifica SLA.
+
 ## 1. Escenario de demanda objetivo (hipótesis de planificación)
 
 Para el restaurante se propone un escenario académico de **20 usuarios concurrentes** en hora pico; **no** es un dato de afluencia medido. Si cada usuario realiza una petición cada 10 s, la demanda media estimada es `20/10 = 2 RPS`. Con un factor de seguridad de 3, el escenario de dimensionamiento es **6 RPS**. Si cada respuesta pesa **20 KB (supuesto)**, el tráfico de salida estimado a 6 RPS es `6 × 20 × 8 = 960 kbit/s ≈ 0,96 Mbit/s`, sin sobrecarga de red/TLS. El sondeo de 2 VUs no valida ese escenario.
@@ -13,9 +29,9 @@ Para el restaurante se propone un escenario académico de **20 usuarios concurre
 
 | Recurso | Capacidad/configuración conocida | Observación real | Acción y limitación |
 |---|---|---|---|
-| Aplicación Render `delicias-peruanas-api` | Servicio Docker Free, límite RAM **512 MB**. **CPU y uso real RAM no disponibles** en panel Free | Se observó `Live` con commit `be949ef` antes del merge APF3; Render advierte de suspensión por inactividad | Verificar nuevo commit `Live`; no atribuir vCPU ni % de RAM no medidos |
+| Aplicación Render `delicias-peruanas-api` | Servicio Docker Free, límite RAM **512 MB**. **CPU y uso real RAM no disponibles** en panel Free | Se verificó después `Live` con commit final `8b07733` (Figura 41); Render advierte suspensión por inactividad | Commit final `Live` verificado; no atribuir vCPU ni % de RAM no medidos |
 | Base de datos Aiven `delicias-peruanas-db` | MySQL 8.4, **1 nodo** visible | Recuperada a `Running`; CPU baja en gráfica, disco ~30 %, memoria ~78–83 % (estimación visual) | Seguimiento de memoria, plan de respaldo y vigencia del plan; obtener métricas exactas exportadas |
-| Pool JDBC | Rama de mejora `apf3-cierre-calidad`: `spring.datasource.hikari.maximum-pool-size=${DB_POOL_MAX_SIZE:5}`, `minimum-idle=${DB_POOL_MIN_IDLE:1}`, `connection-timeout=${DB_POOL_CONNECTION_TIMEOUT_MS:30000}`; **pendiente de merge/despliegue** | CI de la rama de mejora comprobará los valores con H2; tamaño efectivo de Render/MySQL **aún no medido** | Configuración propuesta **5 / 1 / 30 s** añadida en rama de mejora; requiere CI verde, aprobación del PR, despliegue y verificación de métricas de conexiones |
+| Pool JDBC | Configuración integrada desde PR #42 y desplegada en `develop`/Render: `spring.datasource.hikari.maximum-pool-size=${DB_POOL_MAX_SIZE:5}`, `minimum-idle=${DB_POOL_MIN_IDLE:1}`, `connection-timeout=${DB_POOL_CONNECTION_TIMEOUT_MS:30000}`; tamaño efectivo del pool en runtime **no medido** | La prueba de integración H2 verificó propiedades en CI; tamaño efectivo y uso de conexiones Render/MySQL **aún no medidos** | Configuración **5 / 1 / 30 s** integrada y publicada; sigue pendiente medir conexiones reales y calibrar bajo carga |
 | Red HTTPS | URL pública HTTPS en Render | Navegador: `GET /` HTTP 200 y 173 ms en una observación; carga de página 589 ms | Observar p95 y errores desde múltiples ejecuciones; separar latencia de cliente, red y backend |
 | Respaldo / redundancia | No se verificó instancia de respaldo ni balanceador | MySQL mostrado con 1 nodo; no hay evidencia de alta disponibilidad | Registrar RTO/RPO deseados, validar copias de seguridad antes de cambios de esquema |
 
@@ -38,7 +54,7 @@ Para el restaurante se propone un escenario académico de **20 usuarios concurre
 
 ## 4. Optimización de base de datos: tres consultas críticas
 
-Consultas inferidas de `ReservaRepository` y `UsuarioRepository`. **Pendientes de ejecutar en MySQL Aiven**; no se inventan `EXPLAIN` ni tiempos SQL.
+Consultas identificadas en `ReservaRepository` y `UsuarioRepository`. **Tres `EXPLAIN` reales ejecutados en MySQL Aiven el 03/11/2026** (Figuras 29–31); no se inventan tiempos SQL. Las consultas siguientes muestran el procedimiento inicialmente diseñado.
 
 **Consulta 1: detección de reservas superpuestas** (`ReservaRepository.buscarConflictos`).
 
@@ -107,13 +123,13 @@ Los valores son **umbrales de diseño**. El gráfico de memoria Aiven observado 
 4. **Decisión de infraestructura:** si p95/errores superan objetivos, evaluar plan de pago, observabilidad y disponibilidad de Aiven antes de afirmar capacidad de 20 usuarios.
 5. **Revisión continua:** actualizar matriz tras cambios de plan, consultas, carga o despliegue.
 
-**Pendientes reales:** confirmación de HikariCP en producción, uso CPU/RAM real del backend, validación de 6 RPS y confirmación del nuevo commit en Render. **Completado:** sondeo k6 de 2 VUs, 24/24 respuestas HTTP 200 y métricas registradas. No extrapolar estos resultados a capacidad de producción.
+**Pendientes reales:** medición de conexiones HikariCP y uso CPU/RAM real del backend; validación de 6 RPS sostenidos y carga de API autenticada. **Completado:** HikariCP desplegado, commit `8b07733` `Live`, tres `EXPLAIN` reales y sondeo k6 de 2 VUs con 24/24 respuestas HTTP 200. No extrapolar estos resultados a capacidad de producción.
 
-## 7. Criterios de validacion del pool HikariCP (mejora en rama)
+## 7. Criterios de validación del pool HikariCP (integrado; medición runtime pendiente)
 
 La configuracion propuesta limita inicialmente a **5 conexiones maximas**, **1 conexion inactiva minima** y **30 000 ms** de espera para obtener conexion. Se eligen limites conservadores por tratarse de una instancia Aiven de recursos reducidos; **no se ha demostrado aun que cinco conexiones sean suficientes para 20 usuarios concurrentes o 6 RPS**.
 
 - **Validacion automatizada:** el test de integracion `SecurityIntegrationTest.poolHikariDebeAplicarLimitesConfigurados` usa H2 y comprueba las propiedades. Una ejecucion verde solo acredita la configuracion en CI.
 - **Validacion operativa pendiente:** tras aprobacion y despliegue, observar conexiones MySQL, latencia p95 y errores 5xx con carga moderada; ajustar `DB_POOL_MAX_SIZE` y `DB_POOL_MIN_IDLE` mediante variables de entorno si procede, sin publicar secretos.
 - **Criterio de seguridad:** no cambiar limites ni ejecutar estres sobre Aiven/Render Free sin ventana acordada y plan de reversion.
-- **Versionado:** estos cambios estan propuestos en `apf3-cierre-calidad`; no atribuirlos al commit de produccion hasta comprobarlo.
+- **Versionado:** la propuesta original se integró mediante PR #42 y se publicó en Render; el commit final `8b07733` está `Live` (Figura 41). **Aun así, no se han medido los valores efectivos de conexiones en operación**.

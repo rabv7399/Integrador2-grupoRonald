@@ -109,6 +109,6 @@ Render Free puede suspender instancias por inactividad y su panel no muestra CPU
 - **SLA de solicitudes reales:** no evaluable; los tickets #36–#38 continúan abiertos y el #48 es una simulación, excluida de tasas de satisfacción/atención real.
 - **Rendimiento:** el p95 de k6 corresponde a `GET /` con carga ligera, no a transacciones autenticadas ni a saturación. Los `EXPLAIN` de MySQL expresan planes estimados y uso de índices, no tiempos reales.
 
-**Figura 48 (pendiente):** `APF3_E48_Retrospectiva_Sprint6_Acta_Documental_GitHub.png`. Captura del encabezado y matriz de balance de esta sección; acredita el acta documental, **no** una ceremonia Scrum realizada.
+**Figura 48 (captura aportada y verificada):** `APF3_E48_Retrospectiva_Sprint6_Acta_Documental_GitHub.png`. La captura muestra el encabezado del acta documental, la advertencia de que no representa una ceremonia Scrum firmada, y la matriz de cinco dimensiones del balance verificable. **No** demuestra una reunión efectivamente celebrada.
 
 **Estado:** retrospectiva técnica de Sprint 6 actualizada con logros, problemas, aprendizajes, responsables y mejoras; **validación formal del equipo/docente no acreditada**.
