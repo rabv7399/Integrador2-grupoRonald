@@ -134,6 +134,6 @@ El responsable del proyecto debe confirmar si los tickets #36–#38 representan 
 
 **Figura N.º 46:** `APF3_E46_Plantilla_Solicitud_Servicio_GitHub.png` — pantalla de creación de Issues que muestra las dos plantillas activas: RFC de cambios y solicitud de servicio APF3.
 
-**Figura N.º 47 (pendiente de captura):** `APF3_E47_Caso_Simulado_Cinco_Etapas_GitHub.png` — Issue #48 con identificación **SIMULACIÓN**, estado **Closed** y comentarios fechados de validación, decisión, respuesta y cierre. Si no caben todos los comentarios en una pantalla, usar referencias directas al Issue o capturas adicionales sin afirmar que aparecen todos simultáneamente.
+**Figura N.º 47 (captura aportada y verificada):** `APF3_E47_Caso_Simulado_Cinco_Etapas_GitHub.png` — Issue #48 con título de **SIMULACIÓN**, estado **Closed**, responsable `rabv7399`, etiquetas `prioridad-baja` y `solicitud-informacion`, y estado **Done** en el proyecto APF3. La imagen muestra la primera etapa y estado de cierre; **las etapas 2–5 están documentadas en cuatro comentarios del Issue**, no todas dentro de esta captura.
 
 **Pendientes reales para evolución del servicio:** obtener una solicitud informativa auténtica o autorización verificable de altas/roles para medir los SLA e implantar SoD operativa; los tickets #36–#38 permanecen abiertos. La demostración no suple esas pruebas.
