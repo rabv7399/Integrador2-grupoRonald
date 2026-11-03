@@ -15,13 +15,16 @@
 - **Base de datos:** se ejecutaron tres EXPLAIN reales en MySQL Workbench sobre Aiven; los indices utilizados fueron `idx_reservas_mesa_fecha`, `idx_reservas_fecha_estado` y `uq_usuarios_correo`. Evidencias Figuras 28–31, detalladas en `docs/APF3_Plan_Capacidad_Rendimiento.md` de la rama del PR #42.
 - **Historial de despliegues verificado (Figura 33):** Render > Deploys muestra 4 registros: `be949ef` exitoso (Manual, hace 23 dias, `Live`), `be949ef` fallido (Auto-Deploy, hace 23 dias), `79d1d87` exitoso (Auto-Deploy, hace 26 dias) y `640dcff` exitoso (First Deploy, hace 26 dias). **No aparece un despliegue de `f56af91`** en el historial visible. No puede inferirse la causa sin revisar la configuracion.
 - **Causa verificada del desfase (Figura 34):** en Render > Settings > Build, la rama es `develop` y `Root Directory=backend/`. La interfaz advierte que cambios fuera de ese directorio no activan auto-deploy. La comparacion GitHub `be949ef...f56af91` contiene **15 commits y 8 archivos cambiados, todos fuera de `backend/`** (`.github/workflows/`, `docs/`, `performance/`). Por tanto, no se esperaba activacion automatica por esos commits bajo esa regla. **No cambiar Root Directory:** es la ruta correcta para construir el backend.
-- **Proximo control:** revisar **Settings > Deploy > Auto-Deploy** y la ventana de cambio; PR #42 si contiene modificaciones bajo `backend/`, pero sigue en borrador y no se debe fusionar sin revision. No se ha realizado un despliegue manual ni un rollback en esta etapa.
+- **Auto-Deploy verificado (Figura 35):** Render > Settings > Deploy muestra **`On Commit`**, por lo que la funcion automatica esta habilitada. Combinado con `Root Directory=backend/` y cero cambios de backend entre `be949ef` y `f56af91`, explica la ausencia de despliegue nuevo. **No cambiar esta configuracion.**
+- **Preparacion para despliegue controlado:** PR #42 incluye cambios reales en `backend/src/main/resources/application.properties` y una prueba de integracion; el ultimo commit `beb648d8` tiene CI completada satisfactoriamente ([run 41586306780](https://github.com/rabv7399/Integrador2-grupoRonald/actions/runs/41586306780)). Si se fusiona en `develop`, **podria activarse un nuevo despliegue de produccion**. Antes de hacerlo, confirmar autorizacion del responsable, Aiven `Running`, plan de comprobacion y reversion. PR #42 permanece en borrador, sin fusionar; no se ha realizado un despliegue manual ni un rollback.
 
 **Figura 32:** `APF3_E32_Render_Version_Anterior_Detectada.png` — Render `Live` con `be949ef`, frente al commit APF3 integrado en GitHub `f56af91`. Esta imagen documenta una brecha de despliegue, **no** un despliegue final exitoso.
 
 **Figura 33:** `APF3_E33_Historial_Despliegues_Render.png` — Cuatro despliegues historicos, sin intento visible de publicar `f56af91`.
 
 **Figura 34:** `APF3_E34_Configuracion_Root_Directory_Render.png` — Render Build con rama `develop` y Root Directory `backend/`; solo los cambios dentro del backend activan el despliegue automatico segun esta configuracion.
+
+**Figura 35:** `APF3_E35_Auto_Deploy_On_Commit_Render.png` — Render Deploy con Auto-Deploy `On Commit` habilitado; no se muestra el valor privado del Deploy Hook.
 
 ## 1. Arquitectura del entorno desplegado
 
