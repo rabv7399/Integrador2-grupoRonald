@@ -48,18 +48,23 @@ El frontend está servido por la misma aplicación Spring Boot desde `backend/sr
 | Memoria de MySQL | Aproximadamente 78–83 % | Estimación visual, requiere seguimiento |
 | RAM del backend en Render | Límite de 512 MB | Capacidad asignada, **no** consumo real |
 | CPU/RAM de Render | No visibles en el plan Free | Limitación explícita de la plataforma |
+| Sondeo HTTP GitHub Actions — `GET /` secuencial | 3/3 HTTP 200; promedio 128,1 ms; máximo 172,6 ms | Sondeo exploratorio, no carga sostenida |
+| Sondeo HTTP GitHub Actions — `GET /api/categorias` secuencial | 3/3 HTTP 401; promedio 88,2 ms; máximo 100,4 ms | Endpoint protegido sin JWT; respuesta de seguridad, no éxito funcional |
+| Sondeo HTTP GitHub Actions — `GET /api/categorias` con concurrencia 2 | 4/4 HTTP 401; promedio 102,4 ms; máximo 127,8 ms | Solo dos solicitudes simultáneas, no prueba de estrés |
 
 **No se verificaron** un login exitoso, transacciones autenticadas de reservas, pruebas de carga sostenida, SLA real de producción ni una nueva publicación APF3. Estas validaciones permanecen pendientes.
 
 ## 3. Incidente de disponibilidad y recuperación
 
-1. Los sondeos HTTP de GitHub Actions agotaron los tiempos de espera; no se obtuvieron respuestas HTTP desde esos ejecutores. Los resultados se conservaron como evidencia de una prueba no concluyente, no como medición de latencia válida.
+1. Los primeros sondeos HTTP de GitHub Actions agotaron los tiempos de espera; no se obtuvieron respuestas HTTP desde esos ejecutores. Esos resultados se conservaron como evidencia de una prueba no concluyente. En una ejecución posterior, después de la recuperación de MySQL, el sondeo sí obtuvo 11/11 respuestas HTTP y registró tiempos de latencia exploratorios.
 2. En Render se observaron eventos `Instance failed` y registros de Hibernate indicando imposibilidad de obtener metadatos JDBC.
 3. En Aiven se comprobó que `delicias-peruanas-db` estaba `Powered off`.
 4. Se inició la recuperación de la instancia; tras pasar por `Rebuilding`, MySQL apareció `Running`.
 5. Posteriormente se verificó que el navegador podía cargar la interfaz web y que `/api/auth/login` devolvía una respuesta HTTP.
 
-**Interpretación:** la indisponibilidad de MySQL explica razonablemente el fallo de inicialización JDBC observado. El arranque en frío de Render Free es otra condición de riesgo de disponibilidad. No se ha demostrado que ambas condiciones expliquen todos los tiempos de espera de GitHub Actions.
+**Interpretación:** la indisponibilidad de MySQL explica razonablemente el fallo de inicialización JDBC observado. El arranque en frío de Render Free es otra condición de riesgo de disponibilidad. La posterior recuperación de respuestas HTTP es coherente con la restauración del servicio, pero no demuestra por sí sola la causa de todos los tiempos de espera anteriores.
+
+**Ejecución exitosa del sondeo:** https://github.com/rabv7399/Integrador2-grupoRonald/actions/runs/41576301186 — 11 respuestas HTTP, con un calentamiento inicial `GET /` HTTP 200 de 171,1 ms; promedios detallados en la tabla del apartado 2. Artefacto CSV/JSON/Markdown disponible en la ejecución. No se midieron transacciones autenticadas ni carga sostenida.
 
 **Acciones preventivas propuestas:** verificar el estado de Aiven antes de una demostración; calentar el servicio de Render con antelación; documentar incidentes y recuperaciones; monitorizar memoria de MySQL; mantener un procedimiento de respaldo y restauración comprobado; evitar depender de una única prueba externa para evaluar disponibilidad.
 
@@ -74,7 +79,7 @@ El frontend está servido por la misma aplicación Spring Boot desde `backend/sr
 
 - **Integración continua:** workflow `.github/workflows/ci-backend.yml` para compilar y ejecutar pruebas de Java 21/Maven con `clean verify`. Las ejecuciones de CI revisadas concluyeron correctamente.
 - **Aislamiento de pruebas:** uso de H2 en memoria y clave JWT exclusivamente de prueba; no se usan credenciales reales de Aiven/Render en el workflow.
-- **Sondeo HTTP exploratorio:** workflow `.github/workflows/apf3-sondeo-http.yml` con solicitudes limitadas, tiempos de espera y exportación de CSV/JSON/Markdown. Las ejecuciones observadas finalizaron con errores de tiempo de espera; no se presentan como pruebas exitosas.
+- **Sondeo HTTP exploratorio:** workflow `.github/workflows/apf3-sondeo-http.yml` con solicitudes limitadas, tiempos de espera y exportación de CSV/JSON/Markdown. Las ejecuciones iniciales fallaron por timeout; una ejecución posterior fue satisfactoria con 11 respuestas HTTP. Se presentan como sondeos exploratorios, no como validación de SLA o estrés.
 - **Gestión del servicio:** solicitudes REQ-INFO-01, REQ-ACC-01 y REQ-ACC-02 documentadas en GitHub Issues y tablero de seguimiento.
 - **Documentación de despliegue:** registro de arquitectura, incidente, verificaciones, restricciones y procedimiento de publicación en este archivo.
 
@@ -87,7 +92,8 @@ El frontend está servido por la misma aplicación Spring Boot desde `backend/sr
 - [x] Confirmar recuperación de MySQL en Aiven.
 - [x] Registrar evidencias de integración continua y gestión de cambios.
 - [ ] Revisar el contenido completo del PR #39 y registrar aprobación humana.
-- [ ] Resolver o aceptar explícitamente la limitación de los sondeos HTTP; no usar sus resultados fallidos como validación de rendimiento.
+- [x] Obtener un sondeo HTTP exitoso posterior a la recuperación (11/11 respuestas); conservar los intentos fallidos como antecedente del incidente.
+- [ ] Ejecutar pruebas de carga representativas con cuentas autorizadas y condiciones controladas, si se exige una validación de capacidad sostenida.
 - [ ] Decidir si se requiere incorporar SpringDoc/OpenAPI antes de la entrega; actualmente no está integrado.
 - [ ] Integrar los cambios aprobados en `develop` mediante PR, sin copiar secretos.
 - [ ] Confirmar si Render despliega automáticamente la nueva revisión o requiere despliegue manual.
