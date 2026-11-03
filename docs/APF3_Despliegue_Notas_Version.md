@@ -7,6 +7,16 @@
 
 > **Alcance y precisión:** este documento distingue entre el sistema APF2 que está publicado y las mejoras APF3 que siguen en revisión. No constituye constancia de que se haya desplegado una nueva versión APF3.
 
+## Actualizacion de estado — 03/11/2026 (prevalece sobre las referencias historicas a PR #39)
+
+- **Integracion de GitHub:** PR [#39](https://github.com/rabv7399/Integrador2-grupoRonald/pull/39) y [#41](https://github.com/rabv7399/Integrador2-grupoRonald/pull/41) ya estan fusionados en `develop`, cuyo commit confirmado es `f56af91aa7d3b0bd99048e42e336a371cf9cebcd`. Los textos del 02/11 que describen PR #39 como abierto representan el estado **historico** de preparacion, no el estado actual.
+- **Produccion Render:** la captura de **Events** del 03/11 muestra el servicio `delicias-peruanas-api` en estado `Live`, rama `develop`, **pero commit `be949ef`**. Por tanto, **no se ha verificado el despliegue de APF3**. Se registro el desfase en [DEP-APF3-01, Issue #44](https://github.com/rabv7399/Integrador2-grupoRonald/issues/44).
+- **Mejoras adicionales:** PR [#42](https://github.com/rabv7399/Integrador2-grupoRonald/pull/42) sigue en borrador, sin fusionar; su configuracion HikariCP y test automatizado **no** se atribuyen a produccion.
+- **Base de datos:** se ejecutaron tres EXPLAIN reales en MySQL Workbench sobre Aiven; los indices utilizados fueron `idx_reservas_mesa_fecha`, `idx_reservas_fecha_estado` y `uq_usuarios_correo`. Evidencias Figuras 28–31, detalladas en `docs/APF3_Plan_Capacidad_Rendimiento.md` de la rama del PR #42.
+- **Proximo control:** revisar **Deploys** y **Settings > Auto-Deploy** en Render para determinar por que la revision publicada esta desfasada. No se ha realizado un despliegue manual ni un rollback en esta etapa.
+
+**Figura 32:** `APF3_E32_Render_Version_Anterior_Detectada.png` — Render `Live` con `be949ef`, frente al commit APF3 integrado en GitHub `f56af91`. Esta imagen documenta una brecha de despliegue, **no** un despliegue final exitoso.
+
 ## 1. Arquitectura del entorno desplegado
 
 ```text
