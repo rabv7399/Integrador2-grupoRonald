@@ -114,3 +114,26 @@ Se verificó el estado de los tickets mediante GitHub Issues. La tabla distingue
 El responsable del proyecto debe confirmar si los tickets #36–#38 representan **casos de prueba académicos** o solicitudes reales con personas autorizadas. Si son ejemplos, es válido conservarlos abiertos con escenarios y decisiones modeladas sin afirmar altas/aprobaciones reales. Si son reales, deberán obtenerse las autorizaciones y datos mínimos por canal seguro antes de cualquier cambio de permisos. El rol de aprobador debe permanecer separado del ejecutor cuando sea posible; de lo contrario, registrar excepción SoD y validación externa.
 
 **Criterio de cierre:** ningún ticket se cerrará como atendido o autorizado mientras falten verificación, comunicación del resultado y constancia de conformidad o denegación.
+
+
+## 7. Demostración académica completa de cinco etapas — caso SIM-REQ-INFO-01
+
+**Caso registrado:** [Issue #48 — SIM-REQ-INFO-01](https://github.com/rabv7399/Integrador2-grupoRonald/issues/48), cerrado con razón `completed` **exclusivamente como simulación académica**, no como solicitud real atendida. Se identificó un solicitante ficticio sin datos personales. El escenario fue una pregunta informativa: *¿cómo consultar categorías y productos después de iniciar sesión?*
+
+| Etapa ITIL 4 | Evidencia en el Issue #48 | Resultado del ejercicio |
+|---|---|---|
+| 1. Registro | Título, descripción, etiqueta `solicitud-informacion`, prioridad baja, asignación a responsable | Escenario registrado como **SIMULACIÓN** |
+| 2. Validación | Comentario de validación de alcance, pregunta específica y evidencias técnicas | Sin validación de identidad real porque no existe cliente |
+| 3. Aprobación | Comentario de decisión sobre la aprobación | **No aplica** a consulta informativa general; sin fingir firmas |
+| 4. Ejecución | Respuesta modelo publicada como comentario y fundamentada en Figuras 41, 43 y 44 | Instrucciones verificadas técnicamente, **no enviadas** a cliente real |
+| 5. Cierre y encuesta | Comentario de cierre, checklist, razón de cierre y modelo de encuesta no aplicado | **Cierre administrativo de la simulación**; satisfacción no recogida |
+
+**Distinción rigurosa:** en este apartado se demuestra el **diseño y recorrido documental** del proceso, no ejecución de una solicitud recibida de un usuario real. La evidencia real independiente es que la aplicación desplegada ofreció login JWT y devolvió HTTP 200 a una consulta protegida de categorías y productos (Figuras 43 y 44). No se crearon usuarios ni reservas en este escenario.
+
+**Indicadores SLA:** al existir **0 solicitudes reales cerradas** con datos completos y evidencia de entrega/conformidad, la tasa real de cumplimiento de SLA continúa **no evaluable**. El cierre de #48 no se incorpora al denominador de atención real ni genera un tiempo de respuesta imputable al soporte.
+
+**Figura N.º 46:** `APF3_E46_Plantilla_Solicitud_Servicio_GitHub.png` — pantalla de creación de Issues que muestra las dos plantillas activas: RFC de cambios y solicitud de servicio APF3.
+
+**Figura N.º 47 (pendiente de captura):** `APF3_E47_Caso_Simulado_Cinco_Etapas_GitHub.png` — Issue #48 con identificación **SIMULACIÓN**, estado **Closed** y comentarios fechados de validación, decisión, respuesta y cierre. Si no caben todos los comentarios en una pantalla, usar referencias directas al Issue o capturas adicionales sin afirmar que aparecen todos simultáneamente.
+
+**Pendientes reales para evolución del servicio:** obtener una solicitud informativa auténtica o autorización verificable de altas/roles para medir los SLA e implantar SoD operativa; los tickets #36–#38 permanecen abiertos. La demostración no suple esas pruebas.
