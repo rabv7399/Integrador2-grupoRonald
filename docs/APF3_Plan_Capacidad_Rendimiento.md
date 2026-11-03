@@ -15,7 +15,7 @@ Para el restaurante se propone un escenario académico de **20 usuarios concurre
 |---|---|---|---|
 | Aplicación Render `delicias-peruanas-api` | Servicio Docker Free, límite RAM **512 MB**. **CPU y uso real RAM no disponibles** en panel Free | Se observó `Live` con commit `be949ef` antes del merge APF3; Render advierte de suspensión por inactividad | Verificar nuevo commit `Live`; no atribuir vCPU ni % de RAM no medidos |
 | Base de datos Aiven `delicias-peruanas-db` | MySQL 8.4, **1 nodo** visible | Recuperada a `Running`; CPU baja en gráfica, disco ~30 %, memoria ~78–83 % (estimación visual) | Seguimiento de memoria, plan de respaldo y vigencia del plan; obtener métricas exactas exportadas |
-| Pool JDBC | `application.properties` **no fija** `spring.datasource.hikari.maximum-pool-size` | Tamaño real no medido en runtime; el valor de referencia por defecto de HikariCP suele ser 10 si se utiliza su configuración predeterminada | Propuesta inicial: máximo **5** conexiones y mínimo inactivo **1**, **sujeto a ensayo**; no afirmar que esté configurado |
+| Pool JDBC | Rama de mejora `apf3-cierre-calidad`: `spring.datasource.hikari.maximum-pool-size=${DB_POOL_MAX_SIZE:5}`, `minimum-idle=${DB_POOL_MIN_IDLE:1}`, `connection-timeout=${DB_POOL_CONNECTION_TIMEOUT_MS:30000}`; **pendiente de merge/despliegue** | CI de la rama de mejora comprobará los valores con H2; tamaño efectivo de Render/MySQL **aún no medido** | Configuración propuesta **5 / 1 / 30 s** añadida en rama de mejora; requiere CI verde, aprobación del PR, despliegue y verificación de métricas de conexiones |
 | Red HTTPS | URL pública HTTPS en Render | Navegador: `GET /` HTTP 200 y 173 ms en una observación; carga de página 589 ms | Observar p95 y errores desde múltiples ejecuciones; separar latencia de cliente, red y backend |
 | Respaldo / redundancia | No se verificó instancia de respaldo ni balanceador | MySQL mostrado con 1 nodo; no hay evidencia de alta disponibilidad | Registrar RTO/RPO deseados, validar copias de seguridad antes de cambios de esquema |
 
@@ -71,7 +71,18 @@ FROM usuarios WHERE correo = 'prueba@example.invalid';
 
 `Usuario.correo` está declarado `unique = true` en JPA, por lo que **se espera** un índice único si el esquema fue creado conforme al modelo; comprobar con `SHOW INDEX FROM usuarios` y `EXPLAIN`. No consultar contraseñas ni registrar datos personales.
 
-**Procedimiento pendiente:** en Aiven abrir consola SQL autorizada, ejecutar `SHOW INDEX FROM reservas;`, `SHOW INDEX FROM usuarios;` y los tres `EXPLAIN`; conservar salidas (ocultando datos sensibles), identificar recorridos `ALL` y decidir índices en una RFC separada. No ejecutar DDL en producción sin respaldo/aprobación.
+**Procedimiento realizado (03/11/2026):** se inspeccionaron los indices y ejecutaron los tres EXPLAIN reales en MySQL Workbench. El script de solo lectura [`database/APF3_EXPLAIN_Aiven.sql`](../database/APF3_EXPLAIN_Aiven.sql) en cliente SQL autorizado para Aiven; ejecutar `SHOW INDEX FROM reservas;`, `SHOW INDEX FROM usuarios;` y los tres `EXPLAIN`; conservar salidas (ocultando datos sensibles), identificar recorridos `ALL` y decidir índices en una RFC separada. No ejecutar DDL en producción sin respaldo/aprobación.
+
+### Resultados reales de inspeccion de indices y EXPLAIN (03/11/2026)
+
+**Fuente:** capturas de MySQL Workbench compartidas por el responsable del proyecto, conectado a MySQL Aiven, esquema `delicias_peruanas`. Los siguientes son datos observados, no simulados:
+
+- **Figura 28 — `INFORMATION_SCHEMA.STATISTICS`:** `reservas` tiene `idx_reservas_fecha_estado(fecha, estado)`, `idx_reservas_mesa_fecha(mesa_id, fecha)` y `PRIMARY(id)`; `usuarios` tiene `idx_usuarios_rol_activo(rol, activo)`, `uq_usuarios_correo(correo)` (unico) y `PRIMARY(id)`.
+- **Figura 29 — EXPLAIN deteccion de conflictos:** para `SELECT id FROM reservas WHERE mesa_id=1 AND fecha=CURRENT_DATE() AND estado <> 'CANCELADA' AND hora_inicio<'21:00:00' AND hora_fin>'19:00:00'`, MySQL devuelve `type=ref`, `key=idx_reservas_mesa_fecha`, `key_len=11`, `ref=const,const`, `rows=1`, `filtered=50.00`. La captura no muestra completo el campo `Extra`, por lo que no se afirma su contenido.
+- **Interpretacion:** el indice compuesto se utiliza para los filtros de igualdad de mesa y fecha; no hay evidencia de recorrido completo de tabla en ese plan. `rows` y `filtered` son estimaciones del optimizador y no representan latencia ni volumen de carga.
+- **Figura 30 — EXPLAIN reservas por fecha:** para `SELECT id, fecha, hora_inicio, mesa_id, estado FROM reservas WHERE fecha=CURRENT_DATE()`, MySQL devuelve `type=ref`, `possible_keys=idx_reservas_fecha_estado`, `key=idx_reservas_fecha_estado`, `key_len=3`, `ref=const`, `rows=1`, `filtered=100.00`, `Extra=NULL`. Se utiliza el prefijo `fecha` del indice compuesto; no se observa escaneo completo de tabla. La fila estimada no es una medicion de latencia.
+- **Figura 31 — EXPLAIN usuarios por correo, validacion definitiva:** el primer intento con correo ficticio `prueba@example.invalid` devolvio `Extra=no matching row in const table` al no existir coincidencia. Se repitio con una variable de sesion `@correo_prueba` asignada mediante una consulta de solo lectura a un correo existente, **sin exponer su valor en la captura**. Resultado real: `table=usuarios`, `type=const`, `possible_keys=uq_usuarios_correo`, `key=uq_usuarios_correo`, `key_len=602`, `ref=const`, `rows=1`, `filtered=100.00`, `Extra=NULL`. El optimizador aprovecha la clave unica y no realiza escaneo completo; no se requiere un indice adicional con esta evidencia.
+- No se han creado indices nuevos ni ejecutado DDL.
 
 ## 5. Prueba de concurrencia y umbrales
 
@@ -96,4 +107,13 @@ Los valores son **umbrales de diseño**. El gráfico de memoria Aiven observado 
 4. **Decisión de infraestructura:** si p95/errores superan objetivos, evaluar plan de pago, observabilidad y disponibilidad de Aiven antes de afirmar capacidad de 20 usuarios.
 5. **Revisión continua:** actualizar matriz tras cambios de plan, consultas, carga o despliegue.
 
-**Pendientes reales:** salidas `EXPLAIN` de MySQL, uso CPU/RAM real del backend, validación de 6 RPS y confirmación del nuevo commit en Render. **Completado:** sondeo k6 de 2 VUs, 24/24 respuestas HTTP 200 y métricas registradas. No extrapolar estos resultados a capacidad de producción.
+**Pendientes reales:** confirmación de HikariCP en producción, uso CPU/RAM real del backend, validación de 6 RPS y confirmación del nuevo commit en Render. **Completado:** sondeo k6 de 2 VUs, 24/24 respuestas HTTP 200 y métricas registradas. No extrapolar estos resultados a capacidad de producción.
+
+## 7. Criterios de validacion del pool HikariCP (mejora en rama)
+
+La configuracion propuesta limita inicialmente a **5 conexiones maximas**, **1 conexion inactiva minima** y **30 000 ms** de espera para obtener conexion. Se eligen limites conservadores por tratarse de una instancia Aiven de recursos reducidos; **no se ha demostrado aun que cinco conexiones sean suficientes para 20 usuarios concurrentes o 6 RPS**.
+
+- **Validacion automatizada:** el test de integracion `SecurityIntegrationTest.poolHikariDebeAplicarLimitesConfigurados` usa H2 y comprueba las propiedades. Una ejecucion verde solo acredita la configuracion en CI.
+- **Validacion operativa pendiente:** tras aprobacion y despliegue, observar conexiones MySQL, latencia p95 y errores 5xx con carga moderada; ajustar `DB_POOL_MAX_SIZE` y `DB_POOL_MIN_IDLE` mediante variables de entorno si procede, sin publicar secretos.
+- **Criterio de seguridad:** no cambiar limites ni ejecutar estres sobre Aiven/Render Free sin ventana acordada y plan de reversion.
+- **Versionado:** estos cambios estan propuestos en `apf3-cierre-calidad`; no atribuirlos al commit de produccion hasta comprobarlo.

@@ -48,6 +48,36 @@ Horario de cómputo **propuesto:** lunes a viernes, 09:00–18:00, excluyendo fe
 
 **Flujo operativo:** `Todo → In Progress → Done`, con rechazo o espera de aprobación registrados mediante comentarios/etiquetas. Las Issues #36–#38 se crearon y clasificaron; su estado pendiente no equivale a atención finalizada.
 
+### Diagrama operativo con decisiones de control
+
+El siguiente flujo es un **procedimiento diseñado**, no evidencia de altas de usuarios ya ejecutadas. Cada solicitud debe dejar registro de su responsable, fecha, aprobación y resultado.
+
+```mermaid
+flowchart TD
+    A["1. Registro en GitHub Issue REQ-ACC"] --> B["2. Validacion: identidad, rol, necesidad y vigencia"]
+    B --> C{"Datos completos?"}
+    C -- "No" --> D["Solicitar correccion y dejar ticket pendiente"]
+    D --> B
+    C -- "Si" --> E["3. Aprobacion formal por supervisor / propietario"]
+    E --> F{"Aprobado?"}
+    F -- "No" --> G["Denegacion motivada y registro de decision"]
+    G --> K["5. Cierre, notificacion y encuesta"]
+    F -- "Si" --> H["4. Ejecucion por administrador distinto del aprobador"]
+    H --> I["Validar rol minimo, acceso y fecha de revocacion"]
+    I --> J{"Validacion conforme?"}
+    J -- "No" --> L["Corregir o revertir acceso; registrar incidente"]
+    L --> H
+    J -- "Si" --> K
+    K --> M["Actualizar Issue y Projects; conservar evidencias"]
+```
+
+### Auditoria y conservacion de evidencias
+
+- **Rastro disponible hoy:** ID de Issue, comentarios fechados, PR, checks y commits. Proporcionan trazabilidad, **pero no inmutabilidad garantizada**.
+- **Control propuesto para alcanzar mayor rigor:** exportar periodicamente tickets y decisiones a almacenamiento de solo adicion o retencion protegida, con hash SHA-256 y acceso restringido al responsable de auditoria; guardar comprobante de exportacion y periodo de retencion.
+- **SoD:** aprobador y ejecutor deben ser personas distintas; cuando el equipo no pueda cumplirlo, documentar la excepcion y obtener validacion externa antes de ejecutar.
+- **Estado de implantacion:** exportacion inmutable y controles de retencion **no implementados ni comprobados**. No se atribuyen evidencias inexistentes.
+
 ## 5. Evidencias verificables
 
 - **Figura 05:** clasificación y responsable del ticket REQ-INFO-01.
