@@ -13,9 +13,12 @@
 - **Produccion Render:** la captura de **Events** del 03/11 muestra el servicio `delicias-peruanas-api` en estado `Live`, rama `develop`, **pero commit `be949ef`**. Por tanto, **no se ha verificado el despliegue de APF3**. Se registro el desfase en [DEP-APF3-01, Issue #44](https://github.com/rabv7399/Integrador2-grupoRonald/issues/44).
 - **Mejoras adicionales:** PR [#42](https://github.com/rabv7399/Integrador2-grupoRonald/pull/42) sigue en borrador, sin fusionar; su configuracion HikariCP y test automatizado **no** se atribuyen a produccion.
 - **Base de datos:** se ejecutaron tres EXPLAIN reales en MySQL Workbench sobre Aiven; los indices utilizados fueron `idx_reservas_mesa_fecha`, `idx_reservas_fecha_estado` y `uq_usuarios_correo`. Evidencias Figuras 28–31, detalladas en `docs/APF3_Plan_Capacidad_Rendimiento.md` de la rama del PR #42.
-- **Proximo control:** revisar **Deploys** y **Settings > Auto-Deploy** en Render para determinar por que la revision publicada esta desfasada. No se ha realizado un despliegue manual ni un rollback en esta etapa.
+- **Historial de despliegues verificado (Figura 33):** Render > Deploys muestra 4 registros: `be949ef` exitoso (Manual, hace 23 dias, `Live`), `be949ef` fallido (Auto-Deploy, hace 23 dias), `79d1d87` exitoso (Auto-Deploy, hace 26 dias) y `640dcff` exitoso (First Deploy, hace 26 dias). **No aparece un despliegue de `f56af91`** en el historial visible. No puede inferirse la causa sin revisar la configuracion.
+- **Proximo control:** revisar **Settings > Build & Deploy > Auto-Deploy**, rama y filtros en Render para determinar por que la revision publicada esta desfasada. No se ha realizado un despliegue manual ni un rollback en esta etapa.
 
 **Figura 32:** `APF3_E32_Render_Version_Anterior_Detectada.png` — Render `Live` con `be949ef`, frente al commit APF3 integrado en GitHub `f56af91`. Esta imagen documenta una brecha de despliegue, **no** un despliegue final exitoso.
+
+**Figura 33:** `APF3_E33_Historial_Despliegues_Render.png` — Cuatro despliegues historicos, sin intento visible de publicar `f56af91`.
 
 ## 1. Arquitectura del entorno desplegado
 
