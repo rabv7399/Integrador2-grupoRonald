@@ -73,6 +73,15 @@ FROM usuarios WHERE correo = 'prueba@example.invalid';
 
 **Procedimiento pendiente:** usar el script de solo lectura [`database/APF3_EXPLAIN_Aiven.sql`](../database/APF3_EXPLAIN_Aiven.sql) en cliente SQL autorizado para Aiven; ejecutar `SHOW INDEX FROM reservas;`, `SHOW INDEX FROM usuarios;` y los tres `EXPLAIN`; conservar salidas (ocultando datos sensibles), identificar recorridos `ALL` y decidir índices en una RFC separada. No ejecutar DDL en producción sin respaldo/aprobación.
 
+### Resultados reales de inspeccion de indices y EXPLAIN (03/11/2026)
+
+**Fuente:** capturas de MySQL Workbench compartidas por el responsable del proyecto, conectado a MySQL Aiven, esquema `delicias_peruanas`. Los siguientes son datos observados, no simulados:
+
+- **Figura 28 — `INFORMATION_SCHEMA.STATISTICS`:** `reservas` tiene `idx_reservas_fecha_estado(fecha, estado)`, `idx_reservas_mesa_fecha(mesa_id, fecha)` y `PRIMARY(id)`; `usuarios` tiene `idx_usuarios_rol_activo(rol, activo)`, `uq_usuarios_correo(correo)` (unico) y `PRIMARY(id)`.
+- **Figura 29 — EXPLAIN deteccion de conflictos:** para `SELECT id FROM reservas WHERE mesa_id=1 AND fecha=CURRENT_DATE() AND estado <> 'CANCELADA' AND hora_inicio<'21:00:00' AND hora_fin>'19:00:00'`, MySQL devuelve `type=ref`, `key=idx_reservas_mesa_fecha`, `key_len=11`, `ref=const,const`, `rows=1`, `filtered=50.00`. La captura no muestra completo el campo `Extra`, por lo que no se afirma su contenido.
+- **Interpretacion:** el indice compuesto se utiliza para los filtros de igualdad de mesa y fecha; no hay evidencia de recorrido completo de tabla en ese plan. `rows` y `filtered` son estimaciones del optimizador y no representan latencia ni volumen de carga.
+- **Pendiente:** resultados de EXPLAIN para `findByFecha` y `findByCorreo` (Figuras 30 y 31). No se han creado indices nuevos ni ejecutado DDL.
+
 ## 5. Prueba de concurrencia y umbrales
 
 Se ejecutó `performance/k6_sondeo_apf3.js` en [GitHub Actions, ejecución 41581904824](https://github.com/rabv7399/Integrador2-grupoRonald/actions/runs/41581904824): **2 VUs durante 12 segundos**, solo `GET /`, **24 solicitudes y 24 checks correctos**, **0 fallos HTTP**, **p95 127,26 ms** y **1,857 RPS**. El workflow guardó `k6-summary.json` y `k6-console.txt` como [artefacto descargable](https://github.com/rabv7399/Integrador2-grupoRonald/actions/runs/41581904824/artifacts/13206407341). El preflight HTTP fue satisfactorio. Esta simulación controlada cumple el ejercicio básico de concurrencia, **no** demuestra capacidad de 20 usuarios, 6 RPS sostenidos ni un SLA real. Los umbrales de k6 son de control de prueba, no alertas permanentes.
@@ -96,7 +105,7 @@ Los valores son **umbrales de diseño**. El gráfico de memoria Aiven observado 
 4. **Decisión de infraestructura:** si p95/errores superan objetivos, evaluar plan de pago, observabilidad y disponibilidad de Aiven antes de afirmar capacidad de 20 usuarios.
 5. **Revisión continua:** actualizar matriz tras cambios de plan, consultas, carga o despliegue.
 
-**Pendientes reales:** salidas `EXPLAIN` de MySQL, confirmación de HikariCP en producción, uso CPU/RAM real del backend, validación de 6 RPS y confirmación del nuevo commit en Render. **Completado:** sondeo k6 de 2 VUs, 24/24 respuestas HTTP 200 y métricas registradas. No extrapolar estos resultados a capacidad de producción.
+**Pendientes reales:** EXPLAIN de reservas por fecha y usuarios por correo (la consulta de conflictos y los índices ya fueron verificados), confirmación de HikariCP en producción, uso CPU/RAM real del backend, validación de 6 RPS y confirmación del nuevo commit en Render. **Completado:** sondeo k6 de 2 VUs, 24/24 respuestas HTTP 200 y métricas registradas. No extrapolar estos resultados a capacidad de producción.
 
 ## 7. Criterios de validacion del pool HikariCP (mejora en rama)
 
