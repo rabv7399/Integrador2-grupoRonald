@@ -1,0 +1,104 @@
+name: APF3 - Sondeo HTTP de rendimiento
+
+on:
+  push:
+    branches: [apf3-ci]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  sondeo-http:
+    name: Medicion ligera sin modificar datos
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Obtener codigo
+        uses: actions/checkout@v4
+      - name: Preparar Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Medir latencia y respuestas HTTP
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          import csv, json, os, statistics, time
+          from concurrent.futures import ThreadPoolExecutor
+          from urllib.error import HTTPError, URLError
+          from urllib.request import Request, urlopen
+          
+          BASE = "https://delicias-peruanas-api.onrender.com"
+          os.makedirs("evidencias-apf3", exist_ok=True)
+          rows = []
+          
+          def medir(path, modalidad, intento, espera=12):
+              inicio = time.perf_counter()
+              codigo = "SIN_RESPUESTA"
+              error = ""
+              try:
+                  req = Request(BASE + path, headers={"User-Agent": "APF3-Sondeo-Academico/1.0"})
+                  with urlopen(req, timeout=espera) as respuesta:
+                      codigo = str(respuesta.status)
+                      respuesta.read(256)
+              except HTTPError as exc:
+                  codigo = str(exc.code)
+                  exc.close()
+              except (URLError, TimeoutError, OSError) as exc:
+                  error = str(exc)[:180]
+              return {"ruta": path, "modalidad": modalidad, "intento": intento,
+                      "codigo_http": codigo, "tiempo_ms": round((time.perf_counter()-inicio)*1000,1), "error": error}
+          
+          # Primer contacto separado para detectar un posible arranque en frio.
+          rows.append(medir("/", "calentamiento", 1, espera=45))
+          for ruta in ["/", "/api/categorias"]:
+              for intento in range(1, 4):
+                  rows.append(medir(ruta, "secuencial", intento, espera=12))
+          
+          with ThreadPoolExecutor(max_workers=2) as pool:
+              rows.extend(pool.map(lambda i: medir("/api/categorias", "concurrencia_2", i, espera=12), range(1, 5)))
+          
+          campos = ["ruta","modalidad","intento","codigo_http","tiempo_ms","error"]
+          with open("evidencias-apf3/sondeo_http.csv","w",newline="",encoding="utf-8") as archivo:
+              escritor = csv.DictWriter(archivo,fieldnames=campos)
+              escritor.writeheader()
+              escritor.writerows(rows)
+          
+          resumen = []
+          for ruta, modalidad in [("/", "calentamiento"),("/", "secuencial"),("/api/categorias","secuencial"),("/api/categorias","concurrencia_2")]:
+              grupo = [r for r in rows if r["ruta"] == ruta and r["modalidad"] == modalidad]
+              respuestas = [r for r in grupo if r["codigo_http"] != "SIN_RESPUESTA"]
+              tiempos = sorted(r["tiempo_ms"] for r in respuestas)
+              estados = {}
+              for r in grupo:
+                  estados[r["codigo_http"]] = estados.get(r["codigo_http"],0)+1
+              resumen.append({"ruta":ruta,"modalidad":modalidad,"solicitudes":len(grupo),
+                              "respuestas_http":len(respuestas),"estados":estados,
+                              "promedio_ms":round(statistics.mean(tiempos),1) if tiempos else None,
+                              "minimo_ms":min(tiempos) if tiempos else None,
+                              "maximo_ms":max(tiempos) if tiempos else None})
+          with open("evidencias-apf3/resumen.json","w",encoding="utf-8") as archivo:
+              json.dump({"tipo":"sondeo HTTP ligero, no prueba de carga","resultados":resumen},archivo,indent=2,ensure_ascii=False)
+          lineas = ["## APF3 - Sondeo HTTP ligero de la API","","Resultados exploratorios, no equivalen a un SLA validado ni a una prueba de estres.",
+          "Los codigos 401/403/404 indican respuesta HTTP, no exito funcional.","No mide CPU ni RAM.",
+          "","| Ruta | Modalidad | Intentos | Respuestas | Estados HTTP | Promedio (ms) | Maximo (ms) |",
+          "|---|---|---:|---:|---|---:|---:|"]
+          for r in resumen:
+              lineas.append(f"| {r['ruta']} | {r['modalidad']} | {r['solicitudes']} | {r['respuestas_http']} | {r['estados']} | {r['promedio_ms']} | {r['maximo_ms']} |")
+          texto = "\n".join(lineas)+"\n"
+          print(texto,flush=True)
+          with open("evidencias-apf3/resumen.md","w",encoding="utf-8") as archivo:
+              archivo.write(texto)
+          with open(os.environ["GITHUB_STEP_SUMMARY"],"a",encoding="utf-8") as archivo:
+              archivo.write(texto)
+          if not any(r["codigo_http"] != "SIN_RESPUESTA" for r in rows):
+              raise SystemExit("La API no respondio a ninguna solicitud HTTP: revisar Render y conectividad antes de informar resultados.")
+          PY
+      - name: Guardar resultados para APF3
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: apf3-sondeo-http
+          path: evidencias-apf3/
+          if-no-files-found: warn
