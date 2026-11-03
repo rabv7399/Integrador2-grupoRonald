@@ -87,3 +87,30 @@ flowchart TD
 - [Issue #36](https://github.com/rabv7399/Integrador2-grupoRonald/issues/36), [Issue #37](https://github.com/rabv7399/Integrador2-grupoRonald/issues/37) e [Issue #38](https://github.com/rabv7399/Integrador2-grupoRonald/issues/38).
 
 **Mejora priorizada:** agregar plantillas de Issues, registrar aprobaciones diferenciadas, formalizar el horario de soporte y medir SLA a partir de tickets cerrados reales.
+
+
+## 6. Seguimiento operacional verificado — 03/11/2026 (entregable complementario)
+
+Se verificó el estado de los tickets mediante GitHub Issues. La tabla distingue explícitamente **registro y seguimiento interno** de ejecución real, aprobación o cumplimiento SLA.
+
+| Ticket | Prioridad / asignado | Validación documentada | Aprobación y ejecución reales | Estado verificable |
+|---|---|---|---|---|
+| [REQ-INFO-01, #36](https://github.com/rabv7399/Integrador2-grupoRonald/issues/36) | Baja / `rabv7399` | Se registró la clasificación y una **respuesta modelo no enviada**; faltan pregunta específica, horario y disponibilidad confirmados | No se requiere aprobación general; **sin respuesta real ni confirmación del solicitante** | **Abierto**, pendiente de validación y respuesta |
+| [REQ-ACC-02, #37](https://github.com/rabv7399/Integrador2-grupoRonald/issues/37) | Alta / `rabv7399` | Se registró matriz de control: identidad, necesidad ADMIN, justificación, caducidad, SoD | **Sin aprobación ni permisos ADMIN concedidos** | **Abierto**, a la espera de documentación y aprobación |
+| [REQ-ACC-01, #38](https://github.com/rabv7399/Integrador2-grupoRonald/issues/38) | Media / `rabv7399` | Se registró matriz de control: identidad, necesidad OPERADOR, autorización, vigencia, SoD | **Sin aprobación ni cuenta OPERADOR creada** | **Abierto**, a la espera de datos y aprobación |
+
+**Registros nuevos:** se añadieron comentarios de seguimiento fechados a [#36](https://github.com/rabv7399/Integrador2-grupoRonald/issues/36), [#37](https://github.com/rabv7399/Integrador2-grupoRonald/issues/37) y [#38](https://github.com/rabv7399/Integrador2-grupoRonald/issues/38). La fecha del comentario no demuestra atención al solicitante ni cumplimiento del SLA.
+
+**Plantilla reutilizable preparada:** [`.github/ISSUE_TEMPLATE/solicitud_servicio_apf3.md`](../.github/ISSUE_TEMPLATE/solicitud_servicio_apf3.md), que recopila clasificación, datos no sensibles, validación, evidencia de autorización, segregación de funciones, tiempos, pausas, prueba, satisfacción y cierre. Esta plantilla está propuesta en la rama de mejora; **no está disponible en el flujo de creación del repositorio principal hasta que el PR correspondiente se fusione**.
+
+### 6.1 Evidencia disponible y límites académicos
+
+- **Registrado y verificable:** tres tickets identificados con responsable, etiquetas de prioridad, catálogo, cinco etapas del proceso, reglas de aprobación y comentarios de seguimiento.
+- **Diseñado pero no ejecutado:** alta OPERADOR, permiso ADMIN, entrega real de información al solicitante, conformidad, encuesta, aprobación independiente, proceso de revocación y exportación a un almacenamiento inmutable.
+- **SLA:** objetivos y horario están propuestos. Con **0 tickets cerrados** y sin horas de atención real, el cumplimiento del SLA resulta **no evaluable**, no 100 %. Para medirse correctamente se requieren solicitud válida, primera respuesta, pausas, cierre y confirmación.
+
+### 6.2 Próxima decisión de control
+
+El responsable del proyecto debe confirmar si los tickets #36–#38 representan **casos de prueba académicos** o solicitudes reales con personas autorizadas. Si son ejemplos, es válido conservarlos abiertos con escenarios y decisiones modeladas sin afirmar altas/aprobaciones reales. Si son reales, deberán obtenerse las autorizaciones y datos mínimos por canal seguro antes de cualquier cambio de permisos. El rol de aprobador debe permanecer separado del ejecutor cuando sea posible; de lo contrario, registrar excepción SoD y validación externa.
+
+**Criterio de cierre:** ningún ticket se cerrará como atendido o autorizado mientras falten verificación, comunicación del resultado y constancia de conformidad o denegación.
