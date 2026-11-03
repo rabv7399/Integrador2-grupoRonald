@@ -14,11 +14,14 @@
 - **Mejoras adicionales:** PR [#42](https://github.com/rabv7399/Integrador2-grupoRonald/pull/42) sigue en borrador, sin fusionar; su configuracion HikariCP y test automatizado **no** se atribuyen a produccion.
 - **Base de datos:** se ejecutaron tres EXPLAIN reales en MySQL Workbench sobre Aiven; los indices utilizados fueron `idx_reservas_mesa_fecha`, `idx_reservas_fecha_estado` y `uq_usuarios_correo`. Evidencias Figuras 28–31, detalladas en `docs/APF3_Plan_Capacidad_Rendimiento.md` de la rama del PR #42.
 - **Historial de despliegues verificado (Figura 33):** Render > Deploys muestra 4 registros: `be949ef` exitoso (Manual, hace 23 dias, `Live`), `be949ef` fallido (Auto-Deploy, hace 23 dias), `79d1d87` exitoso (Auto-Deploy, hace 26 dias) y `640dcff` exitoso (First Deploy, hace 26 dias). **No aparece un despliegue de `f56af91`** en el historial visible. No puede inferirse la causa sin revisar la configuracion.
-- **Proximo control:** revisar **Settings > Build & Deploy > Auto-Deploy**, rama y filtros en Render para determinar por que la revision publicada esta desfasada. No se ha realizado un despliegue manual ni un rollback en esta etapa.
+- **Causa verificada del desfase (Figura 34):** en Render > Settings > Build, la rama es `develop` y `Root Directory=backend/`. La interfaz advierte que cambios fuera de ese directorio no activan auto-deploy. La comparacion GitHub `be949ef...f56af91` contiene **15 commits y 8 archivos cambiados, todos fuera de `backend/`** (`.github/workflows/`, `docs/`, `performance/`). Por tanto, no se esperaba activacion automatica por esos commits bajo esa regla. **No cambiar Root Directory:** es la ruta correcta para construir el backend.
+- **Proximo control:** revisar **Settings > Deploy > Auto-Deploy** y la ventana de cambio; PR #42 si contiene modificaciones bajo `backend/`, pero sigue en borrador y no se debe fusionar sin revision. No se ha realizado un despliegue manual ni un rollback en esta etapa.
 
 **Figura 32:** `APF3_E32_Render_Version_Anterior_Detectada.png` — Render `Live` con `be949ef`, frente al commit APF3 integrado en GitHub `f56af91`. Esta imagen documenta una brecha de despliegue, **no** un despliegue final exitoso.
 
 **Figura 33:** `APF3_E33_Historial_Despliegues_Render.png` — Cuatro despliegues historicos, sin intento visible de publicar `f56af91`.
+
+**Figura 34:** `APF3_E34_Configuracion_Root_Directory_Render.png` — Render Build con rama `develop` y Root Directory `backend/`; solo los cambios dentro del backend activan el despliegue automatico segun esta configuracion.
 
 ## 1. Arquitectura del entorno desplegado
 
