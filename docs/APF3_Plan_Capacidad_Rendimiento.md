@@ -31,6 +31,7 @@ Para el restaurante se propone un escenario académico de **20 usuarios concurre
 | Mismo sondeo | `GET /api/categorias` secuencial | 3/3 HTTP 401, **96,6 ms** de media, máximo 111,6 ms |
 | Mismo sondeo | `GET /api/categorias`, concurrencia 2 | 4/4 HTTP 401, **89,3 ms** de media, máximo 111,9 ms |
 | Aiven Metrics | CPU, disco, memoria | CPU baja, disco ~30 %, RAM ~78–83 % por lectura visual de capturas; **no valores exportados** |
+| [k6 GitHub Actions 41581904824](https://github.com/rabv7399/Integrador2-grupoRonald/actions/runs/41581904824) | 2 VUs × 12 s, solo `GET /` | **24/24 HTTP 200**, 0 % errores; media **69,04 ms**, p95 **127,26 ms**, máximo **132,94 ms**, tasa observada **1,857 RPS** |
 | Render Metrics Free | CPU/RAM | No disponibles; se observó límite RAM 512 MB, no consumo |
 
 **Interpretación:** 401 es una respuesta válida de la capa HTTP, pero no confirma operación de negocio. Los resultados son exploratorios y no equivalen a prueba de estrés, throughput sostenido ni disponibilidad porcentual.
@@ -74,7 +75,7 @@ FROM usuarios WHERE correo = 'prueba@example.invalid';
 
 ## 5. Prueba de concurrencia y umbrales
 
-Se incorpora `performance/k6_sondeo_apf3.js`, una prueba **no destructiva** de `GET /` con **2 VUs durante 12 segundos**, que registra latencia, tasa de errores y checks. El workflow asociado guarda resumen JSON y consola. Esta simulación de concurrencia cumple el objetivo de **ejercicio básico**; no acredita soporte de 20 usuarios ni 6 RPS. Los umbrales del script son de control de prueba, no alertas de producción permanentes.
+Se ejecutó `performance/k6_sondeo_apf3.js` en [GitHub Actions, ejecución 41581904824](https://github.com/rabv7399/Integrador2-grupoRonald/actions/runs/41581904824): **2 VUs durante 12 segundos**, solo `GET /`, **24 solicitudes y 24 checks correctos**, **0 fallos HTTP**, **p95 127,26 ms** y **1,857 RPS**. El workflow guardó `k6-summary.json` y `k6-console.txt` como [artefacto descargable](https://github.com/rabv7399/Integrador2-grupoRonald/actions/runs/41581904824/artifacts/13206407341). El preflight HTTP fue satisfactorio. Esta simulación controlada cumple el ejercicio básico de concurrencia, **no** demuestra capacidad de 20 usuarios, 6 RPS sostenidos ni un SLA real. Los umbrales de k6 son de control de prueba, no alertas permanentes.
 
 | Métrica | Aviso propuesto | Crítico propuesto | Acción |
 |---|---|---|---|
@@ -95,4 +96,4 @@ Los valores son **umbrales de diseño**. El gráfico de memoria Aiven observado 
 4. **Decisión de infraestructura:** si p95/errores superan objetivos, evaluar plan de pago, observabilidad y disponibilidad de Aiven antes de afirmar capacidad de 20 usuarios.
 5. **Revisión continua:** actualizar matriz tras cambios de plan, consultas, carga o despliegue.
 
-**Pendientes reales:** resultado ejecutado de k6, salidas `EXPLAIN`, uso CPU/RAM real del backend, validación de 6 RPS y confirmación del nuevo commit en Render. No se deben marcar como realizados antes de obtener evidencia.
+**Pendientes reales:** salidas `EXPLAIN` de MySQL, uso CPU/RAM real del backend, validación de 6 RPS y confirmación del nuevo commit en Render. **Completado:** sondeo k6 de 2 VUs, 24/24 respuestas HTTP 200 y métricas registradas. No extrapolar estos resultados a capacidad de producción.
