@@ -1,5 +1,8 @@
 package com.deliciasperuanas.backend.integration;
 
+import com.zaxxer.hikari.HikariDataSource;
+import javax.sql.DataSource;
+
 import com.deliciasperuanas.backend.entity.Usuario;
 import com.deliciasperuanas.backend.repository.UsuarioRepository;
 import com.deliciasperuanas.backend.security.JwtService;
@@ -19,6 +22,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import java.security.SecureRandom;
 import java.util.Base64;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
@@ -87,6 +91,9 @@ class SecurityIntegrationTest {
     private MockMvc mockMvc;
 
     @Autowired
+    private DataSource dataSource;
+
+    @Autowired
     private UsuarioRepository usuarioRepository;
 
     @Autowired
@@ -116,6 +123,14 @@ class SecurityIntegrationTest {
         cliente = usuarioRepository.save(cliente);
 
         tokenCliente = jwtService.generarToken(cliente);
+    }
+
+    @Test
+    void poolHikariDebeAplicarLimitesConfigurados() {
+        HikariDataSource hikari = (HikariDataSource) dataSource;
+        assertEquals(5, hikari.getMaximumPoolSize());
+        assertEquals(1, hikari.getMinimumIdle());
+        assertEquals(30000, hikari.getConnectionTimeout());
     }
 
     @Test
