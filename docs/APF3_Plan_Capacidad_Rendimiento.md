@@ -80,7 +80,8 @@ FROM usuarios WHERE correo = 'prueba@example.invalid';
 - **Figura 28 — `INFORMATION_SCHEMA.STATISTICS`:** `reservas` tiene `idx_reservas_fecha_estado(fecha, estado)`, `idx_reservas_mesa_fecha(mesa_id, fecha)` y `PRIMARY(id)`; `usuarios` tiene `idx_usuarios_rol_activo(rol, activo)`, `uq_usuarios_correo(correo)` (unico) y `PRIMARY(id)`.
 - **Figura 29 — EXPLAIN deteccion de conflictos:** para `SELECT id FROM reservas WHERE mesa_id=1 AND fecha=CURRENT_DATE() AND estado <> 'CANCELADA' AND hora_inicio<'21:00:00' AND hora_fin>'19:00:00'`, MySQL devuelve `type=ref`, `key=idx_reservas_mesa_fecha`, `key_len=11`, `ref=const,const`, `rows=1`, `filtered=50.00`. La captura no muestra completo el campo `Extra`, por lo que no se afirma su contenido.
 - **Interpretacion:** el indice compuesto se utiliza para los filtros de igualdad de mesa y fecha; no hay evidencia de recorrido completo de tabla en ese plan. `rows` y `filtered` son estimaciones del optimizador y no representan latencia ni volumen de carga.
-- **Pendiente:** resultados de EXPLAIN para `findByFecha` y `findByCorreo` (Figuras 30 y 31). No se han creado indices nuevos ni ejecutado DDL.
+- **Figura 30 — EXPLAIN reservas por fecha:** para `SELECT id, fecha, hora_inicio, mesa_id, estado FROM reservas WHERE fecha=CURRENT_DATE()`, MySQL devuelve `type=ref`, `possible_keys=idx_reservas_fecha_estado`, `key=idx_reservas_fecha_estado`, `key_len=3`, `ref=const`, `rows=1`, `filtered=100.00`, `Extra=NULL`. Se utiliza el prefijo `fecha` del indice compuesto; no se observa escaneo completo de tabla. La fila estimada no es una medicion de latencia.
+- **Pendiente:** resultado de EXPLAIN para `findByCorreo` (Figura 31). No se han creado indices nuevos ni ejecutado DDL.
 
 ## 5. Prueba de concurrencia y umbrales
 
@@ -105,7 +106,7 @@ Los valores son **umbrales de diseño**. El gráfico de memoria Aiven observado 
 4. **Decisión de infraestructura:** si p95/errores superan objetivos, evaluar plan de pago, observabilidad y disponibilidad de Aiven antes de afirmar capacidad de 20 usuarios.
 5. **Revisión continua:** actualizar matriz tras cambios de plan, consultas, carga o despliegue.
 
-**Pendientes reales:** EXPLAIN de reservas por fecha y usuarios por correo (la consulta de conflictos y los índices ya fueron verificados), confirmación de HikariCP en producción, uso CPU/RAM real del backend, validación de 6 RPS y confirmación del nuevo commit en Render. **Completado:** sondeo k6 de 2 VUs, 24/24 respuestas HTTP 200 y métricas registradas. No extrapolar estos resultados a capacidad de producción.
+**Pendientes reales:** EXPLAIN de usuarios por correo (las consultas de conflictos y reservas por fecha, junto con los índices, ya fueron verificadas), confirmación de HikariCP en producción, uso CPU/RAM real del backend, validación de 6 RPS y confirmación del nuevo commit en Render. **Completado:** sondeo k6 de 2 VUs, 24/24 respuestas HTTP 200 y métricas registradas. No extrapolar estos resultados a capacidad de producción.
 
 ## 7. Criterios de validacion del pool HikariCP (mejora en rama)
 
