@@ -15,7 +15,7 @@ Para el restaurante se propone un escenario académico de **20 usuarios concurre
 |---|---|---|---|
 | Aplicación Render `delicias-peruanas-api` | Servicio Docker Free, límite RAM **512 MB**. **CPU y uso real RAM no disponibles** en panel Free | Se observó `Live` con commit `be949ef` antes del merge APF3; Render advierte de suspensión por inactividad | Verificar nuevo commit `Live`; no atribuir vCPU ni % de RAM no medidos |
 | Base de datos Aiven `delicias-peruanas-db` | MySQL 8.4, **1 nodo** visible | Recuperada a `Running`; CPU baja en gráfica, disco ~30 %, memoria ~78–83 % (estimación visual) | Seguimiento de memoria, plan de respaldo y vigencia del plan; obtener métricas exactas exportadas |
-| Pool JDBC | `application.properties` **no fija** `spring.datasource.hikari.maximum-pool-size` | Tamaño real no medido en runtime; el valor de referencia por defecto de HikariCP suele ser 10 si se utiliza su configuración predeterminada | Propuesta inicial: máximo **5** conexiones y mínimo inactivo **1**, **sujeto a ensayo**; no afirmar que esté configurado |
+| Pool JDBC | Rama de mejora `apf3-cierre-calidad`: `spring.datasource.hikari.maximum-pool-size=${DB_POOL_MAX_SIZE:5}`, `minimum-idle=${DB_POOL_MIN_IDLE:1}`, `connection-timeout=${DB_POOL_CONNECTION_TIMEOUT_MS:30000}`; **pendiente de merge/despliegue** | CI de la rama de mejora comprobará los valores con H2; tamaño efectivo de Render/MySQL **aún no medido** | Configuración propuesta **5 / 1 / 30 s** añadida en rama de mejora; requiere CI verde, aprobación del PR, despliegue y verificación de métricas de conexiones |
 | Red HTTPS | URL pública HTTPS en Render | Navegador: `GET /` HTTP 200 y 173 ms en una observación; carga de página 589 ms | Observar p95 y errores desde múltiples ejecuciones; separar latencia de cliente, red y backend |
 | Respaldo / redundancia | No se verificó instancia de respaldo ni balanceador | MySQL mostrado con 1 nodo; no hay evidencia de alta disponibilidad | Registrar RTO/RPO deseados, validar copias de seguridad antes de cambios de esquema |
 
@@ -71,7 +71,7 @@ FROM usuarios WHERE correo = 'prueba@example.invalid';
 
 `Usuario.correo` está declarado `unique = true` en JPA, por lo que **se espera** un índice único si el esquema fue creado conforme al modelo; comprobar con `SHOW INDEX FROM usuarios` y `EXPLAIN`. No consultar contraseñas ni registrar datos personales.
 
-**Procedimiento pendiente:** en Aiven abrir consola SQL autorizada, ejecutar `SHOW INDEX FROM reservas;`, `SHOW INDEX FROM usuarios;` y los tres `EXPLAIN`; conservar salidas (ocultando datos sensibles), identificar recorridos `ALL` y decidir índices en una RFC separada. No ejecutar DDL en producción sin respaldo/aprobación.
+**Procedimiento pendiente:** usar el script de solo lectura [`database/APF3_EXPLAIN_Aiven.sql`](../database/APF3_EXPLAIN_Aiven.sql) en cliente SQL autorizado para Aiven; ejecutar `SHOW INDEX FROM reservas;`, `SHOW INDEX FROM usuarios;` y los tres `EXPLAIN`; conservar salidas (ocultando datos sensibles), identificar recorridos `ALL` y decidir índices en una RFC separada. No ejecutar DDL en producción sin respaldo/aprobación.
 
 ## 5. Prueba de concurrencia y umbrales
 
@@ -96,4 +96,13 @@ Los valores son **umbrales de diseño**. El gráfico de memoria Aiven observado 
 4. **Decisión de infraestructura:** si p95/errores superan objetivos, evaluar plan de pago, observabilidad y disponibilidad de Aiven antes de afirmar capacidad de 20 usuarios.
 5. **Revisión continua:** actualizar matriz tras cambios de plan, consultas, carga o despliegue.
 
-**Pendientes reales:** salidas `EXPLAIN` de MySQL, uso CPU/RAM real del backend, validación de 6 RPS y confirmación del nuevo commit en Render. **Completado:** sondeo k6 de 2 VUs, 24/24 respuestas HTTP 200 y métricas registradas. No extrapolar estos resultados a capacidad de producción.
+**Pendientes reales:** salidas `EXPLAIN` de MySQL, confirmación de HikariCP en producción, uso CPU/RAM real del backend, validación de 6 RPS y confirmación del nuevo commit en Render. **Completado:** sondeo k6 de 2 VUs, 24/24 respuestas HTTP 200 y métricas registradas. No extrapolar estos resultados a capacidad de producción.
+
+## 7. Criterios de validacion del pool HikariCP (mejora en rama)
+
+La configuracion propuesta limita inicialmente a **5 conexiones maximas**, **1 conexion inactiva minima** y **30 000 ms** de espera para obtener conexion. Se eligen limites conservadores por tratarse de una instancia Aiven de recursos reducidos; **no se ha demostrado aun que cinco conexiones sean suficientes para 20 usuarios concurrentes o 6 RPS**.
+
+- **Validacion automatizada:** el test de integracion `SecurityIntegrationTest.poolHikariDebeAplicarLimitesConfigurados` usa H2 y comprueba las propiedades. Una ejecucion verde solo acredita la configuracion en CI.
+- **Validacion operativa pendiente:** tras aprobacion y despliegue, observar conexiones MySQL, latencia p95 y errores 5xx con carga moderada; ajustar `DB_POOL_MAX_SIZE` y `DB_POOL_MIN_IDLE` mediante variables de entorno si procede, sin publicar secretos.
+- **Criterio de seguridad:** no cambiar limites ni ejecutar estres sobre Aiven/Render Free sin ventana acordada y plan de reversion.
+- **Versionado:** estos cambios estan propuestos en `apf3-cierre-calidad`; no atribuirlos al commit de produccion hasta comprobarlo.
