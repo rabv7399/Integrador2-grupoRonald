@@ -48,9 +48,9 @@ El frontend está servido por la misma aplicación Spring Boot desde `backend/sr
 | Memoria de MySQL | Aproximadamente 78–83 % | Estimación visual, requiere seguimiento |
 | RAM del backend en Render | Límite de 512 MB | Capacidad asignada, **no** consumo real |
 | CPU/RAM de Render | No visibles en el plan Free | Limitación explícita de la plataforma |
-| Sondeo HTTP GitHub Actions — `GET /` secuencial | 3/3 HTTP 200; promedio 128,1 ms; máximo 172,6 ms | Sondeo exploratorio, no carga sostenida |
-| Sondeo HTTP GitHub Actions — `GET /api/categorias` secuencial | 3/3 HTTP 401; promedio 88,2 ms; máximo 100,4 ms | Endpoint protegido sin JWT; respuesta de seguridad, no éxito funcional |
-| Sondeo HTTP GitHub Actions — `GET /api/categorias` con concurrencia 2 | 4/4 HTTP 401; promedio 102,4 ms; máximo 127,8 ms | Solo dos solicitudes simultáneas, no prueba de estrés |
+| Sondeo HTTP GitHub Actions — `GET /` secuencial | 3/3 HTTP 200; promedio 78,9 ms; máximo 97,5 ms | Sondeo exploratorio, no carga sostenida |
+| Sondeo HTTP GitHub Actions — `GET /api/categorias` secuencial | 3/3 HTTP 401; promedio 96,6 ms; máximo 111,6 ms | Endpoint protegido sin JWT; respuesta de seguridad, no éxito funcional |
+| Sondeo HTTP GitHub Actions — `GET /api/categorias` con concurrencia 2 | 4/4 HTTP 401; promedio 89,3 ms; máximo 111,9 ms | Solo dos solicitudes simultáneas, no prueba de estrés |
 
 **No se verificaron** un login exitoso, transacciones autenticadas de reservas, pruebas de carga sostenida, SLA real de producción ni una nueva publicación APF3. Estas validaciones permanecen pendientes.
 
@@ -64,7 +64,7 @@ El frontend está servido por la misma aplicación Spring Boot desde `backend/sr
 
 **Interpretación:** la indisponibilidad de MySQL explica razonablemente el fallo de inicialización JDBC observado. El arranque en frío de Render Free es otra condición de riesgo de disponibilidad. La posterior recuperación de respuestas HTTP es coherente con la restauración del servicio, pero no demuestra por sí sola la causa de todos los tiempos de espera anteriores.
 
-**Ejecución exitosa del sondeo:** https://github.com/rabv7399/Integrador2-grupoRonald/actions/runs/41576301186 — 11 respuestas HTTP, con un calentamiento inicial `GET /` HTTP 200 de 171,1 ms; promedios detallados en la tabla del apartado 2. Artefacto CSV/JSON/Markdown disponible en la ejecución. No se midieron transacciones autenticadas ni carga sostenida.
+**Ejecución exitosa del sondeo usada para la Figura 24:** https://github.com/rabv7399/Integrador2-grupoRonald/actions/runs/41576386565 — 11 respuestas HTTP, con un calentamiento inicial `GET /` HTTP 200 de 133,9 ms; promedios detallados en la tabla del apartado 2. Artefacto CSV/JSON/Markdown disponible en la ejecución. No se midieron transacciones autenticadas ni carga sostenida. Existen otras ejecuciones satisfactorias con latencias distintas; las cifras de este documento se vinculan a la Figura 24 para mantener trazabilidad.
 
 **Acciones preventivas propuestas:** verificar el estado de Aiven antes de una demostración; calentar el servicio de Render con antelación; documentar incidentes y recuperaciones; monitorizar memoria de MySQL; mantener un procedimiento de respaldo y restauración comprobado; evitar depender de una única prueba externa para evaluar disponibilidad.
 
