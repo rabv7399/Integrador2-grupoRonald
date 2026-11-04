@@ -102,6 +102,9 @@ class SecurityIntegrationTest {
     @Autowired
     private JwtService jwtService;
 
+    @Autowired
+    private com.deliciasperuanas.backend.repository.MesaRepository mesaRepository;
+
     private Usuario cliente;
     private String tokenCliente;
 
@@ -201,5 +204,48 @@ class SecurityIntegrationTest {
                 .andExpect(jsonPath("$.token").isNotEmpty())
                 .andExpect(jsonPath("$.tipo").value("Bearer"))
                 .andExpect(jsonPath("$.rol").value("CLIENTE"));
+    }
+
+    @Test
+    void consultaMesasSinTokenDebeRetornar401() throws Exception {
+        mockMvc.perform(get("/api/mesas"))
+                .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    void clienteNoPuedeConsultarMesasDebeRetornar403() throws Exception {
+        mockMvc.perform(get("/api/mesas")
+                        .header("Authorization", "Bearer " + tokenCliente))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    void administradorPuedeConsultarMesasConJwt() throws Exception {
+        comprobarConsultaMesas("ADMIN");
+    }
+
+    @Test
+    void operadorPuedeConsultarMesasConJwt() throws Exception {
+        comprobarConsultaMesas("OPERADOR");
+    }
+
+    private void comprobarConsultaMesas(String rol) throws Exception {
+        com.deliciasperuanas.backend.entity.Mesa mesa =
+                new com.deliciasperuanas.backend.entity.Mesa();
+        mesa.setNumero(901);
+        mesa.setCapacidad(4);
+        mesa = mesaRepository.save(mesa);
+        try {
+            cliente.setRol(rol);
+            cliente = usuarioRepository.saveAndFlush(cliente);
+            String token = jwtService.generarToken(cliente);
+            mockMvc.perform(get("/api/mesas")
+                            .header("Authorization", "Bearer " + token))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$[?(@.numero == 901)].capacidad")
+                            .value(org.hamcrest.Matchers.hasItem(4)));
+        } finally {
+            mesaRepository.deleteById(mesa.getId());
+        }
     }
 }
