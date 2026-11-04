@@ -16,6 +16,7 @@
 | CPU/RAM real del backend Render Free | **No medido ni disponible mediante el panel Free en la evidencia reunida** | No inventar porcentajes ni métricas de aplicación |
 | Capacidad proyectada 20 usuarios / 6 RPS | **Hipótesis de dimensionamiento sin validar** por carga representativa | Sección 1; prueba de 2 VUs no permite extrapolar |
 | Conexiones Hikari activas en producción | **No medidas**; se verificaron propiedades en código/CI y que la aplicación operó con autenticación y lectura | No equiparar configuración con observabilidad del pool |
+| Conexiones MySQL globales al consultar Workbench | **2 conexiones** (`Threads_connected`) en un instante, no atribuidas al pool Hikari | Figura 50, consulta read-only de MySQL Aiven |
 | Memoria, almacenamiento y CPU de Aiven | **Memoria 86 %** y **disco 30,2 %** de 1 GB; CPU con tendencia baja no cuantificada; conexión del pool sin medición | Figura 49 (Overview > Service plan usage), captura del responsable |
 
 **Hallazgo crítico para la rúbrica:** se dispone de medición de p95 real de **frontend público**, tres planes MySQL reales y configuración de pool desplegada, pero **aún falta demostrar una carga controlada sobre endpoints autenticados y obtener métricas operativas reales de conexiones/CPU/RAM**. No se representa el sondeo ligero como prueba de estrés ni se atribuyen recursos no medidos. La muestra de k6 es exploratoria y no certifica SLA.
@@ -154,3 +155,19 @@ La configuracion propuesta limita inicialmente a **5 conexiones maximas**, **1 c
 **Acciones de seguimiento sin riesgo para producción:** revisar más adelante las métricas de memoria y conexiones por el panel Aiven, documentar la política y prueba de restauración en un entorno de ensayo, y medir conexiones activas en una ventana autorizada; no ejecutar cargas agresivas sobre Aiven/Render Free por el solo hecho de ver 86 % de RAM. Render conserva su propia limitación de observabilidad de CPU/RAM.
 
 **Figura N.º 49:** `APF3_E49_Metricas_CPU_RAM_Conexiones_Aiven.png` — *Panel de capacidad de MySQL Aiven de Delicias Peruanas: memoria utilizada 86 %, almacenamiento 30,2 % y tendencia de CPU durante 60 minutos; las conexiones no se muestran en esta captura.* La copia omite la URL del navegador con identificadores internos.
+
+## 9. Conexiones globales del servidor MySQL — Figura 50
+
+**Evidencia observada:** el responsable ejecutó mediante MySQL Workbench, conectado a la base Aiven, la consulta de solo lectura:
+
+```sql
+SHOW GLOBAL STATUS LIKE 'Threads_connected';
+```
+
+La salida del servidor devuelve exactamente **`Threads_connected = 2`** (una fila); la captura muestra hora local de ejecución **22:12:20** del 03/11/2026. Esta medición constituye un **conteo puntual de conexiones MySQL abiertas**.
+
+**Alcance:** `Threads_connected` es una variable de estado **global del servidor**. Puede incluir la conexión de Workbench y otras conexiones, por lo que **no identifica dos conexiones HikariCP**, no revela conexiones activas/inactivas por aplicación y no valida por sí sola el objetivo de 20 usuarios o 6 RPS. La configuración HikariCP de máximo 5 conexiones por defecto en Spring Boot sigue siendo un dato de código/CI/despliegue, distinto del conteo global.
+
+**Figura N.º 50:** `APF3_E50_Conexiones_Activas_MySQL_Aiven.png` — *Verificación en MySQL Workbench de dos conexiones abiertas en la instancia MySQL Aiven mediante `SHOW GLOBAL STATUS LIKE 'Threads_connected'`, sin atribuirlas exclusivamente al pool HikariCP.* Se ocultaron direcciones de correo visibles en otras líneas SQL, sin tapar la consulta ni su salida.
+
+**Seguimiento recomendado:** revisar `Max_used_connections` (pico desde el arranque del servidor) y `max_connections` (límite del servidor) mediante consultas de solo lectura autorizadas. Comparar solo con contexto temporal y sin ejecutar carga agresiva sobre la instancia Free.
