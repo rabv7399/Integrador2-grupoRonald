@@ -1,0 +1,35 @@
+# Cierre de validación APF3 — criterios de revisión
+
+Responsable: Ronald Albert Bustamante Villanueva. Revisión 04/11/2026. Base: guía del docente para Semana 13; no existe una escala de puntajes adicional aportada.
+
+| Apartado | Criterio verificable de cierre | Estado |
+|---|---|---|
+| Observaciones APF2 | Tres comentarios originales, acción, evidencia y límites | Documentado; Figuras 70–79 |
+| Retrospectiva Sprint 6 | Logros, impedimentos, aprendizaje y compromisos con responsable y criterio | Revisión individual documentada; Figura 81; fechas formales del sprint por confirmar |
+| Solicitudes | Catálogo, procedimiento, herramientas y caso trazable | Documentado; Figuras 82–85; simulación separada de atención real |
+| Cambio | Infraestructura, aplicaciones, documentación, calendario, CI y reversión | Documentado y CI comprobada; Figuras 74–78 y 86 |
+| Capacidad | Demanda hipotética, mediciones, limitaciones, decisiones y seguimiento | Plan documentado; falta ejecutar y analizar muestra autenticada reproducible |
+| Despliegue | SHA Live y comprobación funcional posterior con fecha y alcance | a9897e4 Live observado; falta vincular nueva lectura autenticada a esa revisión |
+| Entregables | Informe consistente, figuras legibles, presentación y ensayo | Pendientes |
+
+## Sondeo autenticado limitado
+
+Archivo: [performance/sondeo_autenticado_apf3.py](../performance/sondeo_autenticado_apf3.py). Requiere Python 3, sin paquetes adicionales.
+
+1. Confirmar en Render el SHA Live y que Aiven esté disponible. Preparar el primer acceso antes de medir; registrar cualquier incidencia.
+2. Ejecutar desde la raíz del repositorio: `python performance/sondeo_autenticado_apf3.py`.
+3. Introducir localmente el correo y la contraseña de una cuenta de ensayo autorizada. La contraseña se solicita sin eco; no compartir credenciales ni JWT.
+4. El script hace un login y dos lecturas de preparación excluidas de la muestra. Ejecuta como máximo 20 lecturas repartidas entre categorías y productos con dos trabajadores y pausa de un segundo por trabajador. Son como máximo 23 solicitudes totales.
+5. Cada respuesta debe ser 200 y contener una lista JSON. Ante error, formato inesperado o duración superior a cinco segundos, interrumpe el resto; una petición ya iniciada puede terminar.
+6. Introducir el SHA observado en Render cuando se solicite. Es una referencia declarada por el operador, no un SHA obtenido automáticamente desde la aplicación.
+7. Conservar el JSON y una captura del resumen; comprobar cantidad prevista/obtenida, errores, preparación excluida, media, mediana, p95, máximo y RPS. El archivo no guarda cuerpo de respuestas, correo, contraseña ni token.
+
+**Estado:** script preparado y comprobado localmente con respuestas simuladas; pendiente de ejecución real. No atribuir resultados de simulación a Render. La duración incluye pausas; los tiempos por solicitud incluyen red y descarga, no solo servidor. El p95 usa rango más próximo y una muestra pequeña (10 observaciones por ruta si se completa): es exploratorio, no certifica SLA, estrés, capacidad máxima, 20 usuarios o 6 RPS.
+
+## Criterios de análisis posterior
+
+- Comparar únicamente muestras de igual ruta y método; no equiparar GET público con consultas autenticadas.
+- Conservar fallos y ejecuciones interrumpidas; no seleccionar solo resultados rápidos.
+- Revisar memoria/conexiones Aiven alrededor de la ejecución si hay datos disponibles, con fecha e intervalo; no atribuir sesiones globales a HikariCP.
+- Si la muestra es insatisfactoria, diagnosticar antes de ampliar carga. Una ampliación requiere entorno o ventana adecuados; no se ejecuta por defecto.
+- La revisión documental no sustituye el informe y la presentación. Incluir seis secciones, enlaces funcionales, leyendas legibles y conclusiones limitadas a los resultados obtenidos. La fecha oficial y las fechas del Sprint 6 deben confirmarse con registros, sin inventarlas.
