@@ -1,16 +1,29 @@
 # APF3 | Despliegue, verificación y notas de versión
 
-## Estado vigente al 04 de noviembre de 2026
+## Estado consolidado — 04/11/2026
 
-Esta actualización prevalece sobre las referencias históricas que aparecen después. El último backend verificado visualmente en Render es **16b5cfe**, Live (Figura 69). Los PR #58 y #59 están integrados; se aprobaron **14 pruebas**, sin fallos ni errores. La reserva productiva de prueba devolvió **201**, su repetición **409** y el registro ID 5 quedó **CANCELADA** (Figuras 66–68). El PR #42 ya está integrado; no debe interpretarse el borrador histórico como estado actual.
+**Responsable:** Ronald Albert Bustamante Villanueva. Proyecto individual.
 
-La guía de Semana 13 exige seis apartados. El plan por infraestructura, aplicaciones, documentación y calendario se desarrolla en [Guía de cierre](APF3_Guia_Cierre_Semana13.md). La retrospectiva cuenta ahora con acciones de cierre propuestas para el 04/11/2026 y dependencias explícitas; no se atribuyen reuniones ni aprobaciones externas inexistentes.
+| Control | Resultado comprobado | Evidencia |
+|---|---|---|
+| Publicación en Render | Servicio delicias-peruanas-api, rama develop, commit a9897e4 Live; evento visible del 04/11/2026 a las 00:59 | Figura 90 |
+| Interfaz pública | Página de Delicias Peruanas cargada con encabezado SISTEMA WEB · APF3 | Figura 91; esta captura no demuestra autenticación |
+| Integración continua | 17 pruebas, 0 fallos, 0 errores y 0 omitidas; BUILD SUCCESS | Figura 76; [ejecución 41782116127](https://github.com/rabv7399/Integrador2-grupoRonald/actions/runs/41782116127) |
+| Documentación interactiva | Swagger UI publicada; productos devuelve 401 sin JWT y 200 con JWT | Figuras 70–73, comprobadas en la revisión 7b08b3a |
+| Sincronización | PR #64 integrado; comparación de main/develop sin diferencias al verificar | Figuras 74–75 |
+| Observaciones APF2 | Contraste de los tres comentarios del docente con acciones y alcance | Figura 79 |
+| Retrospectiva Sprint 6 | Revisión individual con resultados y compromisos | Figura 81 |
+| Solicitudes de servicio | Catálogo, flujo, herramientas y tablero; accesos reales pendientes | Figuras 82–85; caso #48 identificado como simulación |
+| Control de cambios | Calendario y matriz por infraestructura, aplicaciones, documentación y calendario | Figuras 78 y 86 |
+| Capacidad | Umbrales propuestos y plan por fases con responsables y criterios | Figuras 87–89; las Figuras 87–88 preceden a la actualización del PR #67 |
 
-Capacidad verificada: **memoria Aiven 86 %, disco 30,2 %, conexiones puntuales 2, pico histórico 13 y límite 76** (Figuras 49–52). Son valores globales de MySQL, distintos del pool HikariCP, cuyo valor predeterminado configurado y probado es 5 / 1 / 30000 ms. La observabilidad runtime del pool sigue pendiente.
+**Trazabilidad de revisiones:** el backend de producción verificado es a9897e4, integrado mediante PR #64. Los PR #65, #66 y #67 actualizaron calendario, retrospectiva y capacidad; no modificaron código del backend. La igualdad de ramas se volvió a comprobar tras cada integración. Estos cambios documentales no acreditan que Render haya publicado otro SHA. Esta consolidación también es exclusivamente documental.
 
-Permanecen abiertos el contraste con las observaciones originales APF2, OpenAPI si fue exigido, la revisión de sincronización de ramas y la presentación. Las métricas runtime y mesas en producción se conservan como mejoras; no se atribuyen como requisitos independientes de esta guía general. La aceptación final no está registrada.
+**Validación funcional previa:** consultas protegidas 200 y reserva productiva de prueba 201, repetición 409 y cancelación del registro ID 5 (Figuras 66–68). No se repitieron reservas para obtener las capturas 90–91 ni se atribuyen estas operaciones a una nueva prueba posterior al despliegue a9897e4.
 
-El registro detallado de pruebas y mediciones se encuentra en el [acta de verificación](APF3_Acta_Publicacion_y_Verificacion.md). Las cifras antiguas de ocho o nueve pruebas y las menciones a despliegue pendiente describen antecedentes, no el estado vigente.
+**Límites y pendientes:** no hay validación de 20 usuarios ni 6 RPS sostenidos, p95 autenticado reproducible, métricas efectivas del pool o CPU/RAM del backend. Memoria Aiven observada: 86 %, sin demostrar tendencia sostenida. No se declara aprobación independiente de accesos, disponibilidad contractual, restauración ensayada ni aceptación funcional final. La consulta de mesas en producción sigue como mejora pendiente, con permisos comprobados en H2. El informe y la presentación permanecen pendientes de consolidación.
+
+Las secciones históricas conservan las cifras y estados de cada revisión; este resumen prevalece para el cierre técnico actual. Las figuras son capturas aportadas por el responsable; su numeración no implica que los archivos de imagen estén incluidos en el repositorio.
 
 ## Registro histórico de preparación y diagnóstico
 

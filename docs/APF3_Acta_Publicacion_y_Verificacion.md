@@ -1,5 +1,31 @@
 # APF3 | Acta de publicación y verificación de versión
 
+## Estado consolidado — 04/11/2026
+
+**Responsable:** Ronald Albert Bustamante Villanueva. Proyecto individual.
+
+| Control | Resultado comprobado | Evidencia |
+|---|---|---|
+| Publicación en Render | Servicio delicias-peruanas-api, rama develop, commit a9897e4 Live; evento visible del 04/11/2026 a las 00:59 | Figura 90 |
+| Interfaz pública | Página de Delicias Peruanas cargada con encabezado SISTEMA WEB · APF3 | Figura 91; esta captura no demuestra autenticación |
+| Integración continua | 17 pruebas, 0 fallos, 0 errores y 0 omitidas; BUILD SUCCESS | Figura 76; [ejecución 41782116127](https://github.com/rabv7399/Integrador2-grupoRonald/actions/runs/41782116127) |
+| Documentación interactiva | Swagger UI publicada; productos devuelve 401 sin JWT y 200 con JWT | Figuras 70–73, comprobadas en la revisión 7b08b3a |
+| Sincronización | PR #64 integrado; comparación de main/develop sin diferencias al verificar | Figuras 74–75 |
+| Observaciones APF2 | Contraste de los tres comentarios del docente con acciones y alcance | Figura 79 |
+| Retrospectiva Sprint 6 | Revisión individual con resultados y compromisos | Figura 81 |
+| Solicitudes de servicio | Catálogo, flujo, herramientas y tablero; accesos reales pendientes | Figuras 82–85; caso #48 identificado como simulación |
+| Control de cambios | Calendario y matriz por infraestructura, aplicaciones, documentación y calendario | Figuras 78 y 86 |
+| Capacidad | Umbrales propuestos y plan por fases con responsables y criterios | Figuras 87–89; las Figuras 87–88 preceden a la actualización del PR #67 |
+
+**Trazabilidad de revisiones:** el backend de producción verificado es a9897e4, integrado mediante PR #64. Los PR #65, #66 y #67 actualizaron calendario, retrospectiva y capacidad; no modificaron código del backend. La igualdad de ramas se volvió a comprobar tras cada integración. Estos cambios documentales no acreditan que Render haya publicado otro SHA. Esta consolidación también es exclusivamente documental.
+
+**Validación funcional previa:** consultas protegidas 200 y reserva productiva de prueba 201, repetición 409 y cancelación del registro ID 5 (Figuras 66–68). No se repitieron reservas para obtener las capturas 90–91 ni se atribuyen estas operaciones a una nueva prueba posterior al despliegue a9897e4.
+
+**Límites y pendientes:** no hay validación de 20 usuarios ni 6 RPS sostenidos, p95 autenticado reproducible, métricas efectivas del pool o CPU/RAM del backend. Memoria Aiven observada: 86 %, sin demostrar tendencia sostenida. No se declara aprobación independiente de accesos, disponibilidad contractual, restauración ensayada ni aceptación funcional final. La consulta de mesas en producción sigue como mejora pendiente, con permisos comprobados en H2. El informe y la presentación permanecen pendientes de consolidación.
+
+Las secciones históricas conservan las cifras y estados de cada revisión; este resumen prevalece para el cierre técnico actual. Las figuras son capturas aportadas por el responsable; su numeración no implica que los archivos de imagen estén incluidos en el repositorio.
+
+
 **Proyecto:** Delicias Peruanas — Curso Integrador II  
 **Fecha de control:** 03/11/2026 (hora local de Perú, UTC-05:00)  
 **Repositorio:** https://github.com/rabv7399/Integrador2-grupoRonald  
@@ -163,4 +189,4 @@ Las figuras corresponden a capturas aportadas durante la validación; esta tabla
 - Figura 73: consulta autenticada de productos devuelve 200 y datos; se conserva la captura sin bloque Curl ni credenciales.
 - Las observaciones originales del docente se registran en APF3_OpenAPI_y_Preparacion_Demo.md. La recomendación de documentación interactiva está implementada y comprobada en producción.
 
-La sincronización de ramas está en preparación; solo se declarará finalizada después de integrar y comparar contenido con CI satisfactoria. El informe se actualizará al final del cierre técnico, según la indicación del responsable.
+La sincronización quedó comprobada mediante PR #64 y comparación de contenido (Figuras 74–75); las integraciones documentales posteriores se verificaron igualmente. El informe se actualizará al final del cierre técnico, según la indicación del responsable.
