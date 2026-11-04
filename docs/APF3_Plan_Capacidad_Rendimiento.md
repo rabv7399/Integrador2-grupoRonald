@@ -17,6 +17,7 @@
 | Capacidad proyectada 20 usuarios / 6 RPS | **Hipótesis de dimensionamiento sin validar** por carga representativa | Sección 1; prueba de 2 VUs no permite extrapolar |
 | Conexiones Hikari activas en producción | **No medidas**; se verificaron propiedades en código/CI y que la aplicación operó con autenticación y lectura | No equiparar configuración con observabilidad del pool |
 | Conexiones MySQL globales al consultar Workbench | **2 conexiones** (`Threads_connected`) en un instante, no atribuidas al pool Hikari | Figura 50, consulta read-only de MySQL Aiven |
+| Máximo histórico de conexiones simultáneas MySQL | **13 conexiones** (`Max_used_connections`), pico desde el último arranque de MySQL; dato global, no exclusivo de HikariCP | Figura 51 (resultado y comando de Workbench) |
 | Memoria, almacenamiento y CPU de Aiven | **Memoria 86 %** y **disco 30,2 %** de 1 GB; CPU con tendencia baja no cuantificada; conexión del pool sin medición | Figura 49 (Overview > Service plan usage), captura del responsable |
 
 **Hallazgo crítico para la rúbrica:** se dispone de medición de p95 real de **frontend público**, tres planes MySQL reales y configuración de pool desplegada, pero **aún falta demostrar una carga controlada sobre endpoints autenticados y obtener métricas operativas reales de conexiones/CPU/RAM**. No se representa el sondeo ligero como prueba de estrés ni se atribuyen recursos no medidos. La muestra de k6 es exploratoria y no certifica SLA.
@@ -171,3 +172,27 @@ La salida del servidor devuelve exactamente **`Threads_connected = 2`** (una fil
 **Figura N.º 50:** `APF3_E50_Conexiones_Activas_MySQL_Aiven.png` — *Verificación en MySQL Workbench de dos conexiones abiertas en la instancia MySQL Aiven mediante `SHOW GLOBAL STATUS LIKE 'Threads_connected'`, sin atribuirlas exclusivamente al pool HikariCP.* Se ocultaron direcciones de correo visibles en otras líneas SQL, sin tapar la consulta ni su salida.
 
 **Seguimiento recomendado:** revisar `Max_used_connections` (pico desde el arranque del servidor) y `max_connections` (límite del servidor) mediante consultas de solo lectura autorizadas. Comparar solo con contexto temporal y sin ejecutar carga agresiva sobre la instancia Free.
+
+## 10. Pico histórico de conexiones globales — Figura 51
+
+**Consulta de diagnóstico read-only:**
+
+```sql
+SHOW GLOBAL STATUS LIKE 'Max_used_connections';
+```
+
+**Resultado observado:** `Max_used_connections = 13`. El historial de MySQL Workbench confirma que la consulta se ejecutó correctamente a las **22:18:41**, hora visible del equipo, mientras la rejilla enviada por el responsable muestra `Variable_name=Max_used_connections` y `Value=13`.
+
+**Semántica oficial MySQL 8.4:** [Max_used_connections](https://dev.mysql.com/doc/refman/8.4/en/server-status-variables.html) es el **máximo de conexiones que han estado abiertas simultáneamente desde que se inició el servidor**, no la suma histórica de conexiones. Corresponde a **toda** la instancia, no al pool exclusivo del backend. 
+
+| Indicador | Valor observado | Momento/interpretación |
+|---|---:|---|
+| `Threads_connected` | **2** | Conteo puntual de conexiones abiertas al ejecutar la consulta anterior; Figura 50, historial a las 22:12:20 |
+| `Max_used_connections` | **13** | Pico global registrado desde el último arranque; Figura 51, consulta registrada a las 22:18:41 |
+| `max_connections` | **Pendiente de medir** | Límite configurado por el servidor; no se atribuye el valor por defecto de MySQL a Aiven sin verificar |
+
+**Criterio de interpretación:** las dos lecturas se realizaron en instantes distintos; no se supone que las 13 conexiones estuviesen activas al momento de las dos conexiones observadas. El valor 13 no contradice el límite por defecto **5** de HikariCP, pues dicho límite aplica al pool de **una instancia de la aplicación**, mientras que la cifra histórica MySQL incluye todas las sesiones de cliente y no identifica aplicaciones. Tampoco se deduce saturación ni capacidad de 20 usuarios hasta observar `max_connections`, errores por límite y un escenario de carga controlado.
+
+**Figura N.º 51:** `APF3_E51_Maximo_Conexiones_MySQL_Aiven.png` — *Verificación del máximo histórico de 13 conexiones simultáneas del servidor MySQL Aiven mediante `Max_used_connections`, utilizando capturas de la consulta y su resultado.* Es un montaje identificado de dos recortes de las capturas originales, sin modificar comando ni valor y sin exponer otras consultas con correos.
+
+**Siguiente control seguro:** ejecutar únicamente `SHOW VARIABLES LIKE 'max_connections';` en Workbench. No modifica datos ni roles. El margen de capacidad en conexiones debe expresarse solo tras obtener el límite realmente configurado en Aiven.
