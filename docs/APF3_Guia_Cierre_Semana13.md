@@ -6,9 +6,9 @@ Revisión documental del 04/11/2026. Base: Guía de Presentación del APF3, Sema
 
 | Etapa | Trabajo | Criterio de cierre | Situación |
 |---|---|---|---|
-| 1 | Alinear el informe con los seis puntos, actualizar métricas y completar cambio por ámbito y calendario | Word revisado visualmente, datos coincidentes con figuras | Revisión en curso |
-| 2 | Ordenar documentos de GitHub | Estado vigente separado del historial; PR y CI satisfactorios | Este cambio |
-| 3 | Contrastar observaciones originales del APF2 | Cada comentario del docente asociado a corrección y evidencia | Falta el registro original |
+| 1 | Alinear el informe con los seis puntos, actualizar métricas y completar cambio por ámbito y calendario | Word revisado visualmente, datos coincidentes con figuras | Pendiente hasta cerrar las verificaciones técnicas |
+| 2 | Ordenar documentos de GitHub | Estado vigente separado del historial; PR y CI satisfactorios | Calendario actualizado; cierre documental en curso |
+| 3 | Contrastar observaciones originales del APF2 | Cada comentario del docente asociado a corrección y evidencia | Contraste realizado; evidencias 70–76 |
 | 4 | Preparar presentación y ensayo | Seis apartados, evidencias legibles y demo preparada | Pendiente |
 
 No se repiten las reservas, los tres EXPLAIN ni las capturas ya verificadas. No se declaran requisitos independientes de la guía general la consulta de mesas en producción ni las métricas runtime de HikariCP. Se conservan como mejoras técnicas; pueden ser obligatorias si la retroalimentación original lo exige.
@@ -24,14 +24,20 @@ No se repiten las reservas, los tres EXPLAIN ni las capturas ya verificadas. No 
 
 ## Calendario de cambios
 
+Responsable de los hitos: Ronald Albert Bustamante Villanueva. Las horas Live se transcriben de las capturas de Render; no representan fechas previstas.
+
 | Hito | Fecha o ventana | Dependencia | Estado |
 |---|---|---|---|
 | Optimización del listado, PR 58 | 03/11/2026, Live 23:33 | Diez pruebas aprobadas | Ejecutado, Figuras 60–64 |
 | Permisos de mesas, PR 59 | 03/11/2026, Live 23:46 | Catorce pruebas aprobadas | Ejecutado, Figuras 65 y 69 |
-| Revisión documental | 04/11/2026 | Guía Semana 13, métricas y capturas | En curso |
-| Contraste de observaciones APF2 | 04/11/2026, propuesto | Comentario original del docente | Pendiente |
-| Correcciones técnicas exigidas | Después del contraste y antes de la entrega | RFC, CI y ventana acordada si modifican backend | Condicionado |
-| Presentación y ensayo | Tras el informe corregido, antes de Semana 13 | Selección de evidencias y fecha oficial de entrega | Planificado |
+| OpenAPI/Swagger, PR 62 | 04/11/2026, Live 00:37 | CI y despliegue 7b08b3a | Validado en producción: interfaz, 401 sin JWT y 200 con JWT; Figuras 70–73 |
+| Sincronización de main y develop, PR 64 | 04/11/2026 | Integración y comparación de ramas | Completada al verificar; Figuras 74–75 |
+| CI de la versión consolidada | 04/11/2026 | GitHub Actions, ejecución 41782116127 | Diecisiete pruebas, cero fallos, errores u omisiones; BUILD SUCCESS, Figura 76 |
+| Contraste de observaciones APF2 | 04/11/2026 | Comentarios originales proporcionados por el docente | Realizado: preparación ante inactividad documentada, Swagger validado y ramas sincronizadas |
+| Revisión de documentación de cierre | 04/11/2026, en curso | Guía Semana 13, métricas y evidencias verificadas | Actualización del calendario; informe reservado para el final |
+| Correcciones adicionales | Antes de la entrega, si se identifica una brecha | RFC, CI y ventana acordada si modifican backend | Condicionado a una necesidad comprobada |
+| Presentación y ensayo | Tras cerrar verificaciones e informe; fecha oficial por confirmar | Selección de evidencias y calendario del aula virtual | Planificado |
+
 
 Si falta autorización, CI, disponibilidad o evidencia, se registra causa y nueva ventana en la RFC. La fecha oficial se confirma en el aula virtual; no se inventa una fecha de exposición.
 
@@ -45,14 +51,18 @@ Si falta autorización, CI, disponibilidad o evidencia, se registra causa y nuev
 - k6: 2 VUs, 24/24 respuestas 200, p95 127,26 ms, solo GET público.
 - API protegida: conservar también la medición de 9,18 s; la última captura registra 774 ms y 773 ms.
 
-## Observaciones que requieren comprobación
+## Contraste de observaciones APF2
 
-OpenAPI/Swagger y sincronización de main/develop aparecen como mejoras pendientes. Solo el registro original del docente permite distinguir recomendación de corrección obligatoria del punto 1. No se cambian sus estados a completados sin pruebas.
+| Comentario del docente | Acción y comprobación | Alcance |
+|---|---|---|
+| Considerar el cold start de Render Free | Preparación manual de la demo y primera consulta documentadas en [OpenAPI y preparación de demo](APF3_OpenAPI_y_Preparacion_Demo.md) | No se configuró un ping periódico; no se atribuye sin diagnóstico la medición de 9,18 s a un cold start |
+| Integrar documentación interactiva | SpringDoc OpenAPI/Swagger publicado; interfaz y consultas protegidas comprobadas, Figuras 70–73 | Swagger accesible y JWT conservado en operaciones protegidas |
+| Mantener commits granulares, ramas sincronizadas y evitar secretos | PR 64 integrado; comparación sin diferencias, Figuras 74–75; CI con 17 pruebas, Figura 76 | Revisión de patrones limitada a 60 archivos de texto de la revisión 7b08b3a, sin coincidencias de los patrones examinados; no equivale a una auditoría histórica completa |
 
 ## Presentación prevista
 
-Portada, observaciones APF2, retrospectiva Sprint 6, solicitudes, gestión del cambio, capacidad, despliegue y conclusiones. Puede separarse capacidad o solicitudes en dos diapositivas si la legibilidad lo requiere. Usar blanco y negro con rojo oscuro o verde. Las 66 capturas son respaldo del informe; seleccionar pocas para la exposición.
+Portada, observaciones APF2, retrospectiva Sprint 6, solicitudes, gestión del cambio, capacidad, despliegue y conclusiones. Puede separarse capacidad o solicitudes en dos diapositivas si la legibilidad lo requiere. Usar blanco y negro con rojo oscuro o verde. Las evidencias numeradas son respaldo; seleccionar pocas para la exposición.
 
 ## Evidencia de cierre técnico disponible
 
-PR 58 y 59 integrados, 14 pruebas aprobadas, JOIN en Render, reserva 201, rechazo 409 y cancelación del dato ID 5; último backend verificado Live 16b5cfe. Acta canónica: [APF3_Acta_Publicacion_y_Verificacion.md](APF3_Acta_Publicacion_y_Verificacion.md).
+PR 58, 59, 62 y 64 integrados; 17 pruebas aprobadas, JOIN en Render, reserva 201, rechazo 409 y cancelación del dato ID 5. Swagger verificado en producción con el backend Live 7b08b3a. La comparación de main y develop confirmó igualdad de contenido (Figura 75); no constituye evidencia de un despliegue posterior en Render. Acta canónica: [APF3_Acta_Publicacion_y_Verificacion.md](APF3_Acta_Publicacion_y_Verificacion.md).
