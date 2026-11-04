@@ -86,7 +86,7 @@ flowchart TD
 - **Figura 08:** comentario de seguimiento inicial en REQ-INFO-01.
 - [Issue #36](https://github.com/rabv7399/Integrador2-grupoRonald/issues/36), [Issue #37](https://github.com/rabv7399/Integrador2-grupoRonald/issues/37) e [Issue #38](https://github.com/rabv7399/Integrador2-grupoRonald/issues/38).
 
-**Mejora priorizada:** agregar plantillas de Issues, registrar aprobaciones diferenciadas, formalizar el horario de soporte y medir SLA a partir de tickets cerrados reales.
+**Mejora priorizada:** mantener las plantillas de Issues integradas, registrar aprobaciones diferenciadas, formalizar el horario de soporte y medir SLA a partir de tickets cerrados reales.
 
 
 ## 6. Seguimiento operacional verificado — 03/11/2026 (entregable complementario)
@@ -101,7 +101,7 @@ Se verificó el estado de los tickets mediante GitHub Issues. La tabla distingue
 
 **Registros nuevos:** se añadieron comentarios de seguimiento fechados a [#36](https://github.com/rabv7399/Integrador2-grupoRonald/issues/36), [#37](https://github.com/rabv7399/Integrador2-grupoRonald/issues/37) y [#38](https://github.com/rabv7399/Integrador2-grupoRonald/issues/38). La fecha del comentario no demuestra atención al solicitante ni cumplimiento del SLA.
 
-**Plantilla reutilizable preparada:** [`.github/ISSUE_TEMPLATE/solicitud_servicio_apf3.md`](../.github/ISSUE_TEMPLATE/solicitud_servicio_apf3.md), que recopila clasificación, datos no sensibles, validación, evidencia de autorización, segregación de funciones, tiempos, pausas, prueba, satisfacción y cierre. Esta plantilla está propuesta en la rama de mejora; **no está disponible en el flujo de creación del repositorio principal hasta que el PR correspondiente se fusione**.
+**Plantilla reutilizable preparada:** [`.github/ISSUE_TEMPLATE/solicitud_servicio_apf3.md`](../.github/ISSUE_TEMPLATE/solicitud_servicio_apf3.md), que recopila clasificación, datos no sensibles, validación, evidencia de autorización, segregación de funciones, tiempos, pausas, prueba, satisfacción y cierre. La plantilla está integrada en el repositorio principal y su disponibilidad en la creación de Issues se comprobó en la Figura 46.
 
 ### 6.1 Evidencia disponible y límites académicos
 
