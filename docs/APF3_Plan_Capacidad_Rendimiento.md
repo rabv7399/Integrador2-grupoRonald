@@ -251,3 +251,22 @@ SHOW VARIABLES LIKE 'max_connections';
 **Límites y riesgos:** las medidas corresponden **únicamente** a la página `GET /` con carga ligera en una ejecución anterior. La pantalla principal se sirvió mediante Render, pero los resultados **no prueban carga de servicios autenticados, eficiencia de consultas MySQL, 20 usuarios concurrentes o disponibilidad bajo saturación**. El workflow de GitHub Actions recibió una advertencia no bloqueante por deprecación de Node.js 20 en acciones utilizadas; conviene revisar compatibilidad durante el siguiente ciclo.
 
 **Próxima validación de capacidad prioritaria:** una prueba moderada con cuentas de ensayo autorizadas y tokens guardados de forma segura (nunca en comentarios de Issues), previa autorización para pruebas contra entorno productivo, más observabilidad del pool de conexiones y recursos de aplicación. No ejecutar automáticamente una prueba de estrés sobre Render/Aiven Free.
+
+## 13. Latencia de peticiones autenticadas mediante navegador — Figura 55
+
+**Fuente:** captura de Chrome DevTools, pestaña Network > Fetch/XHR, durante una sesión autorizada en el frontend de Render. El usuario pulsó una vez el botón **Consultar datos protegidos**, con rol `CLIENTE`, JWT activo y respuesta HTTP válida.
+
+| Petición observada | HTTP Status | Tiempo de red mostrado por Chrome | Tamaño mostrado |
+|---|---:|---:|---:|
+| `categorias` | **200 OK** | **2,96 s** | 0,3 kB |
+| `productos` | **200 OK** | **3,16 s** | 0,4 kB |
+
+**Resultado técnico:** los dos endpoints protegidos respondieron correctamente, pero ambas solicitudes tardaron cerca de tres segundos en **esta observación puntual de cliente**. No se ha calculado media ni p95 de una muestra de peticiones autenticadas; los valores son tiempos individuales de Chrome. No se ha identificado la causa de la latencia. Entre las hipótesis por comprobar figuran arranque en frío del servicio, tiempos de backend/DB, establecimiento de conexión y red. Una prueba puntual no permite atribuir la causa a ninguna de ellas.
+
+**No comparar como iguales:** el k6 de Figuras 53–54 midió **`GET /` público**, con 2 VUs y p95 **127,26 ms**. Figura 55 mide solicitudes protegidas con JWT mediante un **navegador**, sin VUs. Son cargas, rutas y contextos distintos.
+
+**Siguiente experimento seguro y reproducible:** con la misma sesión autorizada y sin refrescar la página, mantener la pestaña Network abierta y pulsar una sola vez `Consultar datos protegidos` para obtener una segunda lectura de `categorias` y `productos`. Registrar `Status`, `Time`, si el servicio estaba despierto y el intervalo desde la primera lectura. Esto generaría únicamente dos solicitudes adicionales, no una prueba de estrés. Dejar de repetir si aparecen errores. **No abrir ni mostrar Request Headers, Authorization o tokens.**
+
+**Figura N.º 55:** `APF3_E55_Tiempos_API_Protegida_Chrome_Network.png` — *Medición en Chrome DevTools de las peticiones protegidas de categorías (HTTP 200, 2,96 s) y productos (HTTP 200, 3,16 s) con sesión JWT activa en Render.* La imagen para el informe conserva las filas y tiempos pero recorta el correo y cabecera del navegador.
+
+**Limitación del criterio 5:** esta evidencia agrega medición funcional auténtica de latencia de API protegida, pero sigue pendiente una muestra suficiente para percentiles/p95 de la API, aislamiento de arranque en frío y observabilidad de CPU/RAM de Render y del pool HikariCP.
