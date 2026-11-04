@@ -248,4 +248,32 @@ class SecurityIntegrationTest {
             mesaRepository.deleteById(mesa.getId());
         }
     }
+
+    @Test
+    void especificacionOpenApiDocumentaRutasYJwt() throws Exception {
+        mockMvc.perform(get("/v3/api-docs"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.info.title").value("Delicias Peruanas API"))
+                .andExpect(jsonPath("$.paths['/api/categorias'].get").exists())
+                .andExpect(jsonPath("$.paths['/api/productos'].get").exists())
+                .andExpect(jsonPath("$.paths['/api/mesas'].get").exists())
+                .andExpect(jsonPath("$.paths['/api/reservas'].post").exists())
+                .andExpect(jsonPath("$.components.securitySchemes.bearerAuth.scheme").value("bearer"))
+                .andExpect(jsonPath("$.security[0].bearerAuth").isArray())
+                .andExpect(jsonPath("$.paths['/api/auth/login'].post.security").isEmpty());
+    }
+
+    @Test
+    void interfazSwaggerPuedeCargarseSinToken() throws Exception {
+        mockMvc.perform(get("/swagger-ui/index.html"))
+                .andExpect(status().isOk())
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("Swagger UI")));
+    }
+
+    @Test
+    void configuracionSwaggerPuedeConsultarseSinToken() throws Exception {
+        mockMvc.perform(get("/v3/api-docs/swagger-config"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.url").value("/v3/api-docs"));
+    }
 }
