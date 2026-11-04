@@ -2,15 +2,15 @@
 
 ## Estado vigente al 04 de noviembre de 2026
 
-Esta actualización prevalece sobre las referencias históricas que aparecen después. El último backend verificado visualmente en Render es **16b5cfe**, Live (Figura 69). Los PR #58 y #59 están integrados; se aprobaron **14 pruebas**, sin fallos ni errores. La reserva productiva de prueba devolvió **201**, su repetición **409** y el registro ID 5 quedó **CANCELADA** (Figuras 66–68). El PR #42 ya está integrado; no debe interpretarse el borrador histórico como estado actual.
+Responsable del plan: **Ronald Albert Bustamante Villanueva**, proyecto individual. Último backend verificado visualmente en Render: **7b08b3a Live**, con Swagger publicado y consultas protegidas comprobadas (Figuras 70–73). La versión consolidada aprobó **17 pruebas** (Figura 76). El contraste APF2 y la sincronización de ramas están documentados (Figuras 74–79); presentación y aceptación final siguen pendientes.
 
-La guía de Semana 13 exige seis apartados. El plan por infraestructura, aplicaciones, documentación y calendario se desarrolla en [Guía de cierre](APF3_Guia_Cierre_Semana13.md). La retrospectiva cuenta ahora con acciones de cierre propuestas para el 04/11/2026 y dependencias explícitas; no se atribuyen reuniones ni aprobaciones externas inexistentes.
+**Línea base observada:** Aiven mostró memoria **86 %**, disco **30,2 %**, conexiones globales puntuales **2**, pico histórico **13** y límite **76** (Figuras 49–52). La lectura de RAM no demuestra presión sostenida. Las conexiones globales no identifican el uso exclusivo de HikariCP, cuya configuración por defecto 5 / 1 / 30000 ms se comprobó en CI; su uso efectivo en producción no está medido.
 
-Capacidad verificada: **memoria Aiven 86 %, disco 30,2 %, conexiones puntuales 2, pico histórico 13 y límite 76** (Figuras 49–52). Son valores globales de MySQL, distintos del pool HikariCP, cuyo valor predeterminado configurado y probado es 5 / 1 / 30000 ms. La observabilidad runtime del pool sigue pendiente.
+**Rendimiento:** k6 público registró 24/24 respuestas 200 y p95 127,26 ms con 2 VUs. En navegador, la API protegida registró 1,16 s y 1,80 s antes del cambio (Figura 57); una medición posterior mostró 9,18 s en ambas consultas (Figura 61), y otra 774 ms y 773 ms (Figura 62). Son observaciones individuales, sin p95 autenticado ni causalidad demostrada; no prueban mejora sostenida ni cumplimiento de SLA. El JOIN se observó en logs (Figura 63).
 
-Permanecen abiertos el contraste con las observaciones originales APF2, OpenAPI si fue exigido, la revisión de sincronización de ramas y la presentación. Las métricas runtime y mesas en producción se conservan como mejoras; no se atribuyen como requisitos independientes de esta guía general. La aceptación final no está registrada.
+Permanecen pendientes la carga reproducible autenticada, las métricas del pool y el uso real de CPU/RAM del backend. El escenario de 20 usuarios y 6 RPS es una hipótesis sin validar. Los umbrales de la sección 5 son propuestas de seguimiento, no alertas permanentes configuradas. La sección 6 establece responsables, plazos condicionados y criterios de cierre.
 
-El registro detallado de pruebas y mediciones se encuentra en el [acta de verificación](APF3_Acta_Publicacion_y_Verificacion.md). Las cifras antiguas de ocho o nueve pruebas y las menciones a despliegue pendiente describen antecedentes, no el estado vigente.
+Las referencias antiguas a despliegues y cifras de pruebas se conservan como antecedentes, no como estado actual. Véanse la [guía de cierre](APF3_Guia_Cierre_Semana13.md) y el [acta de verificación](APF3_Acta_Publicacion_y_Verificacion.md).
 
 ## Registro histórico de preparación y diagnóstico
 
@@ -132,17 +132,23 @@ Se ejecutó `performance/k6_sondeo_apf3.js` en [GitHub Actions, ejecución 41581
 | Disco MySQL | > 70 % | > 85 % | Depurar datos/archivos autorizados y ampliar capacidad |
 | CPU/RAM de Render | No configurables con evidencia actual | No configurables con evidencia actual | Instrumentar Actuator/APM o plan con métricas; **no afirmar alertas activas** |
 
-Los valores son **umbrales de diseño**. El gráfico de memoria Aiven observado (~78–83 %) supera el umbral preventivo propuesto de 75 %, por lo que amerita revisión; no prueba saturación ni falla.
+Los valores son **umbrales de diseño**. La lectura más reciente de memoria Aiven es **86 %** (Figura 49), frente a observaciones anteriores aproximadas de 78–83 %. Supera numéricamente el aviso propuesto de 75 %, pero no acredita que se mantenga por encima del umbral durante un intervalo: revisar tendencias antes de concluir presión sostenida. No prueba saturación ni falla.
 
 ## 6. Plan de capacidad por fases
 
-1. **Línea base:** repetir k6 de 2 VUs y registrar p50/p95, fallos y RPS; separar el primer acceso de arranque en frío.
-2. **Base de datos:** ejecutar los tres `EXPLAIN`, revisar índices, métricas de conexiones y pool real; registrar capturas.
-3. **Escalado controlado:** solo con autorización, pasar a 5 y 10 VUs en entorno no productivo o ventana acordada; medir p95 y 5xx; detener si hay degradación.
-4. **Decisión de infraestructura:** si p95/errores superan objetivos, evaluar plan de pago, observabilidad y disponibilidad de Aiven antes de afirmar capacidad de 20 usuarios.
-5. **Revisión continua:** actualizar matriz tras cambios de plan, consultas, carga o despliegue.
+**Responsable:** Ronald Albert Bustamante Villanueva. Las funciones se distribuyen por actividad dentro del proyecto individual. Los plazos siguientes son objetivos de planificación, no fechas de ejecución ya cumplidas ni SLA.
 
-**Pendientes reales:** medición de conexiones HikariCP y uso CPU/RAM real del backend; validación de 6 RPS sostenidos y carga de API autenticada. **Completado:** HikariCP desplegado, commit `8b07733` `Live`, tres `EXPLAIN` reales y sondeo k6 de 2 VUs con 24/24 respuestas HTTP 200. No extrapolar estos resultados a capacidad de producción.
+| Fase y acción | Función | Plazo o condición | Criterio de cierre | Estado al 04/11/2026 |
+|---|---|---|---|---|
+| 1. Consolidar línea base y separar primer acceso | Pruebas | Antes del cierre documental APF3; repetir mediciones en el próximo ciclo | Registrar ruta, carga, duración, p95, fallos y RPS; conservar por separado tiempos individuales del navegador | Sondeo público 2 VUs completado; muestra autenticada suficiente pendiente |
+| 2. Revisar base de datos y memoria | Base de datos | Próxima revisión disponible; antes de aumentar carga o pool | Conservar tres EXPLAIN y lecturas globales; revisar tendencia de RAM y diferenciar sesiones MySQL del pool | EXPLAIN y lecturas globales completados; RAM observada 86 %; métricas Hikari pendientes |
+| 3. Ampliar carga autenticada gradualmente | Pruebas | Próximo ciclo, en ensayo o ventana acordada | Ejecutar primero carga limitada con cuenta autorizada; registrar p95 y 5xx; evaluar 5 y 10 VUs solo si no hay degradación | Pendiente; no valida todavía 20 usuarios ni 6 RPS |
+| 4. Decidir cambios de recursos | Infraestructura | Tras obtener carga y métricas representativas | Comparar objetivos, coste y recursos; registrar RFC con justificación, validación y reversión antes de cambiar plan | Condicionado a resultados; sin ampliación de recursos ejecutada |
+| 5. Revisar el plan tras cambios | Gestión del servicio | Después de cambios de consultas, carga, plan o despliegue | Actualizar matriz, evidencias, riesgos y pendientes con fecha de revisión | Seguimiento en curso |
+
+**Reglas de actuación:** separar preparación por inactividad de la prueba medida; detener el incremento de carga ante degradación o errores; revisar logs, conexiones y recursos antes de continuar. Los umbrales de GET público no se trasladan automáticamente a la API autenticada. No aumentar el pool por observar margen en max_connections sin comprobar memoria y comportamiento bajo carga.
+
+**Completado:** configuración HikariCP integrada, tres EXPLAIN reales, sondeo público de 2 VUs con 24/24 respuestas 200, mediciones individuales autenticadas y JOIN observado tras PR #58. **Pendiente:** p95 autenticado reproducible, uso efectivo del pool, CPU/RAM del backend y validación de la hipótesis de 6 RPS sostenidos. La documentación de Swagger y las 17 pruebas acreditan funcionalidad e integración; no sustituyen estas mediciones de capacidad.
 
 ## 7. Criterios de validación del pool HikariCP (integrado; medición runtime pendiente)
 
