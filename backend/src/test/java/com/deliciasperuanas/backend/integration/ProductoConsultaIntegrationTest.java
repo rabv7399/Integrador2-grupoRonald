@@ -26,7 +26,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
         "spring.jpa.hibernate.ddl-auto=create-drop",
         "spring.jpa.show-sql=false",
         "spring.jpa.properties.hibernate.generate_statistics=true",
-        "jwt.secret=01234567890123456789012345678901"
+        "jwt.secret=MDEyMzQ1Njc4OTAxMjM0NTY3ODkwMTIzNDU2Nzg5MDE="
 })
 @Transactional
 class ProductoConsultaIntegrationTest {
