@@ -2,7 +2,7 @@
 
 ## Estado vigente al 04 de noviembre de 2026
 
-Responsable del plan: **Ronald Albert Bustamante Villanueva**, proyecto individual. Último backend verificado visualmente en Render: **7b08b3a Live**, con Swagger publicado y consultas protegidas comprobadas (Figuras 70–73). La versión consolidada aprobó **17 pruebas** (Figura 76). El contraste APF2 y la sincronización de ramas están documentados (Figuras 74–79); presentación y aceptación final siguen pendientes.
+Responsable del plan: **Ronald Albert Bustamante Villanueva**, proyecto individual. Último backend verificado visualmente en Render: **a9897e4 Live** (Figura 90), con interfaz APF3 visible (Figura 91). Swagger y consultas protegidas fueron comprobados previamente en 7b08b3a (Figuras 70–73); no se atribuyen a una repetición posterior. La versión consolidada aprobó **17 pruebas** (Figura 76). El contraste APF2 y la sincronización de ramas están documentados (Figuras 74–79); presentación y aceptación final siguen pendientes.
 
 **Línea base observada:** Aiven mostró memoria **86 %**, disco **30,2 %**, conexiones globales puntuales **2**, pico histórico **13** y límite **76** (Figuras 49–52). La lectura de RAM no demuestra presión sostenida. Las conexiones globales no identifican el uso exclusivo de HikariCP, cuya configuración por defecto 5 / 1 / 30000 ms se comprobó en CI; su uso efectivo en producción no está medido.
 
