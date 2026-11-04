@@ -10,9 +10,20 @@
 
 > Este documento distingue entre despliegue técnico exitoso y aceptación funcional completa. Las verificaciones que no se realizaron figuran como pendientes; no se inventan mediciones ni credenciales.
 
+## Registro histórico del despliegue de presentación — 03/11/2026
+
+- **Producción Render:** `develop` / **`8b07733e2962a3aad2f180c2d0c465b3eb53298a`** / **`Live`**, visible en **Figura 41**; segundo despliegue Auto-Deploy duró 3 min 2 s.
+- **Presentación pública:** `SISTEMA WEB · APF3` por HTTPS, **Figura 42**.
+- **CI de la revisión final:** [GitHub Actions #41720071675](https://github.com/rabv7399/Integrador2-grupoRonald/actions/runs/41720071675), **success**.
+- **Validación de regresión posterior al último despliegue:** login JWT exitoso (Figura 43) y lectura protegida de tres categorías y tres productos, HTTP 200 con JWT válido (Figura 44).
+- **Sincronización Git:** `main` incorpora la versión APF3 por PR #46, y su Ruleset está **Active** (Figura 45). Los cambios posteriores de documentación en `main` no equivalen a una nueva versión desplegada en Render.
+- **Restricciones vigentes:** sin prueba real de creación/conflicto de reservas ni métricas CPU/RAM del backend, ni certificación de disponibilidad SLA. RFC #43 contiene seguimiento histórico y no debe declararse aceptación integral de todo flujo.
+
+**Nota de interpretación:** las referencias a la revisión `d5818f4` y el PR #42 en la tabla siguiente corresponden a **un despliegue anterior exitoso** de APF3, que fue reemplazado posteriormente por la revisión final `8b07733` del PR #45. **No** son el estado actual de Render.
+
 ## 1. Registro histórico de la publicación inicial
 
-La revisión vigente y las verificaciones posteriores se detallan en la sección 7.
+Las verificaciones posteriores se detallan en las secciones 7 y 8. Las restricciones de este apartado describen el estado de la revisión 8b07733, no el estado vigente.
 
 | Control | Evidencia verificable | Resultado |
 |---|---|---|
@@ -49,21 +60,21 @@ La revisión vigente y las verificaciones posteriores se detallan en la sección
 - [x] CI del commit fusionado satisfactoria (9 pruebas).
 - [x] Despliegue automático exitoso de `d5818f4` en Render (Figura 36).
 - [x] Página principal HTTPS visible en navegador (Figura 37, comprobación visual).
-- [x] Obtener captura de Render con estado `Live` y SHA `d5818f4` en cabecera (Figura 38).
-- [x] Autenticación satisfactoria con cuenta de prueba autorizada, sin exponer contraseña ni token (Figura 39, campos ocultos).
-- [x] Consultar categorías y productos autenticados; resultado HTTP 200, JWT válido, 3 categorías y 3 productos (Figura 40).
+- [x] Obtener captura de Render con estado `Live` y SHA `d5818f4` en cabecera (Figura 38), y de la versión final `8b07733` (Figura 41).
+- [x] Autenticación satisfactoria con cuenta autorizada antes y después del despliegue final (Figuras 39 y 43, credenciales ocultas).
+- [x] Consulta protegida de categorías/productos antes y después del despliegue final: HTTP 200, JWT válido, 3 categorías y 3 productos (Figuras 40 y 44).
 - [ ] Comprobar consulta autenticada de mesas, si el alcance funcional y el rol lo permiten.
 - [x] Crear reserva de prueba ID 5 (201), comprobar superposición (409) y cancelar el registro en Aiven (Figuras 66–68).
 - [x] Inspeccionar logs de Render y comprobar el JOIN de productos y categorías (Figuras 58 y 63).
 - [ ] Validar conexión estable y límites efectivos del pool en entorno productivo si la plataforma lo permite.
-- [x] Presentación APF3 publicada mediante PR #45, revisión 8b07733; formulario APF3 y pruebas funcionales evidenciados posteriormente (Figuras 59, 66 y 67).
+- [x] PR #45 de presentación final APF3 fusionado, nueva publicación `8b07733` en Render `Live` y comprobación visual del encabezado APF3 (Figuras 41–42). También se conservan las Figuras 59, 66 y 67 de comprobaciones posteriores.
 - [ ] Registrar aprobación funcional y cerrar RFC #43.
 
 ## 5. Incidencias, seguimiento y reversión
 
 **Incidencia resuelta:** [Issue #44](https://github.com/rabv7399/Integrador2-grupoRonald/issues/44). Render estaba en `be949ef` porque los cambios previos en `develop` no tocaban `backend/`. La integración de PR #42 sí modificó archivos de backend y activó el despliegue automático; la captura de Figura 36 confirmó éxito.
 
-**Hallazgo histórico de presentación (resuelto por PR #45):** la revisión `d5818f4` contiene en `backend/src/main/resources/static/index.html` el título y encabezado heredados `APF2`. La rama `apf3-release-final` propone actualizar únicamente esas etiquetas a `APF3`, sin alterar la autenticación ni la lógica de negocio. El PR #45 se integró y la Figura 59 confirmó la revisión 8b07733 activa; las Figuras 66 y 67 muestran el formulario APF3.
+**Hallazgo de presentación resuelto:** la revisión anterior `d5818f4` contenía dos etiquetas `APF2` en `index.html`. El [PR #45](https://github.com/rabv7399/Integrador2-grupoRonald/pull/45) las actualizó a `APF3`, se fusionó en `develop` y Render confirmó la revisión `8b07733` en estado `Live` (Figuras 41–42); regresión JWT/consulta HTTP 200 comprobada (Figuras 43–44). La Figura 59 volvió a confirmar 8b07733; las Figuras 66 y 67 muestran el formulario APF3.
 
 **Plan de reversión:** ante fallo persistente de inicio, HTTP 5xx o regresión de seguridad, detener cambios adicionales; recopilar logs, verificar estado de Aiven y, si Render lo permite, restaurar la revisión anterior estable `be949ef`; en paralelo revertir el commit problemático mediante PR. No modificar ni restaurar datos de MySQL sin un respaldo y plan específicos. Tras cualquier reversión, repetir pruebas HTTPS y funcionales.
 
@@ -78,6 +89,11 @@ La revisión vigente y las verificaciones posteriores se detallan en la sección
 - **Figura 38:** `APF3_E38_Render_Live_Commit_APF3.png` — servicio `delicias-peruanas-api` en estado `Live` con revisión `d5818f4` en `develop`.
 - **Figura 39:** `APF3_E39_Login_Exitoso_Produccion.png` — autenticación exitosa de una cuenta autorizada, recepción de JWT y sesión activa; campos de correo y contraseña ocultos en la copia para informe.
 - **Figura 40:** `APF3_E40_Consulta_Protegida_JWT_Produccion.png` — consulta autenticada de categorías y productos con JWT válido y HTTP 200; identificador de usuario oculto en la copia para informe.
+- **Figura 41:** `APF3_E41_Render_Live_Version_Final_APF3.png` — revisión final `8b07733`, rama `develop`, estado `Live`.
+- **Figura 42:** `APF3_E42_Frontend_Final_APF3_HTTPS.png` — cabecera `SISTEMA WEB · APF3` en HTTPS.
+- **Figura 43:** `APF3_E43_Login_JWT_Postdespliegue_Final.png` — login JWT satisfactorio tras el último despliegue.
+- **Figura 44:** `APF3_E44_Consulta_Protegida_Postdespliegue_Final.png` — categorías y productos con JWT válido, HTTP 200.
+- **Figura 45:** `APF3_E45_Ruleset_Main_Activo.png` — Ruleset de rama `main` en estado `Active`.
 
 ## 7. Verificación posterior y revisión vigente — 03/11/2026
 
@@ -137,3 +153,14 @@ Las figuras corresponden a capturas aportadas durante la validación; esta tabla
 - Registrar aceptación funcional final y resolver RFC #43 según su alcance.
 
 **Estado global:** despliegue técnico, autenticación, consultas de categorías/productos, creación de reserva, rechazo por superposición y cancelación del dato de prueba verificados. Permisos de mesas y consulta optimizada validados mediante pruebas automatizadas. La aceptación final y los controles pendientes no se declaran completados.
+
+## 8. Verificación de OpenAPI y Swagger — 04/11/2026
+
+- PR #62 integrado en develop, commit 7b08b3a; 17 pruebas aprobadas sin fallos ni errores.
+- Figura 70: Render Live con la revisión 7b08b3a.
+- Figura 71: Swagger UI muestra Delicias Peruanas API, APF3, rutas y esquema JWT.
+- Figura 72: GET /api/productos sin JWT devuelve 401.
+- Figura 73: consulta autenticada de productos devuelve 200 y datos; se conserva la captura sin bloque Curl ni credenciales.
+- Las observaciones originales del docente se registran en APF3_OpenAPI_y_Preparacion_Demo.md. La recomendación de documentación interactiva está implementada y comprobada en producción.
+
+La sincronización de ramas está en preparación; solo se declarará finalizada después de integrar y comparar contenido con CI satisfactoria. El informe se actualizará al final del cierre técnico, según la indicación del responsable.
