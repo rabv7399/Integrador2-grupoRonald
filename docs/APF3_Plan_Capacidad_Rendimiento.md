@@ -16,6 +16,7 @@
 | CPU/RAM real del backend Render Free | **No medido ni disponible mediante el panel Free en la evidencia reunida** | No inventar porcentajes ni métricas de aplicación |
 | Capacidad proyectada 20 usuarios / 6 RPS | **Hipótesis de dimensionamiento sin validar** por carga representativa | Sección 1; prueba de 2 VUs no permite extrapolar |
 | Conexiones Hikari activas en producción | **No medidas**; se verificaron propiedades en código/CI y que la aplicación operó con autenticación y lectura | No equiparar configuración con observabilidad del pool |
+| Memoria, almacenamiento y CPU de Aiven | **Memoria 86 %** y **disco 30,2 %** de 1 GB; CPU con tendencia baja no cuantificada; conexión del pool sin medición | Figura 49 (Overview > Service plan usage), captura del responsable |
 
 **Hallazgo crítico para la rúbrica:** se dispone de medición de p95 real de **frontend público**, tres planes MySQL reales y configuración de pool desplegada, pero **aún falta demostrar una carga controlada sobre endpoints autenticados y obtener métricas operativas reales de conexiones/CPU/RAM**. No se representa el sondeo ligero como prueba de estrés ni se atribuyen recursos no medidos. La muestra de k6 es exploratoria y no certifica SLA.
 
@@ -30,7 +31,7 @@ Para el restaurante se propone un escenario académico de **20 usuarios concurre
 | Recurso | Capacidad/configuración conocida | Observación real | Acción y limitación |
 |---|---|---|---|
 | Aplicación Render `delicias-peruanas-api` | Servicio Docker Free, límite RAM **512 MB**. **CPU y uso real RAM no disponibles** en panel Free | Se verificó después `Live` con commit final `8b07733` (Figura 41); Render advierte suspensión por inactividad | Commit final `Live` verificado; no atribuir vCPU ni % de RAM no medidos |
-| Base de datos Aiven `delicias-peruanas-db` | MySQL 8.4, **1 nodo** visible | Recuperada a `Running`; CPU baja en gráfica, disco ~30 %, memoria ~78–83 % (estimación visual) | Seguimiento de memoria, plan de respaldo y vigencia del plan; obtener métricas exactas exportadas |
+| Base de datos Aiven `delicias-peruanas-db` | MySQL 8.4, **1 nodo** visible | Recuperada a `Running`; en Figura 49 se observan **memoria usada 86 %**, **almacenamiento 30,2 % de 1 GB** y gráfica CPU de 60 min sin valor puntual etiquetado; capturas previas indicaban 78–83 % de memoria | Seguimiento de memoria, plan de respaldo y vigencia del plan; obtener métricas exactas exportadas |
 | Pool JDBC | Configuración integrada desde PR #42 y desplegada en `develop`/Render: `spring.datasource.hikari.maximum-pool-size=${DB_POOL_MAX_SIZE:5}`, `minimum-idle=${DB_POOL_MIN_IDLE:1}`, `connection-timeout=${DB_POOL_CONNECTION_TIMEOUT_MS:30000}`; tamaño efectivo del pool en runtime **no medido** | La prueba de integración H2 verificó propiedades en CI; tamaño efectivo y uso de conexiones Render/MySQL **aún no medidos** | Configuración **5 / 1 / 30 s** integrada y publicada; sigue pendiente medir conexiones reales y calibrar bajo carga |
 | Red HTTPS | URL pública HTTPS en Render | Navegador: `GET /` HTTP 200 y 173 ms en una observación; carga de página 589 ms | Observar p95 y errores desde múltiples ejecuciones; separar latencia de cliente, red y backend |
 | Respaldo / redundancia | No se verificó instancia de respaldo ni balanceador | MySQL mostrado con 1 nodo; no hay evidencia de alta disponibilidad | Registrar RTO/RPO deseados, validar copias de seguridad antes de cambios de esquema |
@@ -46,7 +47,7 @@ Para el restaurante se propone un escenario académico de **20 usuarios concurre
 | GitHub Actions [sondeo 41576386565](https://github.com/rabv7399/Integrador2-grupoRonald/actions/runs/41576386565) | `GET /` secuencial | 3/3 HTTP 200, **78,9 ms** de media, máximo 97,5 ms |
 | Mismo sondeo | `GET /api/categorias` secuencial | 3/3 HTTP 401, **96,6 ms** de media, máximo 111,6 ms |
 | Mismo sondeo | `GET /api/categorias`, concurrencia 2 | 4/4 HTTP 401, **89,3 ms** de media, máximo 111,9 ms |
-| Aiven Metrics | CPU, disco, memoria | CPU baja, disco ~30 %, RAM ~78–83 % por lectura visual de capturas; **no valores exportados** |
+| Aiven Overview / Service plan usage, Figura 49 | Memoria RAM, CPU y disco (vista 60 min) | **RAM usada 86 %; disco 30,2 % (1 GB)**; gráfica de CPU aparentemente baja sin valor puntual mostrado. Datos de la consola en captura, no de Render; conexiones no visibles. |
 | [k6 GitHub Actions 41581904824](https://github.com/rabv7399/Integrador2-grupoRonald/actions/runs/41581904824) | 2 VUs × 12 s, solo `GET /` | **24/24 HTTP 200**, 0 % errores; media **69,04 ms**, p95 **127,26 ms**, máximo **132,94 ms**, tasa observada **1,857 RPS** |
 | Render Metrics Free | CPU/RAM | No disponibles; se observó límite RAM 512 MB, no consumo |
 
@@ -133,3 +134,23 @@ La configuracion propuesta limita inicialmente a **5 conexiones maximas**, **1 c
 - **Validacion operativa pendiente:** tras aprobacion y despliegue, observar conexiones MySQL, latencia p95 y errores 5xx con carga moderada; ajustar `DB_POOL_MAX_SIZE` y `DB_POOL_MIN_IDLE` mediante variables de entorno si procede, sin publicar secretos.
 - **Criterio de seguridad:** no cambiar limites ni ejecutar estres sobre Aiven/Render Free sin ventana acordada y plan de reversion.
 - **Versionado:** la propuesta original se integró mediante PR #42 y se publicó en Render; el commit final `8b07733` está `Live` (Figura 41). **Aun así, no se han medido los valores efectivos de conexiones en operación**.
+
+
+## 8. Evidencia de capacidad Aiven actualizada — Figura 49
+
+**Fecha de observación:** 03/11/2026. **Fuente:** captura del responsable en la consola Aiven, sección `Overview > Service plan usage`, de la base de datos `delicias-peruanas-db`. Esta sección ya contiene métricas sin necesidad de abrir una pestaña independiente `Metrics`.
+
+| Indicador | Valor realmente visible | Limitación |
+|---|---|---|
+| Capacidad asignada | 1 CPU; 1 GB RAM; 1 GB de almacenamiento | Capacidad del servicio MySQL, **no del backend Render** |
+| Memoria utilizada (60 min) | **86 %** | No se separa el consumo por proceso ni se observa una serie detallada de presión del pool JDBC |
+| Almacenamiento utilizado | **30,2 %** de 1 GB | No implica conocer el ritmo futuro de crecimiento |
+| CPU across all nodes (60 min) | Gráfica con tendencia baja | **No se dispone de porcentaje exacto** en la imagen |
+| Conexiones de MySQL / HikariCP | **No visibles** | No atribuir cantidad o saturación de conexiones |
+| Backups and forking | Último respaldo indicado **13 horas** antes, respaldo más antiguo **15 días**, total mostrado **824 MB** | No se probó restauración ni se confirmó cumplimiento de RTO/RPO |
+
+**Interpretación frente a umbrales propuestos:** la RAM de Aiven al **86 %** supera el umbral preventivo de diseño del **75 %**, pero no el crítico propuesto de **90 %**. Corresponde **revisar tendencias y recursos**, no declarar caída, incumplimiento de SLA ni saturación. Frente a la observación histórica aproximada de 78–83 %, la lectura actual es mayor; no se demuestra que el incremento sea sostenido solo con dos capturas.
+
+**Acciones de seguimiento sin riesgo para producción:** revisar más adelante las métricas de memoria y conexiones por el panel Aiven, documentar la política y prueba de restauración en un entorno de ensayo, y medir conexiones activas en una ventana autorizada; no ejecutar cargas agresivas sobre Aiven/Render Free por el solo hecho de ver 86 % de RAM. Render conserva su propia limitación de observabilidad de CPU/RAM.
+
+**Figura N.º 49:** `APF3_E49_Metricas_CPU_RAM_Conexiones_Aiven.png` — *Panel de capacidad de MySQL Aiven de Delicias Peruanas: memoria utilizada 86 %, almacenamiento 30,2 % y tendencia de CPU durante 60 minutos; las conexiones no se muestran en esta captura.* La copia omite la URL del navegador con identificadores internos.
