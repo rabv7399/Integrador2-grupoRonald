@@ -18,6 +18,7 @@
 | Conexiones Hikari activas en producción | **No medidas**; se verificaron propiedades en código/CI y que la aplicación operó con autenticación y lectura | No equiparar configuración con observabilidad del pool |
 | Conexiones MySQL globales al consultar Workbench | **2 conexiones** (`Threads_connected`) en un instante, no atribuidas al pool Hikari | Figura 50, consulta read-only de MySQL Aiven |
 | Máximo histórico de conexiones simultáneas MySQL | **13 conexiones** (`Max_used_connections`), pico desde el último arranque de MySQL; dato global, no exclusivo de HikariCP | Figura 51 (resultado y comando de Workbench) |
+| Límite de conexiones del servidor MySQL | **76 conexiones** (`max_connections`), variable de configuración leída desde MySQL Aiven | Figura 52; `SHOW VARIABLES LIKE 'max_connections';` |
 | Memoria, almacenamiento y CPU de Aiven | **Memoria 86 %** y **disco 30,2 %** de 1 GB; CPU con tendencia baja no cuantificada; conexión del pool sin medición | Figura 49 (Overview > Service plan usage), captura del responsable |
 
 **Hallazgo crítico para la rúbrica:** se dispone de medición de p95 real de **frontend público**, tres planes MySQL reales y configuración de pool desplegada, pero **aún falta demostrar una carga controlada sobre endpoints autenticados y obtener métricas operativas reales de conexiones/CPU/RAM**. No se representa el sondeo ligero como prueba de estrés ni se atribuyen recursos no medidos. La muestra de k6 es exploratoria y no certifica SLA.
@@ -189,10 +190,34 @@ SHOW GLOBAL STATUS LIKE 'Max_used_connections';
 |---|---:|---|
 | `Threads_connected` | **2** | Conteo puntual de conexiones abiertas al ejecutar la consulta anterior; Figura 50, historial a las 22:12:20 |
 | `Max_used_connections` | **13** | Pico global registrado desde el último arranque; Figura 51, consulta registrada a las 22:18:41 |
-| `max_connections` | **Pendiente de medir** | Límite configurado por el servidor; no se atribuye el valor por defecto de MySQL a Aiven sin verificar |
+| `max_connections` | **76** | Límite de conexiones configurado en MySQL Aiven; lectura read-only Figura 52 |
 
-**Criterio de interpretación:** las dos lecturas se realizaron en instantes distintos; no se supone que las 13 conexiones estuviesen activas al momento de las dos conexiones observadas. El valor 13 no contradice el límite por defecto **5** de HikariCP, pues dicho límite aplica al pool de **una instancia de la aplicación**, mientras que la cifra histórica MySQL incluye todas las sesiones de cliente y no identifica aplicaciones. Tampoco se deduce saturación ni capacidad de 20 usuarios hasta observar `max_connections`, errores por límite y un escenario de carga controlado.
+**Criterio de interpretación:** las dos lecturas se realizaron en instantes distintos; no se supone que las 13 conexiones estuviesen activas al momento de las dos conexiones observadas. El valor 13 no contradice el límite por defecto **5** de HikariCP, pues dicho límite aplica al pool de **una instancia de la aplicación**, mientras que la cifra histórica MySQL incluye todas las sesiones de cliente y no identifica aplicaciones. Con el límite real `max_connections=76`, el pico histórico 13 equivale a aproximadamente **17,1 % del límite**; la diferencia aritmética es **63**. Esto es **margen teórico de conexiones**, no capacidad garantizada para 63 clientes nuevos ni para 20 usuarios concurrentes. Sin datos de errores por límite, consumo RAM/CPU bajo carga y reparto por aplicaciones, no se deduce saturación ni capacidad final.
 
 **Figura N.º 51:** `APF3_E51_Maximo_Conexiones_MySQL_Aiven.png` — *Verificación del máximo histórico de 13 conexiones simultáneas del servidor MySQL Aiven mediante `Max_used_connections`, utilizando capturas de la consulta y su resultado.* Es un montaje identificado de dos recortes de las capturas originales, sin modificar comando ni valor y sin exponer otras consultas con correos.
 
-**Siguiente control seguro:** ejecutar únicamente `SHOW VARIABLES LIKE 'max_connections';` en Workbench. No modifica datos ni roles. El margen de capacidad en conexiones debe expresarse solo tras obtener el límite realmente configurado en Aiven.
+**Control realizado:** se ejecutó `SHOW VARIABLES LIKE 'max_connections';` sin modificar datos ni roles; resultado 76 (Figura 52). Para validar rendimiento real siguen pendientes pruebas de carga controladas de la API autenticada y observabilidad de conexiones HikariCP, CPU y RAM.
+
+## 11. Límite configurado de conexiones — Figura 52
+
+**Consulta ejecutada en MySQL Workbench sobre la conexión Aiven** (solo lectura):
+
+```sql
+SHOW VARIABLES LIKE 'max_connections';
+```
+
+**Resultado real:** `max_connections = 76`, observado en la rejilla de resultados de MySQL Workbench y en el comando SQL seleccionado. No se ejecutó ningún cambio de configuración.
+
+| Indicador MySQL | Valor | Naturaleza |
+|---|---:|---|
+| `Threads_connected` | **2** | Conexiones abiertas en medición puntual anterior (Figura 50) |
+| `Max_used_connections` | **13** | Máximo histórico global desde el arranque (Figura 51) |
+| `max_connections` | **76** | Límite configurado de conexiones concurrentes del servidor (Figura 52) |
+| Pico histórico / límite | **17,1 %** | Proporción aproximada calculada: 13 / 76 × 100 |
+| Diferencia aritmética entre límite y pico | **63** | **Margen teórico**, no garantía de capacidad operativa |
+
+**Diagnóstico técnico:** la cifra 13 es inferior al máximo configurado 76 y no evidencia por sí sola agotamiento del límite. Las conexiones actuales y el pico no identifican cuáles pertenecen a HikariCP, ni el número de usuarios concurrentes, ni el rendimiento de consultas. La lectura de **86 % RAM** en Aiven (Figura 49) merece seguimiento preventivo; la suficiencia de recursos no se demuestra con conexiones solamente.
+
+**Figura N.º 52:** `APF3_E52_Limite_Conexiones_MySQL_Aiven.png` — *Comprobación del límite de 76 conexiones simultáneas configurado en MySQL Aiven mediante `SHOW VARIABLES LIKE 'max_connections'` en MySQL Workbench.* La imagen fue recortada para conservar comando y resultado y excluir un historial inferior que contenía correos de cuentas de prueba; los datos SQL permanecen íntegros.
+
+**Acción recomendada para cerrar el criterio 5 con rigor:** medir carga reproducible de endpoints representativos y revisar métricas del pool/CPU/RAM mediante instrumentación autorizada o una plataforma que las exponga, evitando estresar Render/Aiven Free en producción.
