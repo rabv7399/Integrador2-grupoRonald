@@ -102,6 +102,9 @@ class SecurityIntegrationTest {
     @Autowired
     private JwtService jwtService;
 
+    @Autowired
+    private com.deliciasperuanas.backend.repository.MesaRepository mesaRepository;
+
     private Usuario cliente;
     private String tokenCliente;
 
@@ -201,5 +204,76 @@ class SecurityIntegrationTest {
                 .andExpect(jsonPath("$.token").isNotEmpty())
                 .andExpect(jsonPath("$.tipo").value("Bearer"))
                 .andExpect(jsonPath("$.rol").value("CLIENTE"));
+    }
+
+    @Test
+    void consultaMesasSinTokenDebeRetornar401() throws Exception {
+        mockMvc.perform(get("/api/mesas"))
+                .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    void clienteNoPuedeConsultarMesasDebeRetornar403() throws Exception {
+        mockMvc.perform(get("/api/mesas")
+                        .header("Authorization", "Bearer " + tokenCliente))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    void administradorPuedeConsultarMesasConJwt() throws Exception {
+        comprobarConsultaMesas("ADMIN");
+    }
+
+    @Test
+    void operadorPuedeConsultarMesasConJwt() throws Exception {
+        comprobarConsultaMesas("OPERADOR");
+    }
+
+    private void comprobarConsultaMesas(String rol) throws Exception {
+        com.deliciasperuanas.backend.entity.Mesa mesa =
+                new com.deliciasperuanas.backend.entity.Mesa();
+        mesa.setNumero(901);
+        mesa.setCapacidad(4);
+        mesa = mesaRepository.save(mesa);
+        try {
+            cliente.setRol(rol);
+            cliente = usuarioRepository.saveAndFlush(cliente);
+            String token = jwtService.generarToken(cliente);
+            mockMvc.perform(get("/api/mesas")
+                            .header("Authorization", "Bearer " + token))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$[?(@.numero == 901)].capacidad")
+                            .value(org.hamcrest.Matchers.hasItem(4)));
+        } finally {
+            mesaRepository.deleteById(mesa.getId());
+        }
+    }
+
+    @Test
+    void especificacionOpenApiDocumentaRutasYJwt() throws Exception {
+        mockMvc.perform(get("/v3/api-docs"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.info.title").value("Delicias Peruanas API"))
+                .andExpect(jsonPath("$.paths['/api/categorias'].get").exists())
+                .andExpect(jsonPath("$.paths['/api/productos'].get").exists())
+                .andExpect(jsonPath("$.paths['/api/mesas'].get").exists())
+                .andExpect(jsonPath("$.paths['/api/reservas'].post").exists())
+                .andExpect(jsonPath("$.components.securitySchemes.bearerAuth.scheme").value("bearer"))
+                .andExpect(jsonPath("$.security[0].bearerAuth").isArray())
+                .andExpect(jsonPath("$.paths['/api/auth/login'].post.security").isEmpty());
+    }
+
+    @Test
+    void interfazSwaggerPuedeCargarseSinToken() throws Exception {
+        mockMvc.perform(get("/swagger-ui/index.html"))
+                .andExpect(status().isOk())
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("Swagger UI")));
+    }
+
+    @Test
+    void configuracionSwaggerPuedeConsultarseSinToken() throws Exception {
+        mockMvc.perform(get("/v3/api-docs/swagger-config"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.url").value("/v3/api-docs"));
     }
 }

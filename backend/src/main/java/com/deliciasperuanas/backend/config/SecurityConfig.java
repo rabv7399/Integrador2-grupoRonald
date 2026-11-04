@@ -58,6 +58,15 @@ public class SecurityConfig {
                                 "/favicon.ico"
                         ).permitAll()
 
+                        // Documentación de la API; las operaciones conservan sus permisos
+                        .requestMatchers(
+                                HttpMethod.GET,
+                                "/v3/api-docs",
+                                "/v3/api-docs/**",
+                                "/swagger-ui.html",
+                                "/swagger-ui/**"
+                        ).permitAll()
+
                         // Registro y login públicos
                         .requestMatchers("/api/auth/**").permitAll()
 
