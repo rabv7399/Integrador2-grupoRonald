@@ -221,3 +221,33 @@ SHOW VARIABLES LIKE 'max_connections';
 **Figura N.º 52:** `APF3_E52_Limite_Conexiones_MySQL_Aiven.png` — *Comprobación del límite de 76 conexiones simultáneas configurado en MySQL Aiven mediante `SHOW VARIABLES LIKE 'max_connections'` en MySQL Workbench.* La imagen fue recortada para conservar comando y resultado y excluir un historial inferior que contenía correos de cuentas de prueba; los datos SQL permanecen íntegros.
 
 **Acción recomendada para cerrar el criterio 5 con rigor:** medir carga reproducible de endpoints representativos y revisar métricas del pool/CPU/RAM mediante instrumentación autorizada o una plataforma que las exponga, evitando estresar Render/Aiven Free en producción.
+
+## 12. Evidencia del detalle de k6 — Figuras 53 y 54
+
+**Fuente verificable:** [GitHub Actions, ejecución #41581904824](https://github.com/rabv7399/Integrador2-grupoRonald/actions/runs/41581904824), job `Dos usuarios virtuales - GET publico`, paso `Ejecutar sondeo k6 y guardar resumen`. El responsable aportó dos capturas: resumen del workflow **Success** (Figura 53, duración total 23 s, un artefacto) y resultados k6 del paso (Figura 54). Las cifras concuerdan con logs originales.
+
+| Métrica de prueba | Resultado real observado |
+|---|---:|
+| Usuarios virtuales (VUs) | **2** |
+| Solicitudes HTTP al endpoint público `GET /` | **24** |
+| `checks_succeeded` | **24 / 24 (100 %)** |
+| `http_req_failed` | **0 / 24 (0 %)** |
+| HTTP esperado | **200** en las 24 comprobaciones |
+| Latencia media `http_req_duration` | **69,04 ms** |
+| Latencia mediana | **61,36 ms** |
+| p90 de respuesta | **108,96 ms** |
+| p95 de respuesta | **127,26 ms** |
+| Máximo de respuesta | **132,94 ms** |
+| Throughput del sondeo | **1,857298 solicitudes/s** |
+| Iteraciones | **24** |
+| Duración media de iteración | **1,07 s** |
+| Red total recibida | **137 kB** |
+| Red total enviada | **3,1 kB** |
+
+**Figura N.º 53:** `APF3_E53_K6_Resumen_GitHub_Actions.png` — *Resultado satisfactorio del workflow de concurrencia k6 de Delicias Peruanas en GitHub Actions, con dos usuarios virtuales y un artefacto de evidencias.*
+
+**Figura N.º 54:** `APF3_E54_K6_Metricas_24_Requests_P95.png` — *Resultados de k6 del sondeo público de Delicias Peruanas: 24 solicitudes, 100 % de comprobaciones satisfactorias, cero errores HTTP y tiempo de respuesta p95 de 127,26 ms.*
+
+**Límites y riesgos:** las medidas corresponden **únicamente** a la página `GET /` con carga ligera en una ejecución anterior. La pantalla principal se sirvió mediante Render, pero los resultados **no prueban carga de servicios autenticados, eficiencia de consultas MySQL, 20 usuarios concurrentes o disponibilidad bajo saturación**. El workflow de GitHub Actions recibió una advertencia no bloqueante por deprecación de Node.js 20 en acciones utilizadas; conviene revisar compatibilidad durante el siguiente ciclo.
+
+**Próxima validación de capacidad prioritaria:** una prueba moderada con cuentas de ensayo autorizadas y tokens guardados de forma segura (nunca en comentarios de Issues), previa autorización para pruebas contra entorno productivo, más observabilidad del pool de conexiones y recursos de aplicación. No ejecutar automáticamente una prueba de estrés sobre Render/Aiven Free.
