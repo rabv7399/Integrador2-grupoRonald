@@ -2,15 +2,15 @@
 
 ## Estado vigente al 04 de noviembre de 2026
 
-Esta actualización prevalece sobre las referencias históricas que aparecen después. El último backend verificado visualmente en Render es **16b5cfe**, Live (Figura 69). Los PR #58 y #59 están integrados; se aprobaron **14 pruebas**, sin fallos ni errores. La reserva productiva de prueba devolvió **201**, su repetición **409** y el registro ID 5 quedó **CANCELADA** (Figuras 66–68). El PR #42 ya está integrado; no debe interpretarse el borrador histórico como estado actual.
+La revisión vigente incorpora los PR #58, #59, #62 y #64. Swagger se verificó en producción con el backend **7b08b3a Live** (Figuras 70–73). La versión consolidada aprobó **17 pruebas**, sin fallos, errores ni omisiones (Figura 76). La comparación de ramas confirmó igualdad de contenido (Figura 75); el calendario se actualizó mediante PR #65.
 
-La guía de Semana 13 exige seis apartados. El plan por infraestructura, aplicaciones, documentación y calendario se desarrolla en [Guía de cierre](APF3_Guia_Cierre_Semana13.md). La retrospectiva cuenta ahora con acciones de cierre propuestas para el 04/11/2026 y dependencias explícitas; no se atribuyen reuniones ni aprobaciones externas inexistentes.
+La reserva de prueba devolvió **201**, su repetición **409** y el registro ID 5 quedó **CANCELADA** (Figuras 66–68). El contraste de los comentarios originales del docente está documentado en la [guía de cierre](APF3_Guia_Cierre_Semana13.md), Figuras 78–79.
 
-Capacidad verificada: **memoria Aiven 86 %, disco 30,2 %, conexiones puntuales 2, pico histórico 13 y límite 76** (Figuras 49–52). Son valores globales de MySQL, distintos del pool HikariCP, cuyo valor predeterminado configurado y probado es 5 / 1 / 30000 ms. La observabilidad runtime del pool sigue pendiente.
+Capacidad verificada: memoria Aiven 86 %, disco 30,2 %, conexiones puntuales 2, pico histórico 13 y límite 76 (Figuras 49–52). Las conexiones son valores globales de MySQL; no representan métricas exclusivas de HikariCP. La observabilidad runtime del pool y la carga sobre endpoints autenticados siguen pendientes.
 
-Permanecen abiertos el contraste con las observaciones originales APF2, OpenAPI si fue exigido, la revisión de sincronización de ramas y la presentación. Las métricas runtime y mesas en producción se conservan como mejoras; no se atribuyen como requisitos independientes de esta guía general. La aceptación final no está registrada.
+El proyecto es individual. Ronald Albert Bustamante Villanueva asume las funciones de desarrollo, pruebas, despliegue y seguimiento. Esta retrospectiva es una revisión individual de registros técnicos; no acredita una reunión de equipo ni aprobaciones independientes. La presentación, el ensayo y la aceptación final permanecen pendientes. El informe se completará al terminar las verificaciones técnicas.
 
-El registro detallado de pruebas y mediciones se encuentra en el [acta de verificación](APF3_Acta_Publicacion_y_Verificacion.md). Las cifras antiguas de ocho o nueve pruebas y las menciones a despliegue pendiente describen antecedentes, no el estado vigente.
+Las secciones 1–4 conservan el diagnóstico histórico; sus cifras y pendientes no sustituyen este estado vigente. La sección 5 presenta la retrospectiva actualizada.
 
 ## Registro histórico de preparación y diagnóstico
 
@@ -82,44 +82,47 @@ Render Free puede suspender instancias por inactividad y su panel no muestra CPU
 - `docs/APF3_Despliegue_Notas_Version.md` y `docs/APF3_Acta_Publicacion_y_Verificacion.md`; las capturas 41–44 acreditan el despliegue final y su regresión funcional.
 
 
-## 5. Acta documental de retrospectiva de cierre — Sprint 6 (actualizada 03/11/2026)
+## 5. Retrospectiva individual de cierre — Sprint 6 (actualizada 04/11/2026)
 
-**Naturaleza:** retrospectiva de análisis basada en registros de GitHub, Render, Aiven y pruebas; **no equivale a acta firmada de ceremonia Scrum**. No constan participantes, votos, fecha oficial de inicio/cierre ni moderador de una reunión. El seguimiento técnico en Issues se asignó a `rabv7399`; los responsables funcionales mencionados abajo son **roles propuestos**, no acuerdos atribuidos a personas.
+**Naturaleza:** revisión individual de las actividades del Sprint 6 sustentada en GitHub, Render, Aiven y pruebas. Responsable: **Ronald Albert Bustamante Villanueva**. No se cuenta con fechas formales de inicio y fin del sprint ni con acta firmada de ceremonia Scrum. Los roles siguientes son funciones desempeñadas por la misma persona; no constituyen revisores independientes.
 
 ### 5.1 Balance verificable del ciclo
 
 | Aspecto | Evidencia de APF3 | Resultado |
 |---|---|---|
 | Despliegue de versión final | Figura 41: Render `develop` / `8b07733` / `Live`; Figura 42: interfaz HTTPS muestra APF3 | **Verificado** |
-| Pruebas funcionales postdespliegue | Figura 43: login JWT satisfactorio; Figura 44: categorías/productos protegidos HTTP 200 | **Verificado para estos dos flujos**; no implica probar reservas |
-| Integración y protección del código | PR #46 fusionó a `main`; Ruleset `main` Active, Figura 45; CI Java 21/Maven del commit final satisfactoria | **Verificado**. No se exigen aprobaciones humanas: mínimo 0 |
+| Pruebas funcionales postdespliegue | Figura 43: login JWT satisfactorio; Figura 44: categorías/productos protegidos HTTP 200 | **Verificado**; además se comprobó reserva de prueba 201, repetición 409 y cancelación del dato ID 5 (Figuras 66–68) |
+| Integración y protección del código | PR #64 integrado, ramas sin diferencias (Figuras 74–75), Ruleset observado Active (Figura 45), CI con 17 pruebas (Figura 76) | **Verificado**. No se exigen aprobaciones humanas: mínimo 0 |
 | Gestión de solicitudes | Issues #36–#38, plantilla Figura 46, caso SIM-REQ-INFO-01 #48 con etapas y cierre simulado Figura 47 | **Proceso documentado**; sin alta de usuarios ni SLA real medido |
 | Capacidad de sistema y BD | k6 2 VU × 12 s, 24/24 HTTP 200, p95 127,26 ms en GET /; tres EXPLAIN Aiven y HikariCP parametrizado | **Medición ligera**; no prueba estrés ni CPU/RAM productivos |
 
 ### 5.2 ¿Qué funcionó? ¿Qué impedimentos hubo? ¿Qué aprendimos?
 
-- **Funcionó:** control de commits mediante PR, pruebas Maven/H2, corrección del encabezado a APF3, control RFC, Render Auto-Deploy y verificación de JWT y API protegida con resultado HTTP 200.
+- **Funcionó:** cambios mediante PR, pruebas Maven/H2, control RFC, publicación en Render y verificación de JWT. Se integró Swagger (PR #62), se comprobaron respuestas 401 sin JWT y 200 con JWT (Figuras 70–73), se sincronizaron las ramas (PR #64) y se aprobaron 17 pruebas (Figura 76).
 - **Impedimentos observados:** arranque en frío y una incidencia previa en Render, Aiven temporalmente `Powered off`, desfase del commit publicado debido a `Root Directory=backend/` mientras los cambios anteriores solo tocaban documentación/workflows, falta de métricas de CPU/RAM del plan gratuito.
 - **Aprendizaje clave:** `BUILD SUCCESS`, despliegue exitoso, revisión `Live` y prueba funcional autenticada son evidencias **distintas y complementarias**. Una respuesta HTTP 401 no representa un login exitoso; un caso cerrado como simulación no demuestra SLA real.
-- **No demostrado:** Swagger/OpenAPI implementado, aprobación independiente de altas ADMIN/OPERADOR, auditoría inmutable, pruebas de reservas reales, disponibilidad contractual y acta firmada de reunión retrospectiva.
+- **No demostrado:** aprobación independiente de altas ADMIN/OPERADOR, auditoría inmutable, operación de reservas de clientes reales, disponibilidad contractual y ceremonia Scrum firmada. Sí se verificó una reserva productiva de prueba, su rechazo por superposición y la cancelación posterior del dato (Figuras 66–68).
 
 ### 5.3 Acciones de mejora con responsable y condición de cierre
 
-| Acción | Responsable propuesto | Plazo objetivo propuesto | Criterio verificable | Estado |
-|---|---|---|---|---|
-| Publicar APF3 con HTTPS y revisión correcta | Responsable despliegue | Entrega APF3 | Figuras 41–42 y SHA `8b07733` | **Cerrada técnicamente** |
-| Repetir login y consulta protegida tras publicar | Responsable QA | Entrega APF3 | Figuras 43–44, JWT y HTTP 200 | **Cerrada técnicamente** |
-| Sincronizar/proteger `main` y verificar CI | Responsable Git | Entrega APF3 | PR #46, Ruleset Active Figura 45, check CI | **Cerrada técnicamente** |
-| Registrar solicitudes y recorrido ITIL | Responsable servicio | Entrega APF3 | Figuras 46–47, plantilla, Issues y caso #48 | **Demostración documental cerrada**; aprobación real pendiente |
-| Ampliar prueba k6 a endpoint autenticado y métricas CPU/RAM | QA / infraestructura | Próximo ciclo | Resultados de VU, p95, errores y captura confiable de uso | **Pendiente** |
-| Evaluar SpringDoc / Swagger compatible con Spring Boot | Backend | Próximo ciclo | Ruta OpenAPI accesible y CI verde | **Pendiente** |
-| Aprobar accesos reales y demostrar segregación SoD | Negocio / ejecutor distinto | Próximo ciclo | Aprobación firmada o registro real, mínimo privilegio y evidencia | **Pendiente** |
+Responsable de todas las acciones: **Ronald Albert Bustamante Villanueva**, según la función indicada.
 
-**Precisión:** estas acciones son propuestas sustentadas en datos técnicos; no afirmar que fueron aprobadas mediante reunión con participantes no identificados. Las fechas son objetivos académicos y no compromisos de SLA.
+| Acción | Función | Plazo objetivo | Criterio verificable | Estado |
+|---|---|---|---|---|
+| Publicar APF3 con HTTPS y revisión correcta | Despliegue | Verificado al 04/11/2026 | Render Live 7b08b3a y Swagger en producción, Figuras 70–73 | Completada para la revisión comprobada |
+| Validar consultas y regla de reservas | Pruebas | Verificado al 04/11/2026 | Consultas protegidas 200; reserva de prueba 201, repetición 409 y cancelación, Figuras 66–68 y 73 | Completada para los casos ejecutados |
+| Sincronizar main/develop y verificar CI | Control de versiones | Verificado al 04/11/2026 | PR #64, comparación idéntica y 17 pruebas satisfactorias, Figuras 74–76 | Completada; mantener tras cada cambio |
+| Registrar solicitudes y recorrido de atención | Gestión del servicio | Cierre APF3 | Plantilla y caso simulado #48, Figuras 46–47 | Demostración documental completada; solicitudes reales pendientes |
+| Integrar SpringDoc/Swagger | Desarrollo backend | Completado al 04/11/2026 | PR #62, interfaz pública y seguridad JWT comprobadas, Figuras 70–73; CI, Figura 76 | Completada |
+| Ampliar k6 a un endpoint autenticado | Pruebas | Próximo ciclo, fecha por definir | Registrar carga, duración, p95, errores y alcance con cuenta autorizada | Pendiente |
+| Completar métricas CPU/RAM y del pool | Infraestructura | Próximo ciclo, sujeto a observabilidad disponible | Lecturas con fecha, intervalo y fuente; distinguir MySQL de HikariCP | Pendiente |
+| Formalizar aprobación de accesos y segregación | Gestión del servicio | Antes de un alta real privilegiada | Aprobador autorizado distinto del ejecutor, mínimo privilegio y registro de cierre | Pendiente; el trabajo individual no acredita segregación independiente |
+
+Los plazos pendientes son objetivos académicos, no compromisos de SLA. No se atribuyen acuerdos de reunión ni aprobaciones externas.
 
 ### 5.4 Indicadores y cierre de la retrospectiva
 
-- **CI:** [run #41720071675](https://github.com/rabv7399/Integrador2-grupoRonald/actions/runs/41720071675) `success` para la versión `8b07733`; runs posteriores de `main` documentan sincronización sin alterar producción.
+- **CI:** [ejecución 41782116127](https://github.com/rabv7399/Integrador2-grupoRonald/actions/runs/41782116127), 17 pruebas, cero fallos, errores u omisiones y BUILD SUCCESS (Figura 76).
 - **Regresión productiva:** Render Live, HTTPS, login JWT y consulta de categorías/productos verificados con Figuras 41–44. No inferir disponibilidad anual a partir de estas pruebas.
 - **SLA de solicitudes reales:** no evaluable; los tickets #36–#38 continúan abiertos y el #48 es una simulación, excluida de tasas de satisfacción/atención real.
 - **Rendimiento:** el p95 de k6 corresponde a `GET /` con carga ligera, no a transacciones autenticadas ni a saturación. Los `EXPLAIN` de MySQL expresan planes estimados y uso de índices, no tiempos reales.
