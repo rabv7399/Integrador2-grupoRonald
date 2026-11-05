@@ -8,8 +8,8 @@ Responsable: Ronald Albert Bustamante Villanueva. Revisión 04/11/2026. Base: gu
 | Retrospectiva Sprint 6 | Logros, impedimentos, aprendizaje y compromisos con responsable y criterio | Revisión individual documentada; Figura 81; fechas formales del sprint por confirmar |
 | Solicitudes | Catálogo, procedimiento, herramientas y caso trazable | Documentado; Figuras 82–85; simulación separada de atención real |
 | Cambio | Infraestructura, aplicaciones, documentación, calendario, CI y reversión | Documentado y CI comprobada; Figuras 74–78 y 86 |
-| Capacidad | Demanda hipotética, mediciones, limitaciones, decisiones y seguimiento | Plan documentado; falta ejecutar y analizar muestra autenticada reproducible |
-| Despliegue | SHA Live y comprobación funcional posterior con fecha y alcance | a9897e4 Live observado; falta vincular nueva lectura autenticada a esa revisión |
+| Capacidad | Demanda hipotética, mediciones, limitaciones, decisiones y seguimiento | Plan documentado; muestra autenticada exploratoria ejecutada y recalculada, Figura 93; repetición/carga sostenida y observabilidad pendientes |
+| Despliegue | SHA Live y comprobación funcional posterior con fecha y alcance | a9897e4 Live observado; 20/20 lecturas autenticadas posteriores, SHA declarado por operador en JSON; no es verificación automática de versión |
 | Entregables | Informe consistente, figuras legibles, presentación y ensayo | Pendientes |
 
 ## Sondeo autenticado limitado
@@ -24,7 +24,7 @@ Archivo: [performance/sondeo_autenticado_apf3.py](../performance/sondeo_autentic
 6. Introducir el SHA observado en Render cuando se solicite. Es una referencia declarada por el operador, no un SHA obtenido automáticamente desde la aplicación.
 7. Conservar el JSON y una captura del resumen; comprobar cantidad prevista/obtenida, errores, preparación excluida, media, mediana, p95, máximo y RPS. El archivo no guarda cuerpo de respuestas, correo, contraseña ni token.
 
-**Estado:** script preparado y comprobado localmente con respuestas simuladas; pendiente de ejecución real. No atribuir resultados de simulación a Render. La duración incluye pausas; los tiempos por solicitud incluyen red y descarga, no solo servidor. El p95 usa rango más próximo y una muestra pequeña (10 observaciones por ruta si se completa): es exploratorio, no certifica SLA, estrés, capacidad máxima, 20 usuarios o 6 RPS.
+**Estado:** ejecución real completada, JSON conservado y 20 mediciones recalculadas; Figura 93. Véase el análisis en el plan de capacidad. Los ensayos locales previos con respuestas simuladas no se usan como evidencia de producción. La duración incluye pausas; los tiempos por solicitud incluyen red y descarga, no solo servidor. El p95 usa rango más próximo y una muestra pequeña (10 observaciones por ruta si se completa): es exploratorio, no certifica SLA, estrés, capacidad máxima, 20 usuarios o 6 RPS.
 
 ## Criterios de análisis posterior
 
