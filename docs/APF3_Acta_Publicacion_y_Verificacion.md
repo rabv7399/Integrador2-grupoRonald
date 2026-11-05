@@ -15,13 +15,14 @@
 | Retrospectiva Sprint 6 | Revisión individual con resultados y compromisos | Figura 81 |
 | Solicitudes de servicio | Catálogo, flujo, herramientas y tablero; accesos reales pendientes | Figuras 82–85; caso #48 identificado como simulación |
 | Control de cambios | Calendario y matriz por infraestructura, aplicaciones, documentación y calendario | Figuras 78 y 86 |
+| Sondeo autenticado posterior | 20/20 lecturas válidas de categorías/productos; 20,56 s y 0,973 RPS; SHA a9897e4 declarado por operador | Figura 93 y JSON original |
 | Capacidad | Umbrales propuestos y plan por fases con responsables y criterios | Figuras 87–89; las Figuras 87–88 preceden a la actualización del PR #67 |
 
 **Trazabilidad de revisiones:** el backend de producción verificado es a9897e4, integrado mediante PR #64. Los PR #65, #66 y #67 actualizaron calendario, retrospectiva y capacidad; no modificaron código del backend. La igualdad de ramas se volvió a comprobar tras cada integración. Estos cambios documentales no acreditan que Render haya publicado otro SHA. Esta consolidación también es exclusivamente documental.
 
 **Validación funcional previa:** consultas protegidas 200 y reserva productiva de prueba 201, repetición 409 y cancelación del registro ID 5 (Figuras 66–68). No se repitieron reservas para obtener las capturas 90–91 ni se atribuyen estas operaciones a una nueva prueba posterior al despliegue a9897e4.
 
-**Límites y pendientes:** no hay validación de 20 usuarios ni 6 RPS sostenidos, p95 autenticado reproducible, métricas efectivas del pool o CPU/RAM del backend. Memoria Aiven observada: 86 %, sin demostrar tendencia sostenida. No se declara aprobación independiente de accesos, disponibilidad contractual, restauración ensayada ni aceptación funcional final. La consulta de mesas en producción sigue como mejora pendiente, con permisos comprobados en H2. El informe y la presentación permanecen pendientes de consolidación.
+**Límites y pendientes:** no hay validación de 20 usuarios ni 6 RPS sostenidos, repetición del p95 autenticado exploratorio, métricas efectivas del pool o CPU/RAM del backend. Memoria Aiven observada: 86 %, sin demostrar tendencia sostenida. No se declara aprobación independiente de accesos, disponibilidad contractual, restauración ensayada ni aceptación funcional final. La consulta de mesas en producción sigue como mejora pendiente, con permisos comprobados en H2. El informe y la presentación permanecen pendientes de consolidación.
 
 Las secciones históricas conservan las cifras y estados de cada revisión; este resumen prevalece para el cierre técnico actual. Las figuras son capturas aportadas por el responsable; su numeración no implica que los archivos de imagen estén incluidos en el repositorio.
 
@@ -190,3 +191,25 @@ Las figuras corresponden a capturas aportadas durante la validación; esta tabla
 - Las observaciones originales del docente se registran en APF3_OpenAPI_y_Preparacion_Demo.md. La recomendación de documentación interactiva está implementada y comprobada en producción.
 
 La sincronización quedó comprobada mediante PR #64 y comparación de contenido (Figuras 74–75); las integraciones documentales posteriores se verificaron igualmente. El informe se actualizará al final del cierre técnico, según la indicación del responsable.
+
+
+## Sondeo autenticado verificado — 04/11/2026, Figura 93
+
+Fuente: [JSON original de mediciones](../performance/results/APF3_sondeo_autenticado_20261104_191041.json), aportado por el responsable y contrastado con el resumen de consola. Inicio registrado: 04/11/2026 a las 19:05:31 (Perú), equivalente a 05/11/2026 00:05:31 UTC. El nombre del archivo indica su guardado a las 19:10:41; el intervalo hasta guardar incluye interacción y no es duración de carga. SHA declarado por el operador: `a9897e4`, consistente con la Figura 90; el script no consulta automáticamente la versión del servidor.
+
+Dos trabajadores, diez lecturas por trabajador, pausa de un segundo entre ciclos: **20/20 respuestas 200 con lista JSON válida, cero fallos y sin interrupción**. Ventana medida: **20,56 s**; tasa observada: **0,973 solicitudes/s**, calculada como 20 / 20,56 e incluidas las pausas. No representa throughput máximo.
+
+| Ruta | Solicitudes válidas | Media (ms) | p50 por rango próximo (ms) | p95 (ms) | Máximo (ms) |
+|---|---:|---:|---:|---:|---:|
+| /api/categorias | 10/10 | 1075,90 | 989,39 | 1499,39 | 1499,39 |
+| /api/productos | 10/10 | 1027,61 | 995,50 | 1194,00 | 1194,00 |
+
+Se recalcularon conteos, media, percentiles y máximo a partir de las 20 muestras: coinciden con el resumen. El p50 usa rango más próximo (quinto valor de diez), no el promedio de los dos valores centrales. El p95 corresponde al máximo con diez observaciones por ruta. Las duraciones incluyen red y descarga, no solo procesamiento del backend. Las muestras están agrupadas por trabajador y no constituyen una cronología global de llegada.
+
+Preparación excluida: categorías **2743,58 ms** y productos **1427,84 ms**, ambas 200 con lista válida. No se atribuyen esos tiempos a cold start sin diagnóstico. El JSON no registra duración del login ni credenciales. Antes de esta ejecución hubo intentos cancelados observados en consola (error genérico y login no validado), sin JSON ni tiempos completos; no se incluyen en la tasa de éxito de esta muestra ni se omiten como incidencias de preparación.
+
+**Decisión:** cerrar el sondeo autenticado básico y conservarlo como línea base exploratoria. Las lecturas protegidas prueban funcionamiento de categorías y productos en esta ejecución, pero no una regresión completa de reservas o mesas. No ampliar recursos ni el pool con estos datos solamente. En el próximo ciclo, repetir el mismo método y obtener una muestra mayor en ventana acordada, con métricas simultáneas del backend/pool y objetivos definidos para estas rutas. Los umbrales del GET público no se aplican automáticamente aquí.
+
+**Pendientes:** estabilidad en ejecuciones repetidas, carga sostenida, CPU/RAM del backend, uso efectivo de HikariCP y validación del escenario de 20 usuarios / 6 RPS. La muestra no certifica SLA, disponibilidad ni capacidad máxima. La RAM histórica de Aiven al 86 % no fue medida simultáneamente con este sondeo.
+
+**Figura 93:** resumen de consola del sondeo autenticado, 20/20 consultas completadas sin interrupción. La captura aportada no implica que su imagen esté incluida en el repositorio.

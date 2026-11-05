@@ -1,0 +1,208 @@
+{
+  "started_utc": "2026-11-05T00:05:31.515670+00:00",
+  "base_url": "https://delicias-peruanas-api.onrender.com",
+  "revision_observed": "a9897e4",
+  "workers": 2,
+  "planned_requests": 20,
+  "measured_requests": 20,
+  "aborted": false,
+  "duration_seconds": 20.56,
+  "observed_rps": 0.973,
+  "percentile_method": "nearest rank; muestra exploratoria peque\u00f1a",
+  "warmup_excluded": [
+    {
+      "route": "/api/categorias",
+      "status": 200,
+      "duration_ms": 2743.58,
+      "valid_list": true
+    },
+    {
+      "route": "/api/productos",
+      "status": 200,
+      "duration_ms": 1427.84,
+      "valid_list": true
+    }
+  ],
+  "summary": {
+    "/api/categorias": {
+      "requests": 10,
+      "valid_200": 10,
+      "failed": 0,
+      "mean_ms": 1075.9,
+      "p50_ms": 989.39,
+      "p95_ms": 1499.39,
+      "max_ms": 1499.39
+    },
+    "/api/productos": {
+      "requests": 10,
+      "valid_200": 10,
+      "failed": 0,
+      "mean_ms": 1027.61,
+      "p50_ms": 995.5,
+      "p95_ms": 1194.0,
+      "max_ms": 1194.0
+    }
+  },
+  "samples": [
+    {
+      "worker": 0,
+      "cycle": 1,
+      "route": "/api/categorias",
+      "status": 200,
+      "duration_ms": 985.32,
+      "valid_list": true
+    },
+    {
+      "worker": 0,
+      "cycle": 2,
+      "route": "/api/productos",
+      "status": 200,
+      "duration_ms": 1194.0,
+      "valid_list": true
+    },
+    {
+      "worker": 0,
+      "cycle": 3,
+      "route": "/api/categorias",
+      "status": 200,
+      "duration_ms": 918.01,
+      "valid_list": true
+    },
+    {
+      "worker": 0,
+      "cycle": 4,
+      "route": "/api/productos",
+      "status": 200,
+      "duration_ms": 858.81,
+      "valid_list": true
+    },
+    {
+      "worker": 0,
+      "cycle": 5,
+      "route": "/api/categorias",
+      "status": 200,
+      "duration_ms": 1305.29,
+      "valid_list": true
+    },
+    {
+      "worker": 0,
+      "cycle": 6,
+      "route": "/api/productos",
+      "status": 200,
+      "duration_ms": 976.59,
+      "valid_list": true
+    },
+    {
+      "worker": 0,
+      "cycle": 7,
+      "route": "/api/categorias",
+      "status": 200,
+      "duration_ms": 1011.63,
+      "valid_list": true
+    },
+    {
+      "worker": 0,
+      "cycle": 8,
+      "route": "/api/productos",
+      "status": 200,
+      "duration_ms": 1108.27,
+      "valid_list": true
+    },
+    {
+      "worker": 0,
+      "cycle": 9,
+      "route": "/api/categorias",
+      "status": 200,
+      "duration_ms": 1172.49,
+      "valid_list": true
+    },
+    {
+      "worker": 0,
+      "cycle": 10,
+      "route": "/api/productos",
+      "status": 200,
+      "duration_ms": 1005.95,
+      "valid_list": true
+    },
+    {
+      "worker": 1,
+      "cycle": 1,
+      "route": "/api/productos",
+      "status": 200,
+      "duration_ms": 995.5,
+      "valid_list": true
+    },
+    {
+      "worker": 1,
+      "cycle": 2,
+      "route": "/api/categorias",
+      "status": 200,
+      "duration_ms": 1499.39,
+      "valid_list": true
+    },
+    {
+      "worker": 1,
+      "cycle": 3,
+      "route": "/api/productos",
+      "status": 200,
+      "duration_ms": 940.78,
+      "valid_list": true
+    },
+    {
+      "worker": 1,
+      "cycle": 4,
+      "route": "/api/categorias",
+      "status": 200,
+      "duration_ms": 932.89,
+      "valid_list": true
+    },
+    {
+      "worker": 1,
+      "cycle": 5,
+      "route": "/api/productos",
+      "status": 200,
+      "duration_ms": 969.35,
+      "valid_list": true
+    },
+    {
+      "worker": 1,
+      "cycle": 6,
+      "route": "/api/categorias",
+      "status": 200,
+      "duration_ms": 939.09,
+      "valid_list": true
+    },
+    {
+      "worker": 1,
+      "cycle": 7,
+      "route": "/api/productos",
+      "status": 200,
+      "duration_ms": 1148.57,
+      "valid_list": true
+    },
+    {
+      "worker": 1,
+      "cycle": 8,
+      "route": "/api/categorias",
+      "status": 200,
+      "duration_ms": 989.39,
+      "valid_list": true
+    },
+    {
+      "worker": 1,
+      "cycle": 9,
+      "route": "/api/productos",
+      "status": 200,
+      "duration_ms": 1078.28,
+      "valid_list": true
+    },
+    {
+      "worker": 1,
+      "cycle": 10,
+      "route": "/api/categorias",
+      "status": 200,
+      "duration_ms": 1005.52,
+      "valid_list": true
+    }
+  ]
+}

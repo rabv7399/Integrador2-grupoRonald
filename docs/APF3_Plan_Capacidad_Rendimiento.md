@@ -8,7 +8,7 @@ Responsable del plan: **Ronald Albert Bustamante Villanueva**, proyecto individu
 
 **Rendimiento:** k6 público registró 24/24 respuestas 200 y p95 127,26 ms con 2 VUs. En navegador, la API protegida registró 1,16 s y 1,80 s antes del cambio (Figura 57); una medición posterior mostró 9,18 s en ambas consultas (Figura 61), y otra 774 ms y 773 ms (Figura 62). Son observaciones individuales, sin p95 autenticado ni causalidad demostrada; no prueban mejora sostenida ni cumplimiento de SLA. El JOIN se observó en logs (Figura 63).
 
-Permanecen pendientes la carga reproducible autenticada, las métricas del pool y el uso real de CPU/RAM del backend. El escenario de 20 usuarios y 6 RPS es una hipótesis sin validar. Los umbrales de la sección 5 son propuestas de seguimiento, no alertas permanentes configuradas. La sección 6 establece responsables, plazos condicionados y criterios de cierre.
+El sondeo autenticado básico ya fue ejecutado y recalculado: 20/20 consultas válidas en 20,56 s y 0,973 RPS (Figura 93 y sección de sondeo al final). Permanecen pendientes la repetición y ampliación de la muestra, las métricas del pool y el uso real de CPU/RAM del backend. El escenario de 20 usuarios y 6 RPS es una hipótesis sin validar. Los umbrales de la sección 5 son propuestas de seguimiento, no alertas permanentes configuradas. La sección 6 establece responsables, plazos condicionados y criterios de cierre.
 
 Las referencias antiguas a despliegues y cifras de pruebas se conservan como antecedentes, no como estado actual. Véanse la [guía de cierre](APF3_Guia_Cierre_Semana13.md) y el [acta de verificación](APF3_Acta_Publicacion_y_Verificacion.md).
 
@@ -140,15 +140,15 @@ Los valores son **umbrales de diseño**. La lectura más reciente de memoria Aiv
 
 | Fase y acción | Función | Plazo o condición | Criterio de cierre | Estado al 04/11/2026 |
 |---|---|---|---|---|
-| 1. Consolidar línea base y separar primer acceso | Pruebas | Antes del cierre documental APF3; repetir mediciones en el próximo ciclo | Registrar ruta, carga, duración, p95, fallos y RPS; conservar por separado tiempos individuales del navegador | Sondeo público 2 VUs completado; muestra autenticada suficiente pendiente |
+| 1. Consolidar línea base y separar primer acceso | Pruebas | Antes del cierre documental APF3; repetir mediciones en el próximo ciclo | Registrar ruta, carga, duración, p95, fallos y RPS; conservar por separado tiempos individuales del navegador | Sondeo público completado; línea base autenticada exploratoria de 20 lecturas completada (Figura 93); repetición y ampliación pendientes |
 | 2. Revisar base de datos y memoria | Base de datos | Próxima revisión disponible; antes de aumentar carga o pool | Conservar tres EXPLAIN y lecturas globales; revisar tendencia de RAM y diferenciar sesiones MySQL del pool | EXPLAIN y lecturas globales completados; RAM observada 86 %; métricas Hikari pendientes |
-| 3. Ampliar carga autenticada gradualmente | Pruebas | Próximo ciclo, en ensayo o ventana acordada | Ejecutar primero carga limitada con cuenta autorizada; registrar p95 y 5xx; evaluar 5 y 10 VUs solo si no hay degradación | Pendiente; no valida todavía 20 usuarios ni 6 RPS |
+| 3. Ampliar carga autenticada gradualmente | Pruebas | Próximo ciclo, en ensayo o ventana acordada | Ejecutar primero carga limitada con cuenta autorizada; registrar p95 y 5xx; evaluar 5 y 10 VUs solo si no hay degradación | Primera carga limitada completada: dos trabajadores, 20 lecturas; ampliación pendiente; no valida 20 usuarios ni 6 RPS |
 | 4. Decidir cambios de recursos | Infraestructura | Tras obtener carga y métricas representativas | Comparar objetivos, coste y recursos; registrar RFC con justificación, validación y reversión antes de cambiar plan | Condicionado a resultados; sin ampliación de recursos ejecutada |
 | 5. Revisar el plan tras cambios | Gestión del servicio | Después de cambios de consultas, carga, plan o despliegue | Actualizar matriz, evidencias, riesgos y pendientes con fecha de revisión | Seguimiento en curso |
 
 **Reglas de actuación:** separar preparación por inactividad de la prueba medida; detener el incremento de carga ante degradación o errores; revisar logs, conexiones y recursos antes de continuar. Los umbrales de GET público no se trasladan automáticamente a la API autenticada. No aumentar el pool por observar margen en max_connections sin comprobar memoria y comportamiento bajo carga.
 
-**Completado:** configuración HikariCP integrada, tres EXPLAIN reales, sondeo público de 2 VUs con 24/24 respuestas 200, mediciones individuales autenticadas y JOIN observado tras PR #58. **Pendiente:** p95 autenticado reproducible, uso efectivo del pool, CPU/RAM del backend y validación de la hipótesis de 6 RPS sostenidos. La documentación de Swagger y las 17 pruebas acreditan funcionalidad e integración; no sustituyen estas mediciones de capacidad.
+**Completado:** configuración HikariCP integrada, tres EXPLAIN reales, sondeo público de 2 VUs con 24/24 respuestas 200, mediciones individuales autenticadas y JOIN observado tras PR #58. **Medición adicional completada:** p95 autenticado exploratorio con datos originales y método conservados (Figura 93). **Pendiente:** repetición y ampliación de la muestra autenticada, uso efectivo del pool, CPU/RAM del backend y validación de la hipótesis de 6 RPS sostenidos. La documentación de Swagger y las 17 pruebas acreditan funcionalidad e integración; no sustituyen estas mediciones de capacidad.
 
 ## 7. Criterios de validación del pool HikariCP (integrado; medición runtime pendiente)
 
@@ -291,3 +291,25 @@ SHOW VARIABLES LIKE 'max_connections';
 **Figura N.º 55:** `APF3_E55_Tiempos_API_Protegida_Chrome_Network.png` — *Medición en Chrome DevTools de las peticiones protegidas de categorías (HTTP 200, 2,96 s) y productos (HTTP 200, 3,16 s) con sesión JWT activa en Render.* La imagen para el informe conserva las filas y tiempos pero recorta el correo y cabecera del navegador.
 
 **Limitación del criterio 5:** esta evidencia agrega medición funcional auténtica de latencia de API protegida, pero sigue pendiente una muestra suficiente para percentiles/p95 de la API, aislamiento de arranque en frío y observabilidad de CPU/RAM de Render y del pool HikariCP.
+
+
+## Sondeo autenticado verificado — 04/11/2026, Figura 93
+
+Fuente: [JSON original de mediciones](../performance/results/APF3_sondeo_autenticado_20261104_191041.json), aportado por el responsable y contrastado con el resumen de consola. Inicio registrado: 04/11/2026 a las 19:05:31 (Perú), equivalente a 05/11/2026 00:05:31 UTC. El nombre del archivo indica su guardado a las 19:10:41; el intervalo hasta guardar incluye interacción y no es duración de carga. SHA declarado por el operador: `a9897e4`, consistente con la Figura 90; el script no consulta automáticamente la versión del servidor.
+
+Dos trabajadores, diez lecturas por trabajador, pausa de un segundo entre ciclos: **20/20 respuestas 200 con lista JSON válida, cero fallos y sin interrupción**. Ventana medida: **20,56 s**; tasa observada: **0,973 solicitudes/s**, calculada como 20 / 20,56 e incluidas las pausas. No representa throughput máximo.
+
+| Ruta | Solicitudes válidas | Media (ms) | p50 por rango próximo (ms) | p95 (ms) | Máximo (ms) |
+|---|---:|---:|---:|---:|---:|
+| /api/categorias | 10/10 | 1075,90 | 989,39 | 1499,39 | 1499,39 |
+| /api/productos | 10/10 | 1027,61 | 995,50 | 1194,00 | 1194,00 |
+
+Se recalcularon conteos, media, percentiles y máximo a partir de las 20 muestras: coinciden con el resumen. El p50 usa rango más próximo (quinto valor de diez), no el promedio de los dos valores centrales. El p95 corresponde al máximo con diez observaciones por ruta. Las duraciones incluyen red y descarga, no solo procesamiento del backend. Las muestras están agrupadas por trabajador y no constituyen una cronología global de llegada.
+
+Preparación excluida: categorías **2743,58 ms** y productos **1427,84 ms**, ambas 200 con lista válida. No se atribuyen esos tiempos a cold start sin diagnóstico. El JSON no registra duración del login ni credenciales. Antes de esta ejecución hubo intentos cancelados observados en consola (error genérico y login no validado), sin JSON ni tiempos completos; no se incluyen en la tasa de éxito de esta muestra ni se omiten como incidencias de preparación.
+
+**Decisión:** cerrar el sondeo autenticado básico y conservarlo como línea base exploratoria. Las lecturas protegidas prueban funcionamiento de categorías y productos en esta ejecución, pero no una regresión completa de reservas o mesas. No ampliar recursos ni el pool con estos datos solamente. En el próximo ciclo, repetir el mismo método y obtener una muestra mayor en ventana acordada, con métricas simultáneas del backend/pool y objetivos definidos para estas rutas. Los umbrales del GET público no se aplican automáticamente aquí.
+
+**Pendientes:** estabilidad en ejecuciones repetidas, carga sostenida, CPU/RAM del backend, uso efectivo de HikariCP y validación del escenario de 20 usuarios / 6 RPS. La muestra no certifica SLA, disponibilidad ni capacidad máxima. La RAM histórica de Aiven al 86 % no fue medida simultáneamente con este sondeo.
+
+**Figura 93:** resumen de consola del sondeo autenticado, 20/20 consultas completadas sin interrupción. La captura aportada no implica que su imagen esté incluida en el repositorio.
