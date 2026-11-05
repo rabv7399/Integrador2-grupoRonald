@@ -33,3 +33,31 @@ Archivo: [performance/sondeo_autenticado_apf3.py](../performance/sondeo_autentic
 - Revisar memoria/conexiones Aiven alrededor de la ejecución si hay datos disponibles, con fecha e intervalo; no atribuir sesiones globales a HikariCP.
 - Si la muestra es insatisfactoria, diagnosticar antes de ampliar carga. Una ampliación requiere entorno o ventana adecuados; no se ejecuta por defecto.
 - La revisión documental no sustituye el informe y la presentación. Incluir seis secciones, enlaces funcionales, leyendas legibles y conclusiones limitadas a los resultados obtenidos. La fecha oficial y las fechas del Sprint 6 deben confirmarse con registros, sin inventarlas.
+
+
+## Revisión final contra la guía de Semana 13 — 04/11/2026
+
+La guía suministrada exige seis contenidos en informe y presentación; no aporta ponderaciones ni una rúbrica numérica. La valoración siguiente verifica cobertura y evidencia disponible, no garantiza una nota ni declara terminados los entregables.
+
+| Requisito de la guía | Evidencia disponible | Juicio y condición de entrega |
+|---|---|---|
+| 1. Levantamiento APF2 | Tres comentarios originales contrastados; preparación ante inactividad; Swagger 401/200; ramas y CI; Figuras 70–79 | Contenido cubierto. Incluir acción, evidencia y alcance de cada observación; no afirmar que se eliminó el cold start ni que hubo auditoría histórica completa de secretos. |
+| 2. Retrospectiva Sprint 6 | Logros, impedimentos, aprendizajes, responsable y compromisos; Figura 81 y actualización PR #71 | Contenido cubierto como revisión individual. Ventana documental reconstruida 02–04/11; no presentar estas fechas como planificación original ni inventar una reunión de equipo. |
+| 3. Gestión de solicitudes | Catálogo de información/acceso, procedimiento de cinco etapas, plantillas, Issues/Projects y simulación #48; Figuras 46–47 y 82–85 | Definiciones, procedimientos y herramientas cubiertos. Distinguir demostración de atención real. Preparar diagrama legible para el informe; Figura 83 es demasiado estrecha para su reproducción sin adaptación. |
+| 4. Gestión del cambio | Matriz de infraestructura/aplicaciones/documentación/calendario, RFC, PR, CI y reversión; Figuras 74–78 y 86 | Contenido cubierto. Conservar cronología y separar fechas previstas de ejecuciones; documentar funciones asumidas por el responsable individual. |
+| 5. Gestión de capacidad | Plan por fases, demanda hipotética, EXPLAIN, k6 público, JSON autenticado 20/20 y seguimiento Aiven 82 %; Figuras 28–31, 49–54, 87–89 y 93–94 | Análisis y plan disponibles con alcance exploratorio. Explicar resultados, límites, decisión de mantener recursos y seguimiento; no declarar validados 20 usuarios, 6 RPS o SLA. |
+| 6. Despliegue final | Docker/Render, SHA a9897e4 Live, HTTPS, Swagger y consultas protegidas posteriores; Figuras 70–73 y 90–93 | Publicación y verificación técnica evidenciadas. Vincular cada prueba con su revisión y no atribuir reservas previas a la última prueba. El SHA del sondeo fue declarado por operador. |
+
+### Pendientes necesarios antes de entregar
+
+1. Consolidar el informe con los seis apartados en el orden de la guía, carátula/datos, conclusiones, enlaces y anexos; conservar el formato APF2 solicitado.
+2. Revisar coherencia: fechas y zonas horarias, SHA por evidencia, métricas, estados vigentes e históricos. No copiar como actuales pendientes antiguos ya resueltos.
+3. Seleccionar figuras legibles; redibujar el procedimiento de solicitudes desde su fuente, conservar numeración y ocultar credenciales/tokens en cualquier captura.
+4. Preparar presentación con los seis contenidos, diseño sobrio y evidencias seleccionadas; realizar ensayo y preparar la demo considerando inactividad de Render.
+5. Confirmar fecha oficial de entrega/exposición y cualquier plantilla o indicación adicional del aula virtual. No inventarlas.
+
+### Mejoras técnicas que permanecen planificadas
+
+Repetir y ampliar la muestra autenticada, medir CPU/RAM del backend y HikariCP, validar carga sostenida, ensayar restauración y consultar mesas en producción con rol autorizado. Formalizar aprobaciones independientes antes de altas privilegiadas reales. La guía suministrada no las enumera como pruebas específicas obligatorias; no se declaran realizadas ni se convierten en requisitos adicionales por inferencia. Su necesidad operativa se mantiene en los planes y dependerá de retroalimentación adicional.
+
+**Conclusión de revisión:** los seis contenidos cuentan con material técnico/documental suficiente para comenzar la consolidación de los entregables con sus límites explícitos. La entrega completa sigue pendiente del informe, presentación y revisión de calidad; no equivale a aceptación del docente ni a garantía de 20/20.
