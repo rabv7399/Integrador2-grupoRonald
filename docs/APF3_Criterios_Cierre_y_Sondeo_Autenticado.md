@@ -5,7 +5,7 @@ Responsable: Ronald Albert Bustamante Villanueva. Revisión 04/11/2026. Base: gu
 | Apartado | Criterio verificable de cierre | Estado |
 |---|---|---|
 | Observaciones APF2 | Tres comentarios originales, acción, evidencia y límites | Documentado; Figuras 70–79 |
-| Retrospectiva Sprint 6 | Logros, impedimentos, aprendizaje y compromisos con responsable y criterio | Revisión individual documentada; Figura 81; fechas formales del sprint por confirmar |
+| Retrospectiva Sprint 6 | Logros, impedimentos, aprendizaje y compromisos con responsable y criterio | Revisión individual y ventana documental reconstruida 02–04/11/2026 con enlaces a Issues/PR; fechas originales del sprint no acreditadas |
 | Solicitudes | Catálogo, procedimiento, herramientas y caso trazable | Documentado; Figuras 82–85; simulación separada de atención real |
 | Cambio | Infraestructura, aplicaciones, documentación, calendario, CI y reversión | Documentado y CI comprobada; Figuras 74–78 y 86 |
 | Capacidad | Demanda hipotética, mediciones, limitaciones, decisiones y seguimiento | Plan documentado; muestra autenticada exploratoria ejecutada y recalculada, Figura 93; repetición/carga sostenida y observabilidad pendientes |

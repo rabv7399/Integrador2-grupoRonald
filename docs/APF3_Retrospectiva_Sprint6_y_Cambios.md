@@ -6,11 +6,27 @@ La revisión vigente incorpora los PR #58, #59, #62 y #64. Swagger se verificó 
 
 La reserva de prueba devolvió **201**, su repetición **409** y el registro ID 5 quedó **CANCELADA** (Figuras 66–68). El contraste de los comentarios originales del docente está documentado en la [guía de cierre](APF3_Guia_Cierre_Semana13.md), Figuras 78–79.
 
-Capacidad verificada: memoria Aiven 86 %, disco 30,2 %, conexiones puntuales 2, pico histórico 13 y límite 76 (Figuras 49–52). Las conexiones son valores globales de MySQL; no representan métricas exclusivas de HikariCP. La observabilidad runtime del pool y la carga sobre endpoints autenticados siguen pendientes.
+Capacidad verificada: memoria Aiven 86 %, disco 30,2 %, conexiones puntuales 2, pico histórico 13 y límite 76 (Figuras 49–52). Las conexiones son valores globales de MySQL; no representan métricas exclusivas de HikariCP. La observabilidad runtime del pool sigue pendiente. El sondeo autenticado básico se completó con 20/20 lecturas válidas, dos trabajadores, 20,56 s y 0,973 RPS; los datos se conservaron y recalcularon en PR #70 (Figura 93). La carga sostenida y la repetición de la muestra siguen pendientes.
 
 El proyecto es individual. Ronald Albert Bustamante Villanueva asume las funciones de desarrollo, pruebas, despliegue y seguimiento. Esta retrospectiva es una revisión individual de registros técnicos; no acredita una reunión de equipo ni aprobaciones independientes. La presentación, el ensayo y la aceptación final permanecen pendientes. El informe se completará al terminar las verificaciones técnicas.
 
 Las secciones 1–4 conservan el diagnóstico histórico; sus cifras y pendientes no sustituyen este estado vigente. La sección 5 presenta la retrospectiva actualizada.
+
+### Período documentado de la revisión
+
+**Ventana de actividades examinadas: 02–04 de noviembre de 2026 (hora de Perú, UTC−05:00).** Es una reconstrucción retrospectiva del período respaldado por los registros seleccionados, no una declaración de las fechas originales de planificación del Sprint 6 ni de su duración total.
+
+| Hito trazable | Fecha local de Perú | Fuente |
+|---|---|---|
+| Registro de solicitud de información de reservas | 02/11/2026, 18:48 | [Issue #36](https://github.com/rabv7399/Integrador2-grupoRonald/issues/36), creada 02/11 a las 23:48 UTC |
+| Apertura del cambio de CI y mediciones APF3 | 02/11/2026, 19:45 | [PR #39](https://github.com/rabv7399/Integrador2-grupoRonald/pull/39), creado 03/11 a las 00:45 UTC |
+| Integración de CI y documentación inicial | 03/11/2026, 00:02 | PR #39, integrado 03/11 a las 05:02 UTC |
+| Sondeo autenticado con 20 lecturas válidas | 04/11/2026, inicio registrado 19:05 | [JSON de mediciones](../performance/results/APF3_sondeo_autenticado_20261104_191041.json), Figura 93 |
+| Incorporación de la evidencia y análisis de capacidad | 04/11/2026, 21:53 | [PR #70](https://github.com/rabv7399/Integrador2-grupoRonald/pull/70), integrado 05/11 a las 02:53 UTC |
+
+**Fecha de corte de esta retrospectiva:** 04/11/2026. **Objetivo del ciclo revisado:** consolidar la gestión del servicio APF3 mediante solicitudes, control de cambios, mediciones y verificación de publicación. **Participante y responsable:** Ronald Albert Bustamante Villanueva, trabajo individual.
+
+Las fechas formales de inicio y fin del Sprint 6 no constan en la retrospectiva ni en los registros revisados. No se inventa un sprint de dos semanas ni una ceremonia celebrada. La guía solicita resultados, impedimentos y mejoras; esta revisión los sustenta con una ventana documental delimitada. Como mejora del proceso, registrar objetivo, fechas previstas y criterios de cierre antes del próximo sprint, y contrastarlos con las fechas reales al terminar.
 
 ## Registro histórico de preparación y diagnóstico
 
@@ -114,7 +130,7 @@ Responsable de todas las acciones: **Ronald Albert Bustamante Villanueva**, seg�
 | Sincronizar main/develop y verificar CI | Control de versiones | Verificado al 04/11/2026 | PR #64, comparación idéntica y 17 pruebas satisfactorias, Figuras 74–76 | Completada; mantener tras cada cambio |
 | Registrar solicitudes y recorrido de atención | Gestión del servicio | Cierre APF3 | Plantilla y caso simulado #48, Figuras 46–47 | Demostración documental completada; solicitudes reales pendientes |
 | Integrar SpringDoc/Swagger | Desarrollo backend | Completado al 04/11/2026 | PR #62, interfaz pública y seguridad JWT comprobadas, Figuras 70–73; CI, Figura 76 | Completada |
-| Ampliar k6 a un endpoint autenticado | Pruebas | Próximo ciclo, fecha por definir | Registrar carga, duración, p95, errores y alcance con cuenta autorizada | Pendiente |
+| Medir endpoints autenticados y ampliar gradualmente | Pruebas | Sondeo básico completado 04/11/2026; ampliación en próximo ciclo | JSON original, carga, duración, p95, errores y alcance con cuenta autorizada | Sondeo Python completado, Figura 93 y PR #70; ampliación con k6/carga sostenida pendiente |
 | Completar métricas CPU/RAM y del pool | Infraestructura | Próximo ciclo, sujeto a observabilidad disponible | Lecturas con fecha, intervalo y fuente; distinguir MySQL de HikariCP | Pendiente |
 | Formalizar aprobación de accesos y segregación | Gestión del servicio | Antes de un alta real privilegiada | Aprobador autorizado distinto del ejecutor, mínimo privilegio y registro de cierre | Pendiente; el trabajo individual no acredita segregación independiente |
 
@@ -129,4 +145,4 @@ Los plazos pendientes son objetivos académicos, no compromisos de SLA. No se at
 
 **Figura 48 (captura aportada y verificada):** `APF3_E48_Retrospectiva_Sprint6_Acta_Documental_GitHub.png`. La captura muestra el encabezado del acta documental, la advertencia de que no representa una ceremonia Scrum firmada, y la matriz de cinco dimensiones del balance verificable. **No** demuestra una reunión efectivamente celebrada.
 
-**Estado:** retrospectiva técnica de Sprint 6 actualizada con logros, problemas, aprendizajes, responsables y mejoras; **validación formal del equipo/docente no acreditada**.
+**Estado:** retrospectiva técnica de Sprint 6, con ventana documental 02–04/11/2026, actualizada con logros, problemas, aprendizajes, responsables y mejoras; **validación formal del equipo/docente no acreditada**.
