@@ -4,7 +4,7 @@
 
 Responsable del plan: **Ronald Albert Bustamante Villanueva**, proyecto individual. Último backend verificado visualmente en Render: **a9897e4 Live** (Figura 90), con interfaz APF3 visible (Figura 91). Swagger y consultas protegidas fueron comprobados previamente en 7b08b3a (Figuras 70–73); no se atribuyen a una repetición posterior. La versión consolidada aprobó **17 pruebas** (Figura 76). El contraste APF2 y la sincronización de ramas están documentados (Figuras 74–79); presentación y aceptación final siguen pendientes.
 
-**Línea base observada:** Aiven mostró memoria **86 %**, disco **30,2 %**, conexiones globales puntuales **2**, pico histórico **13** y límite **76** (Figuras 49–52). La lectura de RAM no demuestra presión sostenida. Las conexiones globales no identifican el uso exclusivo de HikariCP, cuya configuración por defecto 5 / 1 / 30000 ms se comprobó en CI; su uso efectivo en producción no está medido.
+**Línea base observada:** la lectura más reciente de Aiven muestra memoria **82 %** (Figura 94); la lectura anterior mostró **86 %**, disco **30,2 %**, conexiones globales puntuales **2**, pico histórico **13** y límite **76** (Figuras 49–52). La lectura de RAM no demuestra presión sostenida. Las conexiones globales no identifican el uso exclusivo de HikariCP, cuya configuración por defecto 5 / 1 / 30000 ms se comprobó en CI; su uso efectivo en producción no está medido.
 
 **Rendimiento:** k6 público registró 24/24 respuestas 200 y p95 127,26 ms con 2 VUs. En navegador, la API protegida registró 1,16 s y 1,80 s antes del cambio (Figura 57); una medición posterior mostró 9,18 s en ambas consultas (Figura 61), y otra 774 ms y 773 ms (Figura 62). Son observaciones individuales, sin p95 autenticado ni causalidad demostrada; no prueban mejora sostenida ni cumplimiento de SLA. El JOIN se observó en logs (Figura 63).
 
@@ -141,7 +141,7 @@ Los valores son **umbrales de diseño**. La lectura más reciente de memoria Aiv
 | Fase y acción | Función | Plazo o condición | Criterio de cierre | Estado al 04/11/2026 |
 |---|---|---|---|---|
 | 1. Consolidar línea base y separar primer acceso | Pruebas | Antes del cierre documental APF3; repetir mediciones en el próximo ciclo | Registrar ruta, carga, duración, p95, fallos y RPS; conservar por separado tiempos individuales del navegador | Sondeo público completado; línea base autenticada exploratoria de 20 lecturas completada (Figura 93); repetición y ampliación pendientes |
-| 2. Revisar base de datos y memoria | Base de datos | Próxima revisión disponible; antes de aumentar carga o pool | Conservar tres EXPLAIN y lecturas globales; revisar tendencia de RAM y diferenciar sesiones MySQL del pool | EXPLAIN y lecturas globales completados; RAM observada 86 %; métricas Hikari pendientes |
+| 2. Revisar base de datos y memoria | Base de datos | Próxima revisión disponible; antes de aumentar carga o pool | Conservar tres EXPLAIN y lecturas globales; revisar tendencia de RAM y diferenciar sesiones MySQL del pool | EXPLAIN y lecturas globales completados; RAM más reciente 82 % (Figura 94), anterior 86 %; métricas Hikari pendientes |
 | 3. Ampliar carga autenticada gradualmente | Pruebas | Próximo ciclo, en ensayo o ventana acordada | Ejecutar primero carga limitada con cuenta autorizada; registrar p95 y 5xx; evaluar 5 y 10 VUs solo si no hay degradación | Primera carga limitada completada: dos trabajadores, 20 lecturas; ampliación pendiente; no valida 20 usuarios ni 6 RPS |
 | 4. Decidir cambios de recursos | Infraestructura | Tras obtener carga y métricas representativas | Comparar objetivos, coste y recursos; registrar RFC con justificación, validación y reversión antes de cambiar plan | Condicionado a resultados; sin ampliación de recursos ejecutada |
 | 5. Revisar el plan tras cambios | Gestión del servicio | Después de cambios de consultas, carga, plan o despliegue | Actualizar matriz, evidencias, riesgos y pendientes con fecha de revisión | Seguimiento en curso |
@@ -313,3 +313,20 @@ Preparación excluida: categorías **2743,58 ms** y productos **1427,84 ms**, am
 **Pendientes:** estabilidad en ejecuciones repetidas, carga sostenida, CPU/RAM del backend, uso efectivo de HikariCP y validación del escenario de 20 usuarios / 6 RPS. La muestra no certifica SLA, disponibilidad ni capacidad máxima. La RAM histórica de Aiven al 86 % no fue medida simultáneamente con este sondeo.
 
 **Figura 93:** resumen de consola del sondeo autenticado, 20/20 consultas completadas sin interrupción. La captura aportada no implica que su imagen esté incluida en el repositorio.
+
+
+## Seguimiento de recursos Aiven — Figura 94
+
+Captura aportada el 04/11/2026 (fecha local de la sesión), posterior al sondeo autenticado. El recorte no muestra fecha ni zona horaria del panel; no se convierten las horas del eje a hora de Perú. Los indicadores de memoria y CPU están etiquetados con una ventana de 60 minutos.
+
+| Indicador | Lectura visible | Interpretación |
+|---|---|---|
+| Recursos asignados | 1 CPU, 1 GB RAM, 1 GB almacenamiento | Servicio MySQL Aiven, no backend Render |
+| Memoria usada (60 min) | 82 % | Cuatro puntos porcentuales menos que la lectura histórica de 86 % (Figura 49); no demuestra descenso sostenido |
+| Almacenamiento | 30,2 % de 1 GB | Mismo porcentaje redondeado que la Figura 49 |
+| CPU across all nodes (60 min), Average | Gráfica visualmente baja, sin porcentaje puntual etiquetado | No asignar un valor numérico exacto |
+| HikariCP y CPU/RAM del backend | No visibles | Continúan pendientes de observabilidad |
+
+**Decisión del plan:** mantener por ahora los recursos y límites del pool; estas lecturas no justifican por sí solas aumentar el plan ni las conexiones. El 82 % supera numéricamente el aviso de diseño de 75 % y está por debajo del crítico propuesto de 90 %. No se demuestra duración sobre el umbral ni saturación; los umbrales no son alertas configuradas. Revisar de nuevo en el siguiente ciclo y antes de aumentar carga, registrando intervalo y métricas simultáneas cuando estén disponibles. Responsable: Ronald Albert Bustamante Villanueva.
+
+La captura no se tomó simultáneamente con las 20 consultas del sondeo y no demuestra su impacto sobre recursos. **Figura 94:** seguimiento de uso de memoria, almacenamiento y CPU de MySQL Aiven; la referencia no implica que la imagen esté incluida en el repositorio.

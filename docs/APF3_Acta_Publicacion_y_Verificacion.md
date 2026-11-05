@@ -22,7 +22,7 @@
 
 **Validación funcional previa:** consultas protegidas 200 y reserva productiva de prueba 201, repetición 409 y cancelación del registro ID 5 (Figuras 66–68). No se repitieron reservas para obtener las capturas 90–91 ni se atribuyen estas operaciones a una nueva prueba posterior al despliegue a9897e4.
 
-**Límites y pendientes:** no hay validación de 20 usuarios ni 6 RPS sostenidos, repetición del p95 autenticado exploratorio, métricas efectivas del pool o CPU/RAM del backend. Memoria Aiven observada: 86 %, sin demostrar tendencia sostenida. No se declara aprobación independiente de accesos, disponibilidad contractual, restauración ensayada ni aceptación funcional final. La consulta de mesas en producción sigue como mejora pendiente, con permisos comprobados en H2. El informe y la presentación permanecen pendientes de consolidación.
+**Límites y pendientes:** no hay validación de 20 usuarios ni 6 RPS sostenidos, repetición del p95 autenticado exploratorio, métricas efectivas del pool o CPU/RAM del backend. Memoria Aiven: lectura más reciente 82 % (Figura 94), anterior 86 % (Figura 49), sin demostrar tendencia sostenida. No se declara aprobación independiente de accesos, disponibilidad contractual, restauración ensayada ni aceptación funcional final. La consulta de mesas en producción sigue como mejora pendiente, con permisos comprobados en H2. El informe y la presentación permanecen pendientes de consolidación.
 
 Las secciones históricas conservan las cifras y estados de cada revisión; este resumen prevalece para el cierre técnico actual. Las figuras son capturas aportadas por el responsable; su numeración no implica que los archivos de imagen estén incluidos en el repositorio.
 
@@ -213,3 +213,20 @@ Preparación excluida: categorías **2743,58 ms** y productos **1427,84 ms**, am
 **Pendientes:** estabilidad en ejecuciones repetidas, carga sostenida, CPU/RAM del backend, uso efectivo de HikariCP y validación del escenario de 20 usuarios / 6 RPS. La muestra no certifica SLA, disponibilidad ni capacidad máxima. La RAM histórica de Aiven al 86 % no fue medida simultáneamente con este sondeo.
 
 **Figura 93:** resumen de consola del sondeo autenticado, 20/20 consultas completadas sin interrupción. La captura aportada no implica que su imagen esté incluida en el repositorio.
+
+
+## Seguimiento de recursos Aiven — Figura 94
+
+Captura aportada el 04/11/2026 (fecha local de la sesión), posterior al sondeo autenticado. El recorte no muestra fecha ni zona horaria del panel; no se convierten las horas del eje a hora de Perú. Los indicadores de memoria y CPU están etiquetados con una ventana de 60 minutos.
+
+| Indicador | Lectura visible | Interpretación |
+|---|---|---|
+| Recursos asignados | 1 CPU, 1 GB RAM, 1 GB almacenamiento | Servicio MySQL Aiven, no backend Render |
+| Memoria usada (60 min) | 82 % | Cuatro puntos porcentuales menos que la lectura histórica de 86 % (Figura 49); no demuestra descenso sostenido |
+| Almacenamiento | 30,2 % de 1 GB | Mismo porcentaje redondeado que la Figura 49 |
+| CPU across all nodes (60 min), Average | Gráfica visualmente baja, sin porcentaje puntual etiquetado | No asignar un valor numérico exacto |
+| HikariCP y CPU/RAM del backend | No visibles | Continúan pendientes de observabilidad |
+
+**Decisión del plan:** mantener por ahora los recursos y límites del pool; estas lecturas no justifican por sí solas aumentar el plan ni las conexiones. El 82 % supera numéricamente el aviso de diseño de 75 % y está por debajo del crítico propuesto de 90 %. No se demuestra duración sobre el umbral ni saturación; los umbrales no son alertas configuradas. Revisar de nuevo en el siguiente ciclo y antes de aumentar carga, registrando intervalo y métricas simultáneas cuando estén disponibles. Responsable: Ronald Albert Bustamante Villanueva.
+
+La captura no se tomó simultáneamente con las 20 consultas del sondeo y no demuestra su impacto sobre recursos. **Figura 94:** seguimiento de uso de memoria, almacenamiento y CPU de MySQL Aiven; la referencia no implica que la imagen esté incluida en el repositorio.

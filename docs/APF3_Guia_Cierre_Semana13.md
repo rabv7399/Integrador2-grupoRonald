@@ -66,3 +66,8 @@ Portada, observaciones APF2, retrospectiva Sprint 6, solicitudes, gestión del c
 ## Evidencia de cierre técnico disponible
 
 PR 58, 59, 62 y 64 integrados; 17 pruebas aprobadas, JOIN en Render, reserva 201, rechazo 409 y cancelación del dato ID 5. Swagger verificado en producción con el backend Live 7b08b3a. La comparación de main y develop confirmó igualdad de contenido (Figura 75); no constituye evidencia de un despliegue posterior en Render. Acta canónica: [APF3_Acta_Publicacion_y_Verificacion.md](APF3_Acta_Publicacion_y_Verificacion.md).
+
+
+## Cierre de verificación previo a entregables — 04/11/2026
+
+La [revisión final de los seis requisitos](APF3_Criterios_Cierre_y_Sondeo_Autenticado.md) distingue cobertura, pendientes de entrega y mejoras del próximo ciclo. El sondeo autenticado quedó conservado en PR #70 (Figura 93: 20/20 lecturas, 20,56 s, 0,973 RPS); la retrospectiva delimita una ventana documental verificable en PR #71. La Figura 94 muestra memoria Aiven 82 % y disco 30,2 %, posterior al sondeo y sin métricas simultáneas. Último backend visualmente acreditado: a9897e4 (Figura 90). La siguiente etapa es consolidar informe y presentación; no se requiere repetir pruebas ya acreditadas para producir más capturas.
