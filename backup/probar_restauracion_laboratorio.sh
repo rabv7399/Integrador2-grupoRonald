@@ -17,7 +17,7 @@ for i in $(seq 1 90); do
 done
 [ "$ready" = 1 ] || { echo 'MySQL laboratorio no inició'; exit 1; }
 
-CLIENT=(docker exec -e "MYSQL_PWD=$PASSWORD" "$CONTAINER" mysql -uroot --batch --skip-column-names)
+CLIENT=(docker exec -i -e "MYSQL_PWD=$PASSWORD" "$CONTAINER" mysql -uroot --batch --skip-column-names)
 DUMP=(docker exec -e "MYSQL_PWD=$PASSWORD" "$CONTAINER" mysqldump -uroot --single-transaction --quick --no-tablespaces --set-gtid-purged=OFF)
 "${CLIENT[@]}" < backend/database/schema.sql
 "${CLIENT[@]}" delicias_peruanas < backup/fixture_recuperacion.sql
