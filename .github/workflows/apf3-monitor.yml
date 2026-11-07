@@ -1,0 +1,62 @@
+name: APF3 - Monitoreo HTTPS y alertas
+on:
+  schedule:
+    - cron: '17,47 * * * *'
+  workflow_dispatch:
+    inputs:
+      prueba_fallo_controlado:
+        description: 'Simular error local de red para validar aviso (no afecta Render)'
+        type: boolean
+        required: true
+        default: false
+permissions:
+  contents: read
+  issues: write
+concurrency:
+  group: apf3-monitor-alertas
+  cancel-in-progress: false
+jobs:
+  verificar:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - name: Consultar HTTPS con reintentos
+        id: check
+        continue-on-error: true
+        env:
+          MONITOR_URL: ${{ inputs.prueba_fallo_controlado && 'http://127.0.0.1:9/' || 'https://delicias-peruanas-api.onrender.com/' }}
+          MONITOR_RETRY_DELAY_SECONDS: ${{ inputs.prueba_fallo_controlado && '1' || '15' }}
+          MONITOR_TIMEOUT_SECONDS: ${{ inputs.prueba_fallo_controlado && '2' || '45' }}
+        run: python3 monitoring/check_service.py
+      - name: Conservar evidencia JSON
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: apf3-monitor-${{ github.run_id }}
+          path: resultado-monitor.json
+          if-no-files-found: warn
+          retention-days: 30
+      - name: Crear o comentar incidencia con deduplicacion
+        if: steps.check.outcome == 'failure'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          SIMULADO: ${{ inputs.prueba_fallo_controlado }}
+        shell: bash
+        run: |
+          if [ "$SIMULADO" = "true" ]; then
+            titulo="APF3-MONITOR [SIMULACION]: alerta de prueba controlada"
+          else
+            titulo="APF3-MONITOR [REAL]: servicio HTTPS no disponible"
+          fi
+          numero=$(gh issue list --repo "$GITHUB_REPOSITORY" --state open --limit 100 --json title,number --jq ".[] | select(.title == \"$titulo\") | .number" | head -1)
+          evidencia="$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
+          mensaje="Verificacion con 3 intentos sin HTTP 200. Evidencia: $evidencia. Estado: $titulo. No modificar datos en MySQL."
+          if [ -z "$numero" ]; then
+            gh issue create --repo "$GITHUB_REPOSITORY" --title "$titulo" --body "$mensaje"
+          else
+            gh issue comment --repo "$GITHUB_REPOSITORY" "$numero" --body "$mensaje"
+          fi
+      - name: Marcar la comprobacion como fallida
+        if: steps.check.outcome == 'failure'
+        run: exit 1
