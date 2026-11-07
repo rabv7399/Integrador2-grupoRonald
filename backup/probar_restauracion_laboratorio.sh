@@ -12,7 +12,7 @@ trap cleanup EXIT
 docker run -d --name "$CONTAINER" -e MYSQL_ROOT_PASSWORD="$PASSWORD" mysql:8.4 >/dev/null
 ready=0
 for i in $(seq 1 90); do
-  if docker exec -e MYSQL_PWD="$PASSWORD" "$CONTAINER" mysqladmin ping -uroot --silent >/dev/null 2>&1; then ready=1; break; fi
+  if docker exec -e MYSQL_PWD="$PASSWORD" "$CONTAINER" mysql -uroot --batch --skip-column-names -e "SELECT 1" >/dev/null 2>&1; then ready=1; break; fi
   sleep 2
 done
 [ "$ready" = 1 ] || { echo 'MySQL laboratorio no inició'; exit 1; }
