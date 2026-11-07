@@ -1,0 +1,39 @@
+name: APF3 - Validacion gradual 6 RPS (solo GET)
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: apf3-capacidad-publica
+  cancel-in-progress: false
+jobs:
+  carga:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: grafana/setup-k6-action@v1
+        with:
+          k6-version: '1.0.0'
+      - name: Preflight disponibilidad (separado del ensayo)
+        shell: bash
+        run: |
+          curl --fail --silent --show-error --location --max-time 90 \
+            --retry 2 --retry-delay 10 --retry-max-time 220 \
+            --output /dev/null --write-out "Preflight HTTP %{http_code} en %{time_total}s\n" \
+            https://delicias-peruanas-api.onrender.com/
+      - name: Escenario GET / con 2, 4 y 6 solicitudes por segundo
+        shell: bash
+        run: |
+          mkdir -p evidencias-apf3/capacidad
+          set -o pipefail
+          k6 run --summary-export=evidencias-apf3/capacidad/resumen-k6.json \
+            performance/k6_capacidad_publica_6rps.js | tee evidencias-apf3/capacidad/salida-k6.txt
+      - name: Adjuntar evidencia incluso ante fallo
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: apf3-capacidad-publica-${{ github.run_id }}
+          path: evidencias-apf3/capacidad/
+          if-no-files-found: warn
+          retention-days: 30
