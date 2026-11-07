@@ -1,0 +1,27 @@
+name: APF3 - Restauracion MySQL de laboratorio
+on:
+  push:
+    branches: [apf3/validar-restauracion-mysql]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  restaurar:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - name: Obtener codigo
+        uses: actions/checkout@v4
+      - name: Restauracion y comparacion en MySQL 8.4 temporal
+        run: bash backup/probar_restauracion_laboratorio.sh
+      - name: Adjuntar resultados NO sensibles
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: apf3-restauracion-laboratorio-${{ github.run_id }}
+          path: |
+            evidencias-restauracion/comparacion.csv
+            evidencias-restauracion/sha256.txt
+            evidencias-restauracion/resultado.txt
+          if-no-files-found: warn
+          retention-days: 30
