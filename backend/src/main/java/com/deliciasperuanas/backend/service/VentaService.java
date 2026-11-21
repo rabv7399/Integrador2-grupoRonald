@@ -43,6 +43,10 @@ public class VentaService {
         if(!"EFECTIVO".equals(metodo) && (referencia.length()<4||referencia.length()>80))
             throw error(HttpStatus.BAD_REQUEST,"REFERENCIA_PAGO_REQUERIDA",
                 "Para YAPE/POS indica el código de operación o voucher (4 a 80 caracteres)");
+        if(!"EFECTIVO".equals(metodo) &&
+             ventas.existsByMedioPagoAndReferenciaPago(metodo,referencia))
+            throw error(HttpStatus.CONFLICT,"REFERENCIA_PAGO_REUTILIZADA",
+                "Esta referencia ya figura en otro cobro del mismo medio de pago");
         if("EFECTIVO".equals(metodo) && !referencia.isEmpty())
             throw error(HttpStatus.BAD_REQUEST,"REFERENCIA_NO_APLICA",
                 "El efectivo no utiliza referencia de Yape o POS");
