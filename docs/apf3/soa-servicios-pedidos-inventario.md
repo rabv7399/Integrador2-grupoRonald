@@ -2,6 +2,40 @@
 
 **Estado:** código en rama `feature/soa-apf3-pedidos-inventario`, pendiente de ejecutar contra una base de desarrollo. No se ha aplicado ninguna migración a Aiven.
 
+## Modo local de demostración sin Aiven
+
+El proyecto incorpora un perfil `soa-demo` con una base H2 **en memoria** y un formulario web para consumir los cinco servicios. Este perfil NO se usa en Render, no tiene acceso a las claves ni tablas de Aiven y borra los datos temporales cuando se detiene la aplicación.
+
+1. En VS Code, abre `D:\\CICLO AGOSTO 2026\\PROYECTO_DELICIAS_PERUANAS`.
+2. Comprueba `git status`; después cambia a la rama `feature/soa-apf3-pedidos-inventario` y actualiza con GitHub.
+3. Desde la raíz ejecuta en PowerShell:
+   ```powershell
+   & "$env:WINDIR\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -NoProfile -ExecutionPolicy Bypass -File ".\\tools\\Iniciar_SOA_Demo.ps1"
+   ```
+4. El script solicita dos contraseñas temporales: ADMIN y CLIENTE, genera un JWT de demostración distinto cada vez y activa Spring Boot en el puerto 8081.
+5. Abre `http://localhost:8081/soa-demo/index.html`.
+6. Inicia sesión como ADMIN (`admin.demo@delicias.local`) para consultar o configurar porciones. Inicia sesión como CLIENTE (`cliente.demo@delicias.local`) para registrar un pedido y cancelarlo cuando esté pendiente.
+7. No registres credenciales reales ni uses `DB_URL`, `DB_PASSWORD` o `JWT_SECRET` de Aiven/Render: el entorno demo solo necesita las contraseñas temporales que introduces.
+8. Detén el servidor con `Ctrl+C`. La base H2 se reiniciará la próxima vez.
+
+Los datos de prueba incluidos son Lomo Saltado (S/ 25, 30 porciones), Ají de Gallina (S/ 22, 20 porciones), Chicha Morada (S/ 8, 25 porciones), Anticuchos (S/ 18, 12 porciones) y Mesa 1 (4 personas). Son datos de **demostración**, no ventas ni disponibilidad real.
+
+### Capturas oficiales recomendadas
+| Archivo | Evidencia |
+|---|---|
+| `SOA_APF3_01_Login_Rol_Admin.png` | Sesión autenticada con rol ADMIN, sin mostrar contraseñas |
+| `SOA_APF3_02_Productos_Categorias_REST.png` | Consulta S02 de productos y categorías |
+| `SOA_APF3_03_Inventario_Inicial.png` | S05: porciones preparadas, reservadas, vendidas y disponibles |
+| `SOA_APF3_04_Registro_Pedido_201.png` | S03: pedido creado con HTTP 201 |
+| `SOA_APF3_05_Stock_Reservado.png` | S05: stock disminuido por una reserva pendiente |
+| `SOA_APF3_06_Idempotencia_200.png` | S03: reintento con la misma referencia, HTTP 200 |
+| `SOA_APF3_07_Confirmacion_Pedido.png` | S03/S05: pedido CONFIRMADO y venta de porciones |
+| `SOA_APF3_08_Error_Stock_422.png` | Rechazo controlado STOCK_INSUFICIENTE |
+| `SOA_APF3_09_Reservas_Mesa_409.png` | S04: reserva duplicada, HTTP 409 |
+| `SOA_APF3_10_Seguridad_403.png` | Intento de operación administrativa con rol CLIENTE |
+
+Las imágenes deben proceder de la interfaz funcionando; no simular respuestas para la sustentación.
+
 ## Servicios representativos
 - S01 Clientes/Autenticación: `POST /api/auth/registro`, `POST /api/auth/login`; JWT en solicitudes protegidas.
 - S02 Productos y Menú: `GET /api/productos`; precio y disponibilidad comercial.
