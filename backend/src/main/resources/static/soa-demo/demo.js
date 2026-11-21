@@ -4,6 +4,9 @@ let token = '';
 let rol = '';
 let correoSesion = '';
 let listaProductos = [];
+let listaCategorias = [];
+let usuariosAdmin = [];
+let configuracionLocal={nombre:'Delicias Peruanas',telefono:'',logoRuta:null};
 const $ = id => document.getElementById(id);
 const formatPrice = value => new Intl.NumberFormat('es-PE',{style:'currency',currency:'PEN'}).format(Number(value));
 function nuevaClave() {
@@ -48,18 +51,30 @@ const MODULOS = {
   orders:{titulo:'Pedidos',servicio:'S03',descripcion:'Registra y consulta pedidos, con control de porciones.'},
   reservations:{titulo:'Reservas de mesas',servicio:'S04',descripcion:'Gestiona solicitudes de reserva para mesas.'},
   stock:{titulo:'Inventario',servicio:'S05',descripcion:'Verifica las porciones preparadas, reservadas y vendidas.'},
+  kitchen:{titulo:'Cocina',servicio:'S03',descripcion:'Comandas por plato: pendiente o listo.'},
+  sales:{titulo:'Caja y cobros',servicio:'S06',descripcion:'Registra pagos y emite tickets internos.'},
+  productsAdmin:{titulo:'Productos · CRUD',servicio:'S02',descripcion:'Agregar, modificar o desactivar platos y bebidas.'},
+  categoriesAdmin:{titulo:'Categorías · CRUD',servicio:'S02',descripcion:'Mantener almuerzos, cenas y bebidas.'},
+  usersAdmin:{titulo:'Usuarios · CRUD',servicio:'S01',descripcion:'Alta, permisos y baja lógica de usuarios.'},
+  settings:{titulo:'Configuración del local',servicio:'ADM',descripcion:'Nombre, teléfono y logo.'},
   api:{titulo:'Laboratorio REST',servicio:'JSON',descripcion:'Inspecciona las respuestas de las API.'}
 };
 const PERFILES = {
   CLIENTE:{titulo:'Cliente',saludo:'¡Qué gusto tenerte aquí!',
-    descripcion:'Explora nuestra carta, realiza pedidos y reserva una mesa.',
-    permisos:'Puedes consultar la carta, registrar y cancelar tus pedidos pendientes y crear reservas. No puedes configurar inventario ni confirmar pedidos como personal.'},
+    descripcion:'Consulta la carta virtual. Puedes solicitar una reserva; un mozo asignará la mesa y registrará el pedido.',
+    permisos:'Puedes consultar productos y solicitar reservas. Un mozo registra los pedidos a mesa. No puedes acceder a inventario, caja ni personal.'},
   MOZO:{titulo:'Mozo',saludo:'Tu área de atención',
     descripcion:'Gestiona las solicitudes de los clientes y confirma sus pedidos.',
     permisos:'Puedes gestionar pedidos y reservas y consultar porciones. No puedes configurar inventario.'},
+  CAJA:{titulo:'Caja',saludo:'Caja y control de ventas',
+    descripcion:'Registra pedidos de mesa o para llevar, cobra e incrementa las porciones preparadas.',
+    permisos:'Puedes registrar y cobrar pedidos, reponer porciones y ver el dashboard. No puedes crear productos ni gestionar usuarios.'},
+  COCINERO:{titulo:'Cocinero',saludo:'Comandas de cocina',
+    descripcion:'Consulta los platos pedidos y marca cada preparación como lista.',
+    permisos:'Solo puedes consultar comandas y marcar LISTO en las líneas pendientes. No puedes cobrar ni cambiar el inventario.'},
   SUPERVISOR:{titulo:'Supervisor',saludo:'Control de operaciones',
     descripcion:'Revisa el inventario y el flujo de pedidos del restaurante.',
-    permisos:'Puedes consultar inventario, gestionar pedidos y reservas. La configuración de porciones corresponde al ADMIN.'},
+    permisos:'Puedes gestionar pedidos, caja y reservas y reponer porciones; la edición de la carta y usuarios corresponde al ADMIN.'},
   ADMIN:{titulo:'Administrador',saludo:'Gestión de Delicias Peruanas',
     descripcion:'Administra las operaciones y la disponibilidad de platos.',
     permisos:'Puedes usar todos los módulos, configurar porciones, confirmar pedidos y gestionar reservas.'},
@@ -118,6 +133,10 @@ function iniciarPanel(){
   $('responseBar').classList.remove('failure');
   history.replaceState(null,'',location.pathname+'#panel');
   consultarCatalogo();
+  cargarConfiguracion();
+  if(['ADMIN','CAJA','SUPERVISOR'].includes(rol)) refrescarResumen();
+  if(['ADMIN','CAJA','MOZO','SUPERVISOR','OPERADOR'].includes(rol)) cargarMesas();
+  if(rol==='ADMIN') { cargarUsuarios(); cargarCategorias(); }
   return true;
 }
 function cerrarSesion(){
@@ -135,14 +154,17 @@ function cerrarSesion(){
   $('correo').focus();
 }
 function listaMenu(){
-  for(const id of ['orderProduct','stockProduct']) {
-    const element=$(id); element.replaceChildren();
+  for(const id of ['orderProduct','stockProduct','productManageSelect']) {
+    const element=$(id);element.replaceChildren();
+    if(id==='productManageSelect')element.add(new Option('Nuevo producto',''));
     for(const p of listaProductos){
-      const option=document.createElement('option');option.value=String(p.id);
-      option.textContent=p.nombre+' · '+formatPrice(p.precio);
-      element.append(option);
+      if(id==='orderProduct' && (!p.disponible || Number(p.precio)<=0))continue;
+      const etiqueta=Number(p.precio)>0?formatPrice(p.precio):'Sin precio confirmado';
+      element.add(new Option(p.nombre+' · '+etiqueta+(p.disponible?'':' · no disponible'),String(p.id)));
     }
   }
+  if(rol!=='CLIENTE' && $('orderProduct').value) consultarDisponibilidad();
+  pintarAdminProductos();
   $('productsCount').textContent=String(listaProductos.length);
   $('dashboardProductsCount').textContent=String(listaProductos.length);
   const div=$('productList');div.replaceChildren();
@@ -150,7 +172,8 @@ function listaMenu(){
   for(const p of listaProductos){
     const row=document.createElement('div');row.className='product-line';
     const name=document.createElement('strong');name.textContent=p.nombre;
-    const price=document.createElement('span');price.textContent=formatPrice(p.precio);
+    const price=document.createElement('span');price.textContent=Number(p.precio)>0?formatPrice(p.precio):'Sin precio confirmado';
+    if(!p.disponible)price.textContent+=' · no disponible';
     row.append(name,price);div.append(row);
   }
 }
@@ -158,7 +181,11 @@ async function consultarCatalogo(){
   const [productos,categorias]=await Promise.all([api('/api/productos'),api('/api/categorias')]);
   mostrar('GET /api/productos',productos);
   if(productos.ok&&Array.isArray(productos.data)){listaProductos=productos.data;listaMenu();}
-  if(categorias.ok&&Array.isArray(categorias.data))$('categoriesCount').textContent=String(categorias.data.length);
+  if(categorias.ok&&Array.isArray(categorias.data)){
+    listaCategorias=categorias.data;
+    $('categoriesCount').textContent=String(listaCategorias.length);
+    pintarCategorias();
+  }
 }
 $('loginForm').addEventListener('submit',async event=>{
   event.preventDefault();
@@ -218,10 +245,18 @@ $('createOrder').addEventListener('click',async()=>{
   if(!pedirSesion())return;
   const id=Number($('orderProduct').value),cantidad=Number($('orderQty').value);
   if(!Number.isInteger(id)||!Number.isInteger(cantidad)||cantidad<1||cantidad>20)return mostrarLocal('Selecciona un producto y una cantidad entre 1 y 20.');
-  ultimaSolicitud={items:[{productoId:id,cantidad}]};
+  const tipoAtencion=$('orderType').value;
+  const mesaId=tipoAtencion==='MESA'?Number($('orderTable').value):null;
+  if(tipoAtencion==='MESA' && (!Number.isInteger(mesaId)||mesaId<1))return mostrarLocal('Elige una mesa disponible.');
+  ultimaSolicitud={items:[{productoId:id,cantidad}],tipoAtencion,mesaId};
   const result=await api('/api/v1/pedidos','POST',ultimaSolicitud,{'Idempotency-Key':$('orderKey').value});
   mostrar('POST /api/v1/pedidos',result);
-  if(result.ok&&result.data.pedidoId)$('orderId').value=result.data.pedidoId;
+  if(result.ok&&result.data.pedidoId){
+    $('orderId').value=result.data.pedidoId;
+    $('cashPedidoId').value=result.data.pedidoId;
+    cargarMesas();
+    consultarDisponibilidad();
+  }
 });
 $('repeatOrder').addEventListener('click',async()=>{
   if(!pedirSesion())return;
@@ -234,7 +269,10 @@ for(const [button,path] of [['confirmOrder','confirmacion'],['cancelOrder','canc
     if(!pedirSesion())return;
     const id=Number($('orderId').value);
     if(!Number.isInteger(id)||id<1)return mostrarLocal('Indica un ID de pedido válido.');
-    mostrar('POST /api/v1/pedidos/'+id+'/'+path,await api('/api/v1/pedidos/'+id+'/'+path,'POST'));
+    const result=await api('/api/v1/pedidos/'+id+'/'+path,'POST');
+    mostrar('POST /api/v1/pedidos/'+id+'/'+path,result);
+    if(result.ok){cargarMesas();consultarDisponibilidad();}
+
   });
 }
 $('reserveForm').addEventListener('submit',async event=>{
