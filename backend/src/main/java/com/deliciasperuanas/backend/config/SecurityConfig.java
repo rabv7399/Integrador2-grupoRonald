@@ -129,6 +129,23 @@ public class SecurityConfig {
                                 "CLIENTE"
                         )
 
+                        // APF3 SOA: lectura interna de porciones, ajustes solo por ADMIN
+                        .requestMatchers(HttpMethod.GET, "/api/v1/inventario/**")
+                        .hasAnyRole("ADMIN", "OPERADOR", "MOZO", "SUPERVISOR")
+
+                        .requestMatchers(HttpMethod.PUT, "/api/v1/inventario/**")
+                        .hasRole("ADMIN")
+
+                        // El personal confirma pedidos; clientes registran, consultan y cancelan los suyos
+                        .requestMatchers(HttpMethod.POST, "/api/v1/pedidos/*/confirmacion")
+                        .hasAnyRole("ADMIN", "OPERADOR", "MOZO", "SUPERVISOR")
+
+                        .requestMatchers(HttpMethod.POST, "/api/v1/pedidos/**")
+                        .hasAnyRole("ADMIN", "OPERADOR", "MOZO", "SUPERVISOR", "CLIENTE")
+
+                        .requestMatchers(HttpMethod.GET, "/api/v1/pedidos/**")
+                        .authenticated()
+
                         .anyRequest().authenticated()
                 )
 
