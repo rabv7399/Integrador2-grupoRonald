@@ -118,18 +118,18 @@ public class SecurityConfig {
                         // Mesas
                         .requestMatchers(
                                 "/api/mesas/**"
-                        ).hasAnyRole("ADMIN", "OPERADOR")
+                        ).hasAnyRole("ADMIN", "OPERADOR", "MOZO", "SUPERVISOR")
 
-                        // Reservas
-                        .requestMatchers(
-                                "/api/reservas/**"
-                        ).hasAnyRole(
-                                "ADMIN",
-                                "OPERADOR",
-                                "MOZO",
-                                "SUPERVISOR",
-                                "CLIENTE"
-                        )
+                        // Reservas: el cliente puede crear; consultas globales y cancelaciones son internas.
+                        // Se evita que un cliente lea o cancele reservas ajenas sin identidad vinculada.
+                        .requestMatchers(HttpMethod.POST, "/api/reservas/**")
+                        .hasAnyRole("ADMIN", "OPERADOR", "MOZO", "SUPERVISOR", "CLIENTE")
+
+                        .requestMatchers(HttpMethod.GET, "/api/reservas/**")
+                        .hasAnyRole("ADMIN", "OPERADOR", "MOZO", "SUPERVISOR")
+
+                        .requestMatchers(HttpMethod.PATCH, "/api/reservas/**")
+                        .hasAnyRole("ADMIN", "OPERADOR", "MOZO", "SUPERVISOR")
 
                         // APF3 SOA: lectura interna de porciones, ajustes solo por ADMIN
                         .requestMatchers(HttpMethod.GET, "/api/v1/inventario/**")
