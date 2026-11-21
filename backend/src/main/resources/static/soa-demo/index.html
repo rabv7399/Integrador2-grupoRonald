@@ -203,6 +203,18 @@
             <button type="button" id="setStock" class="outline">Actualizar porciones (ADMIN)</button>
           </div>
           <p class="hint">Inventario terminado por producto, no de ingredientes. Los pedidos pendientes reservan porciones; al confirmarse pasan a vendidas.</p>
+          <div id="stockOutPanel" data-roles="ADMIN">
+            <div class="control-divider"><strong>Salida de inventario con motivo</strong><p>Solo Administrador. No se permite retirar porciones reservadas ni vendidas.</p></div>
+            <div class="two"><label>Cantidad<input id="stockOutQuantity" type="number" min="1" value="1"></label>
+              <label>Comentario obligatorio<input id="stockOutReason" maxlength="500" placeholder="Ej.: merma o retiro de porciones"></label></div>
+            <button type="button" id="stockOutSubmit" class="danger">Registrar salida justificada</button>
+          </div>
+          <div class="ops-section-label"><strong>Tabla de stock actual</strong><span>Sincronización automática</span></div>
+          <div class="ops-table-wrap"><table class="ops-table"><thead><tr><th>Producto</th><th>Preparadas</th><th>Reservadas</th><th>Vendidas</th><th>Disponibles</th><th>Estado</th></tr></thead><tbody id="inventoryTable"><tr><td colspan="6">Consultando stock…</td></tr></tbody></table></div>
+          <div id="stockHistoryPanel" data-roles="ADMIN,CAJA,SUPERVISOR">
+            <div class="ops-section-label"><strong>Historial de movimientos</strong><span>Entradas, salidas y ajustes</span></div>
+            <div class="ops-table-wrap"><table class="ops-table"><thead><tr><th>Fecha</th><th>Producto</th><th>Movimiento</th><th>Cantidad</th><th>Comentario</th><th>Usuario</th></tr></thead><tbody id="inventoryMovementsTable"><tr><td colspan="6">Sin movimientos registrados.</td></tr></tbody></table></div>
+          </div>
         </div>
       </section>
 
@@ -211,6 +223,7 @@
         <div class="module-heading"><div><span class="eyebrow">COCINA · PREPARACIÓN POR PLATO</span><h2>Órdenes en cocina</h2><p>El cocinero puede marcar cada plato LISTO; no accede al cobro.</p></div><span class="module-label">S03 · OPERACIÓN</span></div>
         <div class="panel"><button type="button" id="refreshKitchen" class="primary">Actualizar comandas</button>
           <div id="kitchenOrders" class="command-list">Consulta pedidos confirmados para empezar.</div>
+          <p class="hint">Las horas de inicio, preparación y entrega permiten medir la demora. Las comandas cobradas desaparecen del listado activo, pero permanecen en el historial de ventas.</p>
         </div>
       </section>
 
@@ -220,9 +233,30 @@
           <button type="button" id="refreshSalesOrders" class="outline">Ver pedidos pendientes de cobro</button>
           <div id="cashOrders" class="command-list"></div>
           <label>ID del pedido<input type="number" id="cashPedidoId" min="1" placeholder="Indica el pedido a cobrar"></label>
-          <label>Monto recibido (S/)<input type="number" id="cashRecibido" min="0.01" step="0.01" placeholder="Ejemplo: 50.00"></label>
+          <label>Medio de pago<select id="cashMethod"><option value="EFECTIVO">Efectivo</option><option value="YAPE">Yape</option><option value="POS">Tarjeta POS</option></select></label>
+          <label id="cashRecibidoWrap">Monto recibido en efectivo (S/)<input type="number" id="cashRecibido" min="0.01" step="0.01" placeholder="Ejemplo: 50.00"></label>
+          <label id="cashReferenceWrap" hidden>Referencia de Yape / voucher POS<input id="cashReference" maxlength="80" placeholder="Código de operación / voucher"></label>
           <div class="buttons"><button type="button" id="cashCharge" class="primary">Cobrar y generar ticket</button><button type="button" id="cashReprint" class="outline">Consultar último comprobante por pedido</button></div>
           <p class="hint">El ticket se abre en otra pestaña. Utiliza «Imprimir» y «Guardar como PDF». Es un comprobante interno académico, no una boleta tributaria.</p>
+          <p class="hint">Yape/POS se registra manualmente: esta demo no conecta con bancos ni pasarelas y requiere confirmar la operación externamente.</p>
+          <div class="ops-section-label"><strong>Cuadre de caja y ventas por fecha</strong><span>Efectivo, Yape y POS por separado</span></div>
+          <label>Fecha a consultar<input type="date" id="cashReportDate"></label>
+          <button id="cashReportRefresh" class="outline" type="button">Consultar ventas del día</button>
+          <div class="ops-summary-grid">
+            <div><small>Venta del día</small><strong id="reportDailyTotal">S/ 0.00</strong></div>
+            <div><small>Venta del mes</small><strong id="reportMonthlyTotal">S/ 0.00</strong></div>
+            <div><small>Efectivo</small><strong id="reportCash">S/ 0.00</strong></div>
+            <div><small>Yape</small><strong id="reportYape">S/ 0.00</strong></div>
+            <div><small>POS</small><strong id="reportPos">S/ 0.00</strong></div>
+          </div>
+          <div class="two ops-close-form">
+            <label>Efectivo contado en la caja (S/)<input id="cashCounted" type="number" min="0" step="0.01" placeholder="Dinero contado"></label>
+            <div><button id="cashCloseSave" class="primary" type="button">Guardar cuadre del día</button>
+              <small id="cashDifference">El efectivo esperado no incluye Yape/POS ni fondo de apertura.</small></div>
+          </div>
+          <p id="cashCloseStatus" class="ops-status"></p>
+          <div class="ops-section-label"><strong>Registro de operaciones cobradas</strong><span>Historial de tickets de la fecha</span></div>
+          <div class="ops-table-wrap"><table class="ops-table"><thead><tr><th>Hora</th><th>Ticket</th><th>Pedido</th><th>Medio</th><th>Total</th></tr></thead><tbody id="salesHistoryTable"><tr><td colspan="5">Selecciona una fecha.</td></tr></tbody></table></div>
         </div>
       </section>
 
