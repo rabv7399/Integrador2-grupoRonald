@@ -6,6 +6,7 @@ import org.springframework.boot.ApplicationRunner;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 import java.math.BigDecimal;
@@ -17,11 +18,11 @@ public class SoaDemoDataConfig {
     ApplicationRunner datosDemo(
         UsuarioRepository usuarios, CategoriaRepository categorias,
         ProductoRepository productos, InventarioPlatoRepository inventarios,
-        MesaRepository mesas, PasswordEncoder encoder
+        MesaRepository mesas, PasswordEncoder encoder,
+        @Value("${soa.demo.admin-password}") String adminPassword,
+        @Value("${soa.demo.client-password}") String clientPassword
     ) {
         return args -> {
-            String adminPassword = System.getenv("SOA_DEMO_ADMIN_PASSWORD");
-            String clientPassword = System.getenv("SOA_DEMO_CLIENT_PASSWORD");
             if (adminPassword == null || adminPassword.length() < 8
                     || clientPassword == null || clientPassword.length() < 8) {
                 throw new IllegalStateException("Define SOA_DEMO_ADMIN_PASSWORD y SOA_DEMO_CLIENT_PASSWORD (8+ caracteres) solo en tu terminal");
