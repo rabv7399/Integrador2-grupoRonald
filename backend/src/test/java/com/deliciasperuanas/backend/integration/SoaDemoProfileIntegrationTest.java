@@ -129,6 +129,135 @@ class SoaDemoProfileIntegrationTest {
             .andExpect(status().isNoContent());
     }
 
+    @Test
+    void mesaCocinaCajaTicketYPedidoParaLlevar() throws Exception {
+        String mozo=iniciar("mozo.demo@delicias.local","MozoDemoTest123!");
+        String cocinero=iniciar("cocinero.demo@delicias.local","CocineroDemoTest123!");
+        String caja=iniciar("caja.demo@delicias.local","CajaDemoTest123!");
+
+        String pedidoJson="""
+          {"tipoAtencion":"MESA","mesaId":1,"items":[
+            {"productoId":1,"cantidad":1},{"productoId":2,"cantidad":1}]}
+          """;
+        String pedido=mvc.perform(post("/api/v1/pedidos")
+                .header("Authorization","Bearer "+mozo)
+                .header("Idempotency-Key","integracion-mesa-001")
+                .contentType(MediaType.APPLICATION_JSON).content(pedidoJson))
+            .andExpect(status().isCreated())
+            .andExpect(jsonPath("$.tipoAtencion").value("MESA"))
+            .andExpect(jsonPath("$.mesaId").value(1))
+            .andExpect(jsonPath("$.items.length()").value(2))
+            .andReturn().getResponse().getContentAsString();
+        Number id=JsonPath.read(pedido,"$.pedidoId");
+
+        mvc.perform(get("/api/mesas").header("Authorization","Bearer "+mozo))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$[?(@.numero == 1)].estado")
+                .value(org.hamcrest.Matchers.hasItem("OCUPADA")));
+
+        mvc.perform(post("/api/v1/pedidos")
+                .header("Authorization","Bearer "+mozo)
+                .header("Idempotency-Key","integracion-mesa-002")
+                .contentType(MediaType.APPLICATION_JSON).content(pedidoJson))
+            .andExpect(status().isConflict())
+            .andExpect(jsonPath("$.codigo").value("MESA_OCUPADA"));
+
+        mvc.perform(post("/api/v1/pedidos/{id}/confirmacion",id.longValue())
+                .header("Authorization","Bearer "+mozo))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.estado").value("CONFIRMADO"));
+
+        mvc.perform(post("/api/v1/ventas/pedidos/{id}/cobrar",id.longValue())
+                .header("Authorization","Bearer "+caja)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"montoRecibido\":100.00}"))
+            .andExpect(status().isConflict())
+            .andExpect(jsonPath("$.codigo").value("PLATOS_PENDIENTES"));
+
+        Number linea0=JsonPath.read(pedido,"$.items[0].detalleId");
+        Number linea1=JsonPath.read(pedido,"$.items[1].detalleId");
+        mvc.perform(post("/api/v1/pedidos/{id}/detalles/{linea}/listo",id.longValue(),linea0.longValue())
+                .header("Authorization","Bearer "+cocinero))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.items[0].estadoPreparacion").value("LISTO"))
+            .andExpect(jsonPath("$.items[1].estadoPreparacion").value("PENDIENTE"));
+        mvc.perform(post("/api/v1/pedidos/{id}/detalles/{linea}/listo",id.longValue(),linea1.longValue())
+                .header("Authorization","Bearer "+cocinero))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.items[1].estadoPreparacion").value("LISTO"));
+
+        mvc.perform(post("/api/v1/ventas/pedidos/{id}/cobrar",id.longValue())
+                .header("Authorization","Bearer "+caja)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"montoRecibido\":100.00}"))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.total").value(47.00))
+            .andExpect(jsonPath("$.cambio").value(53.00))
+            .andExpect(jsonPath("$.aviso").isNotEmpty());
+
+        mvc.perform(post("/api/v1/ventas/pedidos/{id}/cobrar",id.longValue())
+                .header("Authorization","Bearer "+caja)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"montoRecibido\":100.00}"))
+            .andExpect(status().isConflict())
+            .andExpect(jsonPath("$.codigo").value("PEDIDO_YA_PAGADO"));
+
+        mvc.perform(get("/api/mesas").header("Authorization","Bearer "+mozo))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$[?(@.numero == 1)].estado")
+                .value(org.hamcrest.Matchers.hasItem("DISPONIBLE")));
+
+        mvc.perform(post("/api/v1/pedidos")
+                .header("Authorization","Bearer "+caja)
+                .header("Idempotency-Key","integracion-llevar-001")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"tipoAtencion\":\"LLEVAR\",\"items\":[{\"productoId\":1,\"cantidad\":1}]}"))
+            .andExpect(status().isCreated())
+            .andExpect(jsonPath("$.tipoAtencion").value("LLEVAR"))
+            .andExpect(jsonPath("$.mesaId").doesNotExist());
+
+        mvc.perform(patch("/api/v1/inventario/1/reponer")
+                .header("Authorization","Bearer "+caja)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"cantidad\":15}"))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.totalPreparado").value(45));
+    }
+
+    @Test
+    void cajaYCocinaNoPuedenGestionarUsuariosYElAdminSi() throws Exception {
+        String admin=iniciar("admin.demo@delicias.local","AdminDemoTest123!");
+        String caja=iniciar("caja.demo@delicias.local","CajaDemoTest123!");
+        String cocinero=iniciar("cocinero.demo@delicias.local","CocineroDemoTest123!");
+        mvc.perform(get("/api/v1/usuarios").header("Authorization","Bearer "+caja))
+            .andExpect(status().isForbidden());
+        mvc.perform(get("/api/v1/ventas/resumen").header("Authorization","Bearer "+cocinero))
+            .andExpect(status().isForbidden());
+        mvc.perform(get("/api/v1/usuarios").header("Authorization","Bearer "+admin))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$[0].password").doesNotExist());
+
+        String created=mvc.perform(post("/api/v1/usuarios")
+                .header("Authorization","Bearer "+admin)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"nombre\":\"Mozo Nuevo\",\"correo\":\"nuevo@delicias.local\",\"rol\":\"MOZO\",\"password\":\"Prueba45678!\"}"))
+            .andExpect(status().isCreated())
+            .andExpect(jsonPath("$.rol").value("MOZO"))
+            .andReturn().getResponse().getContentAsString();
+        Number id=JsonPath.read(created,"$.id");
+        mvc.perform(delete("/api/v1/usuarios/{id}",id.longValue())
+                .header("Authorization","Bearer "+admin))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.activo").value(false));
+
+        mvc.perform(put("/api/v1/configuracion")
+                .header("Authorization","Bearer "+admin)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"nombre\":\"Delicias Peruanas Demo\",\"telefono\":\"966 100 348\",\"logoRuta\":null}"))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.nombre").value("Delicias Peruanas Demo"));
+    }
+
     private String iniciar(String correo, String pass) throws Exception {
         String json = "{\"correo\":\""+correo+"\",\"password\":\""+pass+"\"}";
         String response = mvc.perform(post("/api/auth/login")
