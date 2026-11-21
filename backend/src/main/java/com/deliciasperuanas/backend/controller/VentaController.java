@@ -3,8 +3,11 @@ package com.deliciasperuanas.backend.controller;
 import com.deliciasperuanas.backend.dto.*;
 import com.deliciasperuanas.backend.service.VentaService;
 import jakarta.validation.Valid;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
-import java.util.Map;
+import org.springframework.format.annotation.DateTimeFormat;
+import java.time.LocalDate;
+import java.util.*;
 
 @RestController
 @RequestMapping("/api/v1/ventas")
@@ -14,8 +17,8 @@ public class VentaController {
 
     @PostMapping("/pedidos/{pedidoId}/cobrar")
     public VentaRespuesta cobrar(@PathVariable Long pedidoId,
-                              @Valid @RequestBody CobroSolicitud req) {
-        return servicio.cobrar(pedidoId,req.montoRecibido());
+                   @Valid @RequestBody CobroSolicitud req,Authentication auth){
+        return servicio.cobrar(pedidoId,req,auth.getName());
     }
 
     @GetMapping("/pedidos/{pedidoId}")
@@ -24,5 +27,17 @@ public class VentaController {
     }
 
     @GetMapping("/resumen")
-    public Map<String,Object> resumen(){return servicio.resumen();}
+    public Map<String,Object> resumen(@RequestParam(required=false)
+        @DateTimeFormat(iso=DateTimeFormat.ISO.DATE) LocalDate fecha){
+        return servicio.resumen(fecha==null?LocalDate.now():fecha);
+    }
+
+    @PostMapping("/cuadres")
+    public CierreCajaRespuesta registrarCuadre(@Valid @RequestBody CierreCajaSolicitud req,
+                                                Authentication auth){
+        return servicio.registrarCuadre(req,auth.getName());
+    }
+
+    @GetMapping("/cuadres")
+    public List<CierreCajaRespuesta> cuadres(){return servicio.listarCuadres();}
 }
