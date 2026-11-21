@@ -41,4 +41,4 @@ jobs:
           cache-dependency-path: backend/pom.xml
 
       - name: Compilar y ejecutar pruebas Maven
-        run: bash ./mvnw -B -ntp clean verify
+        run: mvn -B -ntp clean verify
