@@ -26,6 +26,17 @@ public class PedidoController {
             .body(result.respuesta());
     }
 
+    @GetMapping
+    public java.util.List<PedidoRespuesta> listar(Authentication auth) {
+        return service.listar(auth.getName());
+    }
+
+    @PostMapping("/{id}/detalles/{detalleId}/listo")
+    public PedidoRespuesta marcarListo(@PathVariable Long id,@PathVariable Long detalleId,
+                                       Authentication auth) {
+        return service.marcarListo(id,detalleId,auth.getName());
+    }
+
     @GetMapping("/{id}")
     public PedidoRespuesta consultar(@PathVariable Long id, Authentication auth) {
         return service.consultar(id, auth.getName());

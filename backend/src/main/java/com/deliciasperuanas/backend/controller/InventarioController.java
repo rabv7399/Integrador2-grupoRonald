@@ -17,6 +17,12 @@ public class InventarioController {
         return service.consultar(productoId);
     }
 
+    @PatchMapping("/{productoId}/reponer")
+    public InventarioRespuesta reponer(@PathVariable Long productoId,
+                                       @Valid @RequestBody com.deliciasperuanas.backend.dto.ReposicionSolicitud s) {
+        return service.reponer(productoId,s.cantidad());
+    }
+
     @PutMapping("/{productoId}")
     public InventarioRespuesta configurar(@PathVariable Long productoId,
                                            @Valid @RequestBody InventarioSolicitud solicitud) {

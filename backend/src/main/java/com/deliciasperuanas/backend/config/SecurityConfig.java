@@ -118,7 +118,7 @@ public class SecurityConfig {
                         // Mesas
                         .requestMatchers(
                                 "/api/mesas/**"
-                        ).hasAnyRole("ADMIN", "OPERADOR", "MOZO", "SUPERVISOR")
+                        ).hasAnyRole("ADMIN", "OPERADOR", "MOZO", "SUPERVISOR", "CAJA")
 
                         // Reservas: el cliente puede crear; consultas globales y cancelaciones son internas.
                         // Se evita que un cliente lea o cancele reservas ajenas sin identidad vinculada.
@@ -126,27 +126,44 @@ public class SecurityConfig {
                         .hasAnyRole("ADMIN", "OPERADOR", "MOZO", "SUPERVISOR", "CLIENTE")
 
                         .requestMatchers(HttpMethod.GET, "/api/reservas/**")
-                        .hasAnyRole("ADMIN", "OPERADOR", "MOZO", "SUPERVISOR")
+                        .hasAnyRole("ADMIN", "OPERADOR", "MOZO", "SUPERVISOR", "CAJA")
 
                         .requestMatchers(HttpMethod.PATCH, "/api/reservas/**")
                         .hasAnyRole("ADMIN", "OPERADOR", "MOZO", "SUPERVISOR")
 
                         // APF3 SOA: lectura interna de porciones, ajustes solo por ADMIN
                         .requestMatchers(HttpMethod.GET, "/api/v1/inventario/**")
-                        .hasAnyRole("ADMIN", "OPERADOR", "MOZO", "SUPERVISOR")
+                        .hasAnyRole("ADMIN", "OPERADOR", "MOZO", "SUPERVISOR", "CAJA")
+
+                        .requestMatchers(HttpMethod.PATCH, "/api/v1/inventario/*/reponer")
+                        .hasAnyRole("ADMIN", "SUPERVISOR", "CAJA")
 
                         .requestMatchers(HttpMethod.PUT, "/api/v1/inventario/**")
                         .hasRole("ADMIN")
 
                         // El personal confirma pedidos; clientes registran, consultan y cancelan los suyos
+                        // Un cocinero marca platos como LISTO, pero no cobra ni confirma.
+                        .requestMatchers(HttpMethod.POST, "/api/v1/pedidos/*/detalles/*/listo")
+                        .hasAnyRole("ADMIN", "SUPERVISOR", "COCINERO")
+
                         .requestMatchers(HttpMethod.POST, "/api/v1/pedidos/*/confirmacion")
-                        .hasAnyRole("ADMIN", "OPERADOR", "MOZO", "SUPERVISOR")
+                        .hasAnyRole("ADMIN", "OPERADOR", "MOZO", "SUPERVISOR", "CAJA")
 
                         .requestMatchers(HttpMethod.POST, "/api/v1/pedidos/**")
-                        .hasAnyRole("ADMIN", "OPERADOR", "MOZO", "SUPERVISOR", "CLIENTE")
+                        .hasAnyRole("ADMIN", "OPERADOR", "MOZO", "SUPERVISOR", "CAJA", "CLIENTE")
 
                         .requestMatchers(HttpMethod.GET, "/api/v1/pedidos/**")
-                        .authenticated()
+                        .hasAnyRole("ADMIN", "OPERADOR", "MOZO", "SUPERVISOR", "CAJA", "COCINERO", "CLIENTE")
+
+                        // S06 ventas y comprobante interno
+                        .requestMatchers("/api/v1/ventas/**")
+                        .hasAnyRole("ADMIN","SUPERVISOR","CAJA")
+
+                        // S01 gestión interna de usuarios y S07 configuración del local
+                        .requestMatchers("/api/v1/usuarios/**")
+                        .hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.GET, "/api/v1/configuracion/**").permitAll()
+                        .requestMatchers(HttpMethod.PUT, "/api/v1/configuracion/**").hasRole("ADMIN")
 
                         .anyRequest().authenticated()
                 )

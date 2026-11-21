@@ -49,6 +49,23 @@ public class InventarioService {
         return respuesta(inventarios.saveAndFlush(stock));
     }
 
+    @Transactional
+    public InventarioRespuesta reponer(Long productoId,int cantidad) {
+        if (cantidad<=0 || cantidad>10000) {
+            throw new OperacionNegocioException(HttpStatus.BAD_REQUEST,"CANTIDAD_INVALIDA",
+                "La reposición debe sumar entre 1 y 10000 porciones");
+        }
+        InventarioPlato stock=inventarios.bloquearProducto(productoId).orElseThrow(() ->
+            new OperacionNegocioException(HttpStatus.NOT_FOUND,"INVENTARIO_NO_CONFIGURADO",
+                "El Administrador debe crear primero el inventario del plato"));
+        if ((long)stock.getTotalPreparado()+cantidad>Integer.MAX_VALUE) {
+            throw new OperacionNegocioException(HttpStatus.CONFLICT,"TOTAL_FUERA_RANGO",
+                "La reposición supera el máximo de porciones permitido");
+        }
+        stock.setTotalPreparado(stock.getTotalPreparado()+cantidad);
+        return respuesta(stock);
+    }
+
     // Se invoca dentro de la misma transaccion que registra el pedido.
     // El bloqueo pesimista impide descontar dos veces las mismas porciones.
     @Transactional
