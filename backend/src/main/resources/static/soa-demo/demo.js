@@ -241,6 +241,7 @@ $('setStock').addEventListener('click',async()=>{
 });
 $('newKey').addEventListener('click',nuevaClave);
 let ultimaSolicitud = null;
+let carritoPlatos = [];
 $('createOrder').addEventListener('click',async()=>{
   if(!pedirSesion())return;
   const id=Number($('orderProduct').value),cantidad=Number($('orderQty').value);
@@ -248,13 +249,15 @@ $('createOrder').addEventListener('click',async()=>{
   const tipoAtencion=$('orderType').value;
   const mesaId=tipoAtencion==='MESA'?Number($('orderTable').value):null;
   if(tipoAtencion==='MESA' && (!Number.isInteger(mesaId)||mesaId<1))return mostrarLocal('Elige una mesa disponible.');
-  ultimaSolicitud={items:[{productoId:id,cantidad}],tipoAtencion,mesaId};
+  const items=carritoPlatos.length?carritoPlatos.map(i=>({...i})):[{productoId:id,cantidad}];
+  ultimaSolicitud={items,tipoAtencion,mesaId};
   const result=await api('/api/v1/pedidos','POST',ultimaSolicitud,{'Idempotency-Key':$('orderKey').value});
   mostrar('POST /api/v1/pedidos',result);
   if(result.ok&&result.data.pedidoId){
     $('orderId').value=result.data.pedidoId;
     $('cashPedidoId').value=result.data.pedidoId;
     cargarMesas();
+    carritoPlatos=[];pintarCarrito();
     consultarDisponibilidad();
   }
 });
@@ -336,7 +339,7 @@ async function consultarDisponibilidad(){
     $('orderAvailability').textContent='Porciones disponibles: '+disponible+
       ' · Reservadas: '+resultado.data.reservadas+
       ' · Vendidas: '+resultado.data.vendidas;
-    $('createOrder').disabled=disponible<1;
+    $('createOrder').disabled=disponible<1 && carritoPlatos.length===0;
   }else{
     $('orderAvailability').textContent='Sin datos de inventario o acceso no autorizado.';
     $('createOrder').disabled=true;
@@ -642,3 +645,44 @@ $('settingsSave').addEventListener('click',async()=>{
   const r=await api('/api/v1/configuracion','PUT',data);
   mostrar('PUT /api/v1/configuracion',r);if(r.ok)cargarConfiguracion();
 });
+
+/* Carrito temporal para pedido de mesa o para llevar con múltiples platos */
+function pintarCarrito(){
+  const lugar=$('orderLines');lugar.replaceChildren();
+  if(!carritoPlatos.length){
+    lugar.textContent='Agrega platos a la orden o registra directamente el producto seleccionado.';
+    return;
+  }
+  let total=0;
+  for(const [index,linea] of carritoPlatos.entries()){
+    const producto=listaProductos.find(p=>p.id===linea.productoId);
+    const row=document.createElement('div');row.className='cash-row';
+    const texto=document.createElement('span');
+    total+=Number(producto?.precio||0)*linea.cantidad;
+    texto.textContent=linea.cantidad+' × '+(producto?.nombre||'Producto #'+linea.productoId)+' · '+formatPrice(Number(producto?.precio||0)*linea.cantidad);
+    row.append(texto,crearBoton('Quitar',()=>{carritoPlatos.splice(index,1);pintarCarrito();},'danger'));
+    lugar.append(row);
+  }
+  const cierre=document.createElement('strong');
+  cierre.textContent='Total estimado: '+formatPrice(total)+' · '+carritoPlatos.length+' líneas';
+  lugar.append(cierre);
+}
+$('addOrderLine').addEventListener('click',async()=>{
+  const id=Number($('orderProduct').value),cantidad=Number($('orderQty').value);
+  if(!Number.isInteger(id)||!Number.isInteger(cantidad)||cantidad<1||cantidad>20)
+    return mostrarLocal('Producto o cantidad no válidos.');
+  const producto=listaProductos.find(p=>p.id===id);
+  if(!producto?.disponible || Number(producto.precio)<=0)
+    return mostrarLocal('El plato seleccionado no se encuentra disponible.');
+  const inventario=await api('/api/v1/inventario/'+id);
+  const yaEnCarrito=carritoPlatos.filter(p=>p.productoId===id).reduce((n,p)=>n+p.cantidad,0);
+  if(!inventario.ok || Number(inventario.data.disponibles)<cantidad+yaEnCarrito)
+    return mostrarLocal('No hay suficientes porciones para añadir esa cantidad al pedido.');
+  if(carritoPlatos.length>=20 || cantidad+yaEnCarrito>20)
+    return mostrarLocal('Máximo 20 líneas y 20 porciones por producto.');
+  carritoPlatos.push({productoId:id,cantidad});
+  pintarCarrito();
+  $('createOrder').disabled=false;
+});
+$('clearOrderLines').addEventListener('click',()=>{carritoPlatos=[];pintarCarrito();consultarDisponibilidad();});
+pintarCarrito();
