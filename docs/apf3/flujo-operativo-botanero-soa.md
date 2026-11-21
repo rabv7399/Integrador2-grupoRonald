@@ -27,8 +27,8 @@ La autorización se verifica en **Spring Security**; los menús ocultos son solo
 1. Inicia Spring Boot en modo demo desde `tools/Iniciar_SOA_Demo.ps1`.
 2. Accede a `http://localhost:8081/soa-demo/index.html`.
 3. Inicia sesión como MOZO: `mozo.demo@delicias.local` con la contraseña temporal.
-4. Ve a **Pedidos**, selecciona `MESA`, Mesa #1, Lomo Saltado, una porción; registra el pedido (HTTP 201).
-5. Para probar dos platos en una misma orden, utiliza Postman con `{"tipoAtencion":"MESA","mesaId":1,"items":[{"productoId":1,"cantidad":1},{"productoId":2,"cantidad":1}]}`, **en lugar de** hacer el pedido de un solo producto en la interfaz. La API admite múltiples líneas; la selección múltiple en pantalla está pendiente.
+4. Ve a **Pedidos**, selecciona `MESA`, Mesa #1. Elige Lomo Saltado (1 porción) y pulsa **+ Añadir plato a esta orden**; después añade Ají de Gallina (1 porción).
+5. Comprueba los dos platos en el carrito y pulsa **Registrar pedido** (HTTP 201). La Mesa #1 queda OCUPADA. El pedido contiene dos líneas con IDs independientes. El mismo flujo puede probarse vía Postman con `{"tipoAtencion":"MESA","mesaId":1,"items":[{"productoId":1,"cantidad":1},{"productoId":2,"cantidad":1}]}`.
 6. Consulta **Pedidos**: Mesa #1 queda OCUPADA. El mozo confirma la orden.
 7. Inicia sesión COCINERO: `cocinero.demo@delicias.local`. En **Cocina**, marca cada uno de los platos por separado como LISTO.
 8. Inicia sesión CAJA: `caja.demo@delicias.local`. En **Caja y cobros**, selecciona el pedido, escribe el monto recibido y cobra.
