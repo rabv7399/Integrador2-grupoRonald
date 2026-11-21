@@ -58,9 +58,9 @@ Guardar en `evidencias/APF3/` los siguientes archivos:
 | `APF3_03_Carta_Almuerzos.png` | Filtro Almuerzos |
 | `APF3_04_Carta_Cenas.png` | Filtro Cenas |
 | `APF3_05_Carta_Bebidas.png` | Filtro Bebidas |
-| `APF3_06_Nosotros_Contacto.png` | Secciones Nosotros y Contacto |
-| `APF3_07_Registro_Cliente_201.png` | Registro exitoso con usuario de prueba, sin mostrar contraseña |
-| `APF3_08_Registro_Correo_409.png` | Validación de correo duplicado |
+| `APF3_07_Nosotros.png` | Secciones Nosotros y Contacto |
+| `APF3_11_Registro_Cliente_201.png` | Registro exitoso con usuario de prueba, sin mostrar contraseña |
+| `APF3_12_Registro_Correo_409.png` | Validación de correo duplicado |
 | `APF3_09_Postman_Catalogo_200.png` | GET /api/productos público, respuesta JSON |
 | `APF3_10_Postman_Admin_401.png` | POST /api/productos sin JWT, respuesta 401 |
 
