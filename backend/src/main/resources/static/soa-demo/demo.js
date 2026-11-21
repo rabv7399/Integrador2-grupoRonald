@@ -101,6 +101,7 @@ function abrirModulo(modulo) {
   });
   $('workspaceTitle').textContent=MODULOS[modulo].titulo;
   window.scrollTo({top:0,behavior:'instant'});
+  if(modulo==='stock' && $('stockProduct').value)consultarInventarioUI();
 }
 function iniciarPanel(){
   const perfil=PERFILES[rol];
@@ -164,6 +165,7 @@ function listaMenu(){
     }
   }
   if(rol!=='CLIENTE' && $('orderProduct').value) consultarDisponibilidad();
+  if(!$('module-stock').hidden && $('stockProduct').value)consultarInventarioUI();
   pintarAdminProductos();
   $('productsCount').textContent=String(listaProductos.length);
   $('dashboardProductsCount').textContent=String(listaProductos.length);
@@ -224,12 +226,52 @@ document.querySelectorAll('#sideNav [data-module]').forEach(button=>
   button.addEventListener('click',()=>abrirModulo(button.dataset.module)));
 $('viewJson').addEventListener('click',()=>abrirModulo('api'));
 $('getCatalog').addEventListener('click',consultarCatalogo);
-$('getStock').addEventListener('click',async()=>{
+function pintarInventario(datos) {
+  const producto=listaProductos.find(p=>p.id===Number(datos.productoId));
+  const disponible=Math.max(0,Number(datos.disponibles));
+  const preparado=Number(datos.totalPreparado);
+  const habilitado=producto ? producto.disponible===true : true;
+  const estado=!habilitado?'No disponible en carta':disponible>0?'Disponible':'Agotado';
+  $('inventoryName').textContent=datos.producto||producto?.nombre||'Plato seleccionado';
+  $('inventoryPrepared').textContent=String(datos.totalPreparado);
+  $('inventoryReserved').textContent=String(datos.reservadas);
+  $('inventorySold').textContent=String(datos.vendidas);
+  $('inventoryAvailable').textContent=String(datos.disponibles);
+  $('inventoryBadge').textContent=estado;
+  $('inventoryBadge').className='inventory-badge '+(habilitado&&disponible>0?'is-available':'is-unavailable');
+  $('inventoryMeterFill').style.width=(preparado>0?Math.min(100,disponible/preparado*100):0)+'%';
+  $('inventoryMeterLabel').setAttribute('aria-label',disponible+' de '+preparado+' porciones disponibles');
+  $('inventorySummaryNote').textContent=habilitado
+    ? (disponible>0?'Hay '+disponible+' porciones para nuevos pedidos.':'El plato está agotado; Caja puede reponer cuando Cocina entregue más porciones.')
+    : 'El producto está desactivado en la carta. No se puede pedir aunque haya porciones registradas.';
+  $('inventorySummaryError').hidden=true;
+  $('inventorySummary').hidden=false;
+}
+async function consultarInventarioUI(){
   if(!pedirSesion())return;
   const id=$('stockProduct').value;
-  if(!id)return mostrarLocal('Primero consulta los productos.');
-  mostrar('GET /api/v1/inventario/'+id,await api('/api/v1/inventario/'+id));
-});
+  if(!id){
+    $('inventorySummary').hidden=true;
+    return mostrarLocal('Primero consulta los productos.');
+  }
+  const consultado=id;
+  const url='/api/v1/inventario/'+id;
+  const resultado=await api(url);
+  // Evita mostrar el inventario anterior tras cambiar de plato.
+  if($('stockProduct').value!==consultado)return;
+  mostrar('GET '+url,resultado);
+  if(resultado.ok&&resultado.data&&Number.isFinite(Number(resultado.data.disponibles))){
+    pintarInventario(resultado.data);
+  }else{
+    $('inventorySummary').hidden=true;
+    $('inventorySummaryError').hidden=false;
+    $('inventorySummaryError').textContent=resultado.status===401
+      ? 'La sesión caducó. Pulsa Salir y vuelve a ingresar para consultar las porciones.'
+      : (resultado.data?.mensaje||resultado.data?.message||'No se pudo consultar la disponibilidad.');
+  }
+}
+$('getStock').addEventListener('click',consultarInventarioUI);
+$('stockProduct').addEventListener('change',consultarInventarioUI);
 $('setStock').addEventListener('click',async()=>{
   if(!pedirSesion())return;
   if(rol!=='ADMIN')return mostrarLocal('Solo el ADMIN puede modificar el total de porciones. Usa la sesión de administrador.');
@@ -237,7 +279,9 @@ $('setStock').addEventListener('click',async()=>{
   if(!id)return mostrarLocal('Primero consulta los productos.');
   const value=Number($('prepared').value);
   if(!Number.isInteger(value)||value<0)return mostrarLocal('El total preparado debe ser un entero no negativo.');
-  mostrar('PUT /api/v1/inventario/'+id,await api('/api/v1/inventario/'+id,'PUT',{totalPreparado:value}));
+  const resultado=await api('/api/v1/inventario/'+id,'PUT',{totalPreparado:value});
+  mostrar('PUT /api/v1/inventario/'+id,resultado);
+  if(resultado.ok)pintarInventario(resultado.data);
 });
 $('newKey').addEventListener('click',nuevaClave);
 let ultimaSolicitud = null;
@@ -353,7 +397,10 @@ $('replenishStock').addEventListener('click',async()=>{
   if(!id || !Number.isInteger(cantidad)||cantidad<1)return mostrarLocal('Indica un plato y un número positivo de porciones.');
   const result=await api('/api/v1/inventario/'+id+'/reponer','PATCH',{cantidad});
   mostrar('PATCH /api/v1/inventario/'+id+'/reponer',result);
-  if(result.ok)consultarDisponibilidad();
+  if(result.ok){
+    pintarInventario(result.data);
+    consultarDisponibilidad();
+  }
 });
 
 function crearBoton(texto,handler,clase='outline'){

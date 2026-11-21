@@ -160,6 +160,23 @@
         <div class="panel">
           <label>Seleccionar producto<select id="stockProduct"></select></label>
           <div class="buttons"><button type="button" id="getStock" class="primary">Consultar inventario</button></div>
+          <section id="inventorySummary" class="inventory-summary" aria-label="Disponibilidad del plato" aria-live="polite" hidden>
+            <div class="inventory-summary-head">
+              <div><span class="eyebrow">EXISTENCIAS ACTUALES</span><h3 id="inventoryName">Plato seleccionado</h3></div>
+              <strong id="inventoryBadge" class="inventory-badge">Consultando</strong>
+            </div>
+            <div class="inventory-metrics">
+              <div class="inventory-metric"><span>Preparadas</span><strong id="inventoryPrepared">—</strong><small>Total producido</small></div>
+              <div class="inventory-metric"><span>Reservadas</span><strong id="inventoryReserved">—</strong><small>Pedidos pendientes</small></div>
+              <div class="inventory-metric"><span>Vendidas</span><strong id="inventorySold">—</strong><small>Pedidos confirmados</small></div>
+              <div class="inventory-metric inventory-metric-available"><span>Disponibles</span><strong id="inventoryAvailable">—</strong><small>Para nuevos pedidos</small></div>
+            </div>
+            <div class="inventory-meter" role="img" id="inventoryMeterLabel" aria-label="Porciones disponibles">
+              <span id="inventoryMeterFill" class="inventory-meter-fill"></span>
+            </div>
+            <p id="inventorySummaryNote" class="hint">El inventario indica porciones terminadas, no ingredientes.</p>
+          </section>
+          <p id="inventorySummaryError" class="inventory-inline-error" role="alert" hidden></p>
           <div class="control-divider" id="stockReplenishControls" data-roles="ADMIN,CAJA,SUPERVISOR">
              <strong>Reponer porciones de cocina</strong>
              <p>Agrega la nueva producción. Por ejemplo: +15 lomo saltado.</p>

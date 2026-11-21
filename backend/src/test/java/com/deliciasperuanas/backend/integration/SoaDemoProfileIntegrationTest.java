@@ -75,7 +75,9 @@ class SoaDemoProfileIntegrationTest {
         mvc.perform(get("/soa-demo/index.html")).andExpect(status().isOk())
             .andExpect(content().string(org.hamcrest.Matchers.containsString("id=\"loginView\"")))
             .andExpect(content().string(org.hamcrest.Matchers.containsString("id=\"appView\"")))
-            .andExpect(content().string(org.hamcrest.Matchers.containsString("data-module=\"stock\"")));
+            .andExpect(content().string(org.hamcrest.Matchers.containsString("data-module=\"stock\"")))
+            .andExpect(content().string(org.hamcrest.Matchers.containsString("id=\"inventoryAvailable\"")))
+            .andExpect(content().string(org.hamcrest.Matchers.containsString("id=\"inventoryBadge\"")));
 
         String cliente=iniciar("cliente.demo@delicias.local", "ClienteDemoTest123!");
         String mozo=iniciar("mozo.demo@delicias.local", "MozoDemoTest123!");
@@ -85,7 +87,11 @@ class SoaDemoProfileIntegrationTest {
         mvc.perform(get("/api/v1/inventario/1").header("Authorization", "Bearer "+cliente))
             .andExpect(status().isForbidden());
         mvc.perform(get("/api/v1/inventario/1").header("Authorization", "Bearer "+mozo))
-            .andExpect(status().isOk());
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.totalPreparado").value(30))
+            .andExpect(jsonPath("$.reservadas").value(0))
+            .andExpect(jsonPath("$.vendidas").value(0))
+            .andExpect(jsonPath("$.disponibles").value(30));
         mvc.perform(get("/api/v1/inventario/1").header("Authorization", "Bearer "+supervisor))
             .andExpect(status().isOk());
         mvc.perform(put("/api/v1/inventario/1").header("Authorization", "Bearer "+mozo)
