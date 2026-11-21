@@ -99,3 +99,32 @@ body{background:#f7f8f5}
 @media(max-width:1050px){.dashboard-view{grid-template-columns:220px minmax(0,1fr)}.side-brand strong{font-size:10px}.side-menu button{font-size:12px}.access-layout{gap:32px}}
 @media(max-width:800px){.access-layout{grid-template-columns:1fr;padding-top:35px}.access-message h1{font-size:46px}.login-card{max-width:510px}.dashboard-view{display:block}.side{position:relative;min-height:0;height:auto;padding:15px}.side-brand{padding:0 4px 13px}.side-heading,.side-bottom{display:none}.side-menu{flex-direction:row;overflow-x:auto;padding-top:14px}.side-menu button{width:auto;flex:none;padding:9px 11px}.workspace-header{padding:15px 20px}.workspace-content{padding:20px}.user-info{display:none}}
 @media(max-width:520px){.access-roles,.quick-grid,.kpi-grid{grid-template-columns:1fr}.access-message h1{font-size:39px}.login-card{padding:24px}.workspace-user{gap:8px}.workspace-header h2{font-size:21px}.workspace-eyebrow{font-size:8px}.module-heading{align-items:flex-start}.module-heading h2{font-size:27px}.module-label{display:none}.response-banner{align-items:start;flex-direction:column}.panel{padding:18px}}
+
+
+/* Operaciones de sala, cocina y caja */
+.mesa-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:9px;margin:17px 0}
+.mesa-button{display:flex;flex-direction:column;gap:6px;align-items:start;min-height:74px;padding:13px;border:1px solid #bedac3;border-radius:9px;background:#f3faf3;color:#245634;text-align:left}
+.mesa-button.ocupada{border-color:#f0ddd7;background:#fff4ef;color:#a86648}
+.mesa-button:disabled{opacity:.77;cursor:not-allowed}
+.mesa-button strong{font-size:14px}.mesa-button small{font-size:11px;text-transform:uppercase;letter-spacing:.08em}
+.command-list{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:14px;margin-top:20px;color:#536456}
+.command-card{border:1px solid #e0e8df;border-radius:10px;background:#fdfefd;padding:18px}
+.command-heading{display:flex;justify-content:space-between;gap:13px;align-items:center;color:var(--dark)}
+.order-status{font-size:10px;font-weight:900;padding:5px 8px;background:#e9f2eb;color:#306441;border-radius:5px}
+.command-items{list-style:none;padding:0;margin:15px 0 0}
+.command-items li{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 0;border-top:1px solid var(--line);font-size:12px}
+.command-items button{padding:6px 8px;min-width:90px;flex:none}
+.cash-row{display:flex;align-items:center;justify-content:space-between;gap:15px;border-bottom:1px solid #e5eae5;padding:10px 0}
+.cash-row span{font-size:12px;color:#455e49}.cash-row button{min-width:95px}
+.admin-list{max-height:320px;overflow-y:auto;margin-top:20px}
+.bar-chart{display:flex;justify-content:space-around;align-items:end;min-height:195px;gap:12px;border-top:1px solid var(--line);padding:20px 6px 8px}
+.bar-group{height:180px;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;gap:5px;flex:1;min-width:35px}
+.bar-group b{font-size:10px;color:#396e49;white-space:nowrap}
+.bar-group small{font-size:10px;color:var(--muted)}
+.bar{width:min(65%,70px);min-height:4px;background:linear-gradient(180deg,#73ad83,#214b35);border-radius:6px 6px 2px 2px}
+.config-preview{font-size:16px;color:var(--green);margin-top:18px;padding:17px;background:#f4f9f3;border:1px solid #dce9d9;border-radius:7px}
+#module-stock .control-divider{margin-top:26px}
+#module-sales .panel label{max-width:450px}
+#module-usersAdmin .panel,#module-productsAdmin .panel{max-width:1000px}
+#module-usersAdmin input:disabled{background:#eff1ef;color:#66756a}
+@media(max-width:650px){.mesa-grid{grid-template-columns:repeat(2,1fr)}.cash-row{flex-direction:column;align-items:start}.command-list{grid-template-columns:1fr}.bar-chart{overflow-x:auto;justify-content:flex-start}.bar-group{min-width:70px}}
