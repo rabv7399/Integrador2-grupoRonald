@@ -29,13 +29,15 @@ class SoaDemoProfileIntegrationTest {
         r.add("jwt.secret", () -> SECRET);
         r.add("soa.demo.admin-password", () -> "AdminDemoTest123!");
         r.add("soa.demo.client-password", () -> "ClienteDemoTest123!");
+        r.add("soa.demo.mozo-password", () -> "MozoDemoTest123!");
+        r.add("soa.demo.supervisor-password", () -> "SupervisorDemoTest123!");
     }
     @Autowired MockMvc mvc;
 
     @Test
     void perfilDemoCargaCincoServiciosYPermiteProcesarPedido() throws Exception {
         mvc.perform(get("/soa-demo/index.html")).andExpect(status().isOk())
-            .andExpect(content().string(org.hamcrest.Matchers.containsString("Servicios que trabajan juntos")));
+            .andExpect(content().string(org.hamcrest.Matchers.containsString("Iniciar sesión")));
         mvc.perform(get("/api/productos")).andExpect(status().isOk())
             .andExpect(jsonPath("$.length()").value(4));
 
@@ -62,6 +64,35 @@ class SoaDemoProfileIntegrationTest {
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.vendidas").value(2))
             .andExpect(jsonPath("$.disponibles").value(28));
+    }
+
+    @Test
+    void menuPorRolesYPermisosAutorizadosPorBackend() throws Exception {
+        mvc.perform(get("/soa-demo/index.html")).andExpect(status().isOk())
+            .andExpect(content().string(org.hamcrest.Matchers.containsString("id=\"loginView\"")))
+            .andExpect(content().string(org.hamcrest.Matchers.containsString("id=\"appView\"")))
+            .andExpect(content().string(org.hamcrest.Matchers.containsString("data-module=\"stock\"")));
+
+        String cliente=iniciar("cliente.demo@delicias.local", "ClienteDemoTest123!");
+        String mozo=iniciar("mozo.demo@delicias.local", "MozoDemoTest123!");
+        String supervisor=iniciar("supervisor.demo@delicias.local", "SupervisorDemoTest123!");
+        String admin=iniciar("admin.demo@delicias.local", "AdminDemoTest123!");
+
+        mvc.perform(get("/api/v1/inventario/1").header("Authorization", "Bearer "+cliente))
+            .andExpect(status().isForbidden());
+        mvc.perform(get("/api/v1/inventario/1").header("Authorization", "Bearer "+mozo))
+            .andExpect(status().isOk());
+        mvc.perform(get("/api/v1/inventario/1").header("Authorization", "Bearer "+supervisor))
+            .andExpect(status().isOk());
+        mvc.perform(put("/api/v1/inventario/1").header("Authorization", "Bearer "+mozo)
+                .contentType(MediaType.APPLICATION_JSON).content("{\"totalPreparado\":31}"))
+            .andExpect(status().isForbidden());
+        mvc.perform(put("/api/v1/inventario/1").header("Authorization", "Bearer "+supervisor)
+                .contentType(MediaType.APPLICATION_JSON).content("{\"totalPreparado\":31}"))
+            .andExpect(status().isForbidden());
+        mvc.perform(put("/api/v1/inventario/1").header("Authorization", "Bearer "+admin)
+                .contentType(MediaType.APPLICATION_JSON).content("{\"totalPreparado\":31}"))
+            .andExpect(status().isOk()).andExpect(jsonPath("$.totalPreparado").value(31));
     }
 
     private String iniciar(String correo, String pass) throws Exception {

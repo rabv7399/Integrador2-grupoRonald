@@ -126,6 +126,8 @@ public class SecurityConfig {
                         ).hasAnyRole(
                                 "ADMIN",
                                 "OPERADOR",
+                                "MOZO",
+                                "SUPERVISOR",
                                 "CLIENTE"
                         )
 

@@ -20,15 +20,21 @@ public class SoaDemoDataConfig {
         ProductoRepository productos, InventarioPlatoRepository inventarios,
         MesaRepository mesas, PasswordEncoder encoder,
         @Value("${soa.demo.admin-password}") String adminPassword,
-        @Value("${soa.demo.client-password}") String clientPassword
+        @Value("${soa.demo.client-password}") String clientPassword,
+        @Value("${soa.demo.mozo-password}") String mozoPassword,
+        @Value("${soa.demo.supervisor-password}") String supervisorPassword
     ) {
         return args -> {
             if (adminPassword == null || adminPassword.length() < 8
-                    || clientPassword == null || clientPassword.length() < 8) {
+                    || clientPassword == null || clientPassword.length() < 8
+                    || mozoPassword == null || mozoPassword.length() < 8
+                    || supervisorPassword == null || supervisorPassword.length() < 8) {
                 throw new IllegalStateException("Define SOA_DEMO_ADMIN_PASSWORD y SOA_DEMO_CLIENT_PASSWORD (8+ caracteres) solo en tu terminal");
             }
             crearUsuario(usuarios, encoder, "Administrador Demo", "admin.demo@delicias.local", "ADMIN", adminPassword);
             crearUsuario(usuarios, encoder, "Cliente Demo", "cliente.demo@delicias.local", "CLIENTE", clientPassword);
+            crearUsuario(usuarios, encoder, "Mozo Demo", "mozo.demo@delicias.local", "MOZO", mozoPassword);
+            crearUsuario(usuarios, encoder, "Supervisor Demo", "supervisor.demo@delicias.local", "SUPERVISOR", supervisorPassword);
             Categoria fondos = categoria(categorias, "Platos de Fondo", "COMIDA");
             Categoria cenas = categoria(categorias, "Cenas", "COMIDA");
             Categoria bebidas = categoria(categorias, "Bebidas", "BEBIDA");
