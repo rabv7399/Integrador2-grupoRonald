@@ -100,6 +100,7 @@ function abrirModulo(modulo) {
     else b.removeAttribute('aria-current');
   });
   $('workspaceTitle').textContent=MODULOS[modulo].titulo;
+  if(window.refrescarOperaciones)setTimeout(window.refrescarOperaciones,0);
   window.scrollTo({top:0,behavior:'instant'});
   if(modulo==='stock' && $('stockProduct').value)consultarInventarioUI();
 }
@@ -138,9 +139,11 @@ function iniciarPanel(){
   if(['ADMIN','CAJA','SUPERVISOR'].includes(rol)) refrescarResumen();
   if(['ADMIN','CAJA','MOZO','SUPERVISOR','OPERADOR'].includes(rol)) cargarMesas();
   if(rol==='ADMIN') { cargarUsuarios(); cargarCategorias(); }
+  if(window.iniciarOperaciones)window.iniciarOperaciones();
   return true;
 }
 function cerrarSesion(){
+  if(window.detenerOperaciones)window.detenerOperaciones();
   token='';rol='';correoSesion='';
   $('appView').hidden=true;
   $('loginView').hidden=false;
@@ -333,7 +336,9 @@ $('reserveForm').addEventListener('submit',async event=>{
     cantidadPersonas:Number($('reserveCount').value),
     mesa:{id:Number($('mesaId').value)}
   };
-  mostrar('POST /api/reservas',await api('/api/reservas','POST',data));
+  const respuesta=await api('/api/reservas','POST',data);
+  mostrar('POST /api/reservas',respuesta);
+  if(respuesta.ok&&window.refrescarOperaciones)window.refrescarOperaciones();
 });
 $('clearResponse').addEventListener('click',()=>{ $('httpStatus').textContent='Sin solicitudes';$('httpStatus').className='response-status';$('responseJson').textContent='Respuesta limpiada';});
 $('reserveDate').value=new Date(Date.now()+86400000).toISOString().slice(0,10);
@@ -400,6 +405,7 @@ $('replenishStock').addEventListener('click',async()=>{
   if(result.ok){
     pintarInventario(result.data);
     consultarDisponibilidad();
+    if(window.refrescarOperaciones)window.refrescarOperaciones();
   }
 });
 
@@ -486,7 +492,9 @@ function pintarTicket(ventana,venta){
   <hr><table>${lineas}</table><hr>
   <table><tr><td><strong>TOTAL</strong></td><td class="r"><strong>${formatPrice(venta.total)}</strong></td></tr>
   <tr><td>RECIBIDO</td><td class="r">${formatPrice(venta.montoRecibido)}</td></tr>
-  <tr><td>CAMBIO</td><td class="r">${formatPrice(venta.cambio)}</td></tr></table>
+  <tr><td>CAMBIO</td><td class="r">${formatPrice(venta.cambio)}</td></tr>
+  <tr><td>MEDIO DE PAGO</td><td class="r">${escapeTicket(venta.medioPago)}</td></tr></table>
+  <p>${venta.referenciaPago?'Referencia: '+escapeTicket(venta.referenciaPago):''}</p>
   <p>Gracias por tu compra.<br><strong>Documento académico; no válido tributariamente</strong></p>
   <button onclick="window.print()">Imprimir o guardar como PDF</button></body></html>`;
   ventana.document.open();ventana.document.write(contenido);ventana.document.close();
@@ -495,17 +503,23 @@ async function cobrarPedido(reimpresion=false){
   if(!pedirSesion())return;
   const pedidoId=Number($('cashPedidoId').value);
   if(!Number.isInteger(pedidoId)||pedidoId<1)return mostrarLocal('Indica un ID de pedido.');
-  const recibido=Number($('cashRecibido').value);
-  if(!reimpresion && (!Number.isFinite(recibido) || recibido<=0))return mostrarLocal('Indica cuánto dinero recibiste.');
+  const medioPago=$('cashMethod').value;
+  const referenciaPago=$('cashReference').value.trim();
+  const recibido=medioPago==='EFECTIVO'?Number($('cashRecibido').value):null;
+  if(!reimpresion && medioPago==='EFECTIVO' && (!Number.isFinite(recibido)||recibido<=0))
+    return mostrarLocal('Indica cuánto dinero recibiste en efectivo.');
+  if(!reimpresion && medioPago!=='EFECTIVO' && referenciaPago.length<4)
+    return mostrarLocal('Indica un código Yape o voucher POS de al menos 4 caracteres.');
   // Apertura sincrónica para evitar bloqueo de ventanas emergentes tras await.
   const ventana=window.open('','_blank','width=410,height=680');
   const url='/api/v1/ventas/pedidos/'+pedidoId+(reimpresion?'':'/cobrar');
   const resultado=await api(url,reimpresion?'GET':'POST',
-      reimpresion?null:{montoRecibido:recibido});
+      reimpresion?null:{montoRecibido:recibido,medioPago,referenciaPago:medioPago==='EFECTIVO'?null:referenciaPago});
   mostrar((reimpresion?'GET ':'POST ')+url,resultado);
   if(resultado.ok){
     pintarTicket(ventana,resultado.data);
     cargarMesas();refrescarResumen();cargarPedidosCaja();
+    if(window.refrescarOperaciones)window.refrescarOperaciones();
   }else if(ventana){ventana.close();}
 }
 $('cashCharge').addEventListener('click',()=>cobrarPedido(false));
