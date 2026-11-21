@@ -147,3 +147,45 @@ body{background:#f7f8f5}
 .inventory-meter-fill{display:block;height:100%;background:#2e8851;transition:width .2s ease}
 .inventory-inline-error{padding:12px 16px;border-radius:8px;border:1px solid #f1cac2;background:#fff4f0;color:#9a321c;margin-top:14px}
 @media(max-width:700px){.inventory-metrics{grid-template-columns:repeat(2,minmax(0,1fr))}.inventory-summary-head{align-items:start;flex-direction:column}}
+
+/* Operación de sala con consulta REST sincronizada (APF3) */
+.ops-section-label{display:flex;align-items:center;justify-content:space-between;gap:15px;flex-wrap:wrap;margin:30px 0 13px;padding-top:18px;border-top:1px solid #e4ece5}
+.ops-section-label strong{font-size:15px;color:#1d5035}
+.ops-section-label span{font-size:11px;color:#607767}
+.ops-table-wrap{width:100%;overflow-x:auto;border:1px solid #dfe9e0;border-radius:10px;margin:7px 0 15px;background:#fff}
+.ops-table{border-collapse:collapse;width:100%;min-width:640px;font-size:12px;color:#33483a}
+.ops-table th{background:#eaf3eb;text-align:left;font-size:11px;letter-spacing:.04em;color:#28513b;font-weight:800;padding:13px}
+.ops-table td{padding:12px 13px;border-top:1px solid #e8ede8;vertical-align:middle}
+.ops-table tr:nth-child(even) td{background:#fbfdfb}
+.ops-table .ops-empty{text-align:center;color:#718074;padding:23px}
+.ops-table button{font-size:11px;padding:6px 9px;min-width:0}
+.ops-badge{font-size:10px;letter-spacing:.025em;font-weight:800;border-radius:7px;padding:5px 8px;display:inline-flex;align-items:center}
+.ops-badge.good{background:#e0f2e3;color:#28633b}
+.ops-badge.waiting{background:#fff4db;color:#906625}
+.ops-badge.bad{background:#fde9e4;color:#9b453b}
+.ops-order-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(290px,1fr));gap:14px}
+.ops-order-card{padding:17px;border-radius:12px;background:white;border:1px solid #dce8de;box-shadow:0 6px 18px rgba(30,70,44,.04)}
+.ops-order-head{display:flex;gap:10px;justify-content:space-between;align-items:center;margin-bottom:4px}
+.ops-order-head strong{font-size:14px;color:#184a33}
+.ops-order-sub{color:#718074;font-size:12px;margin:4px 0 10px}
+.ops-order-lines{border-top:1px solid #e8ece7;padding-top:7px}
+.ops-order-line{display:grid;grid-template-columns:minmax(90px,1fr) auto;align-items:center;gap:8px;border-bottom:1px solid #eff0ed;padding:8px 0}
+.ops-order-line>span:first-child{font-size:12px;color:#3c5744}
+.ops-order-line .ops-age{color:#819080;grid-column:1}
+.ops-order-line button{grid-column:2;grid-row:2;padding:6px 9px;font-size:11px}
+.ops-order-actions{margin-top:14px;gap:7px;flex-wrap:wrap}
+.ops-order-actions button{padding:9px 12px;min-width:0;font-size:11px}
+.ops-age{white-space:nowrap;font-size:11px;color:#607866}
+.ops-cocina-line{display:grid!important;grid-template-columns:minmax(150px,1fr) auto;gap:8px!important}
+.ops-cocina-line .ops-age{font-size:11px}
+.ops-cocina-line button{grid-column:1/-1;justify-self:start}
+.ops-summary-grid{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:10px;margin:17px 0}
+.ops-summary-grid>div{display:flex;flex-direction:column;gap:8px;background:#f3f9f4;border:1px solid #dae9dc;border-radius:9px;padding:14px}
+.ops-summary-grid small{color:#65796b;font-size:10px;letter-spacing:.04em}
+.ops-summary-grid strong{font-size:18px;color:#1c5037;line-height:1.4}
+.ops-close-form{align-items:end;margin:20px 0 0}
+.ops-close-form>div{display:flex;flex-direction:column;gap:12px;justify-content:end}
+.ops-close-form small{font-size:11px;line-height:1.5;color:#627364}
+.ops-status{font-size:12px;color:#3c6a4f}
+@media(max-width:900px){.ops-summary-grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media(max-width:560px){.ops-summary-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.ops-order-grid{grid-template-columns:1fr}.ops-order-card{padding:12px}.ops-section-label{align-items:start;flex-direction:column}}
