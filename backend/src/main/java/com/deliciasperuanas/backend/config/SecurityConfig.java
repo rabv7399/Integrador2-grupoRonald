@@ -131,9 +131,16 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.PATCH, "/api/reservas/**")
                         .hasAnyRole("ADMIN", "OPERADOR", "MOZO", "SUPERVISOR")
 
+                        // Auditoría del inventario: NO expuesta al Mozo.
+                        .requestMatchers(HttpMethod.GET,"/api/v1/inventario/movimientos")
+                        .hasAnyRole("ADMIN","SUPERVISOR","CAJA")
+
                         // APF3 SOA: lectura interna de porciones, ajustes solo por ADMIN
-                        .requestMatchers(HttpMethod.GET, "/api/v1/inventario/**")
+                        .requestMatchers(HttpMethod.GET, "/api/v1/inventario", "/api/v1/inventario/**")
                         .hasAnyRole("ADMIN", "OPERADOR", "MOZO", "SUPERVISOR", "CAJA")
+
+                        .requestMatchers(HttpMethod.PATCH,"/api/v1/inventario/*/salida")
+                        .hasRole("ADMIN")
 
                         .requestMatchers(HttpMethod.PATCH, "/api/v1/inventario/*/reponer")
                         .hasAnyRole("ADMIN", "SUPERVISOR", "CAJA")
