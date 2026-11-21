@@ -292,3 +292,353 @@ $('clearResponse').addEventListener('click',()=>{ $('httpStatus').textContent='S
 $('reserveDate').value=new Date(Date.now()+86400000).toISOString().slice(0,10);
 nuevaClave();
 $('correo').focus();
+
+
+/* Módulos operativos Botanero → SOA APF3, conectados a REST real. */
+function modoMesa(){
+  const esMesa=$('orderType').value==='MESA';
+  $('orderTableWrap').hidden=!esMesa;
+  $('mesaCards').hidden=!esMesa;
+}
+$('orderType').addEventListener('change',modoMesa);
+modoMesa();
+
+async function cargarMesas(){
+  if(!token || !['MOZO','CAJA','SUPERVISOR','ADMIN','OPERADOR'].includes(rol))return;
+  const resultado=await api('/api/mesas');
+  if(!resultado.ok || !Array.isArray(resultado.data))return mostrar('GET /api/mesas',resultado);
+  const seleccionado=$('orderTable').value;
+  $('orderTable').replaceChildren();
+  $('mesaCards').replaceChildren();
+  const mesas=[...resultado.data].sort((a,b)=>a.numero-b.numero);
+  for(const m of mesas){
+    const option=new Option('Mesa #'+m.numero+' · '+m.estado,String(m.id));
+    option.disabled=m.estado!=='DISPONIBLE';
+    $('orderTable').add(option);
+    const boton=document.createElement('button');
+    boton.type='button';boton.className='mesa-button '+(m.estado==='OCUPADA'?'ocupada':'libre');
+    boton.disabled=m.estado!=='DISPONIBLE';
+    const nombre=document.createElement('strong');nombre.textContent='Mesa #'+m.numero;
+    const estado=document.createElement('small');estado.textContent=m.estado;
+    boton.append(nombre,estado);
+    boton.addEventListener('click',()=>{$('orderType').value='MESA';modoMesa();$('orderTable').value=String(m.id);});
+    $('mesaCards').append(boton);
+  }
+  if(mesas.some(m=>String(m.id)===seleccionado && m.estado==='DISPONIBLE'))$('orderTable').value=seleccionado;
+}
+
+async function consultarDisponibilidad(){
+  const id=$('orderProduct').value;
+  if(!id || !token || rol==='CLIENTE')return;
+  const resultado=await api('/api/v1/inventario/'+id);
+  if(resultado.ok && Number.isFinite(Number(resultado.data.disponibles))){
+    const disponible=Number(resultado.data.disponibles);
+    $('orderAvailability').textContent='Porciones disponibles: '+disponible+
+      ' · Reservadas: '+resultado.data.reservadas+
+      ' · Vendidas: '+resultado.data.vendidas;
+    $('createOrder').disabled=disponible<1;
+  }else{
+    $('orderAvailability').textContent='Sin datos de inventario o acceso no autorizado.';
+    $('createOrder').disabled=true;
+  }
+}
+$('orderProduct').addEventListener('change',consultarDisponibilidad);
+
+$('replenishStock').addEventListener('click',async()=>{
+  if(!pedirSesion())return;
+  const id=$('stockProduct').value,cantidad=Number($('stockReplenishQty').value);
+  if(!id || !Number.isInteger(cantidad)||cantidad<1)return mostrarLocal('Indica un plato y un número positivo de porciones.');
+  const result=await api('/api/v1/inventario/'+id+'/reponer','PATCH',{cantidad});
+  mostrar('PATCH /api/v1/inventario/'+id+'/reponer',result);
+  if(result.ok)consultarDisponibilidad();
+});
+
+function crearBoton(texto,handler,clase='outline'){
+  const b=document.createElement('button');b.type='button';b.className=clase;
+  b.textContent=texto;b.addEventListener('click',handler);return b;
+}
+function articuloPedido(p){
+  const container=document.createElement('article');container.className='command-card';
+  const h=document.createElement('div');h.className='command-heading';
+  const titulo=document.createElement('strong');titulo.textContent='Pedido #'+p.pedidoId+' · '+(p.tipoAtencion==='MESA'?'Mesa '+p.mesaId:'Para llevar');
+  const estado=document.createElement('span');estado.textContent=p.estado;estado.className='order-status';
+  h.append(titulo,estado);container.append(h);
+  const ul=document.createElement('ul');ul.className='command-items';
+  for(const i of p.items||[]){
+    const li=document.createElement('li');
+    const descripcion=document.createElement('span');descripcion.textContent=i.cantidad+' × '+i.nombre+' · '+i.estadoPreparacion;
+    li.append(descripcion);
+    if(['ADMIN','COCINERO','SUPERVISOR'].includes(rol) &&
+      p.estado==='CONFIRMADO' && i.estadoPreparacion!=='LISTO'){
+      li.append(crearBoton('Marcar LISTO',async()=>{
+        const x=await api('/api/v1/pedidos/'+p.pedidoId+'/detalles/'+i.detalleId+'/listo','POST');
+        mostrar('POST cocina LISTO',x);if(x.ok)cargarComandas();
+      },'primary'));
+    }
+    ul.append(li);
+  }
+  container.append(ul);return container;
+}
+
+async function cargarComandas(){
+  if(!pedirSesion())return;
+  const resultado=await api('/api/v1/pedidos');
+  mostrar('GET /api/v1/pedidos',resultado);
+  if(!resultado.ok || !Array.isArray(resultado.data))return;
+  const activos=resultado.data.filter(p=>['PENDIENTE','CONFIRMADO'].includes(p.estado));
+  $('kitchenOrders').replaceChildren();
+  if(!activos.length)$('kitchenOrders').textContent='No hay comandas activas.';
+  for(const pedido of activos)$('kitchenOrders').append(articuloPedido(pedido));
+}
+$('refreshKitchen').addEventListener('click',cargarComandas);
+
+async function cargarPedidosCaja(){
+  if(!pedirSesion())return;
+  const resultado=await api('/api/v1/pedidos');
+  mostrar('GET /api/v1/pedidos',resultado);
+  if(!resultado.ok || !Array.isArray(resultado.data))return;
+  $('cashOrders').replaceChildren();
+  const activos=resultado.data.filter(p=>['CONFIRMADO','PENDIENTE'].includes(p.estado));
+  if(!activos.length)$('cashOrders').textContent='No hay pedidos activos para cobrar.';
+  for(const p of activos){
+    const row=document.createElement('div');row.className='cash-row';
+    const txt=document.createElement('span');txt.textContent='#'+p.pedidoId+' · '+(p.tipoAtencion==='MESA'?'Mesa '+p.mesaId:'Llevar')+' · '+formatPrice(p.total)+' · '+p.estado;
+    const b=crearBoton('Seleccionar',()=>{
+      $('cashPedidoId').value=p.pedidoId;
+      $('cashRecibido').value=Number(p.total).toFixed(2);
+    });
+    row.append(txt,b);$('cashOrders').append(row);
+  }
+}
+$('refreshSalesOrders').addEventListener('click',cargarPedidosCaja);
+
+function escapeTicket(s){
+  return String(s??'').replace(/[&<>"']/g,ch=>({
+    '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
+  })[ch]);
+}
+function pintarTicket(ventana,venta){
+  if(!ventana)return;
+  const lineas=(venta.items||[]).map(item=>
+    '<tr><td>'+escapeTicket(item.nombre)+' × '+item.cantidad+'</td><td class="r">'+formatPrice(item.subtotal)+'</td></tr>'
+  ).join('');
+  const contenido=`<!doctype html><html lang="es"><head><meta charset="utf-8">
+  <title>Ticket interno ${escapeTicket(venta.comprobante)}</title>
+  <style>body{font:12px/1.5 Consolas,monospace;width:290px;margin:25px auto;color:#222}
+  h1{text-align:center;font-size:18px}p{text-align:center}table{width:100%;border-collapse:collapse}
+  td{padding:4px;border-bottom:1px dashed #ddd}.r{text-align:right}strong{font-size:15px}
+  button{width:100%;margin:15px 0;padding:10px;background:#204c34;color:#fff;border:0}
+  @media print{button{display:none}body{margin:0;width:75mm}}</style></head><body>
+  <h1>${escapeTicket(venta.restaurante)}</h1>
+  <p>Tel.: ${escapeTicket(venta.telefono)}</p>
+  <p>COMPROBANTE INTERNO<br>${escapeTicket(venta.comprobante)}<br>${escapeTicket(venta.fechaPago)}</p>
+  <p>${escapeTicket(venta.tipoAtencion)} ${venta.mesaId?'· Mesa '+venta.mesaId:''}<br>Pedido #${venta.pedidoId}</p>
+  <hr><table>${lineas}</table><hr>
+  <table><tr><td><strong>TOTAL</strong></td><td class="r"><strong>${formatPrice(venta.total)}</strong></td></tr>
+  <tr><td>RECIBIDO</td><td class="r">${formatPrice(venta.montoRecibido)}</td></tr>
+  <tr><td>CAMBIO</td><td class="r">${formatPrice(venta.cambio)}</td></tr></table>
+  <p>Gracias por tu compra.<br><strong>Documento académico; no válido tributariamente</strong></p>
+  <button onclick="window.print()">Imprimir o guardar como PDF</button></body></html>`;
+  ventana.document.open();ventana.document.write(contenido);ventana.document.close();
+}
+async function cobrarPedido(reimpresion=false){
+  if(!pedirSesion())return;
+  const pedidoId=Number($('cashPedidoId').value);
+  if(!Number.isInteger(pedidoId)||pedidoId<1)return mostrarLocal('Indica un ID de pedido.');
+  const recibido=Number($('cashRecibido').value);
+  if(!reimpresion && (!Number.isFinite(recibido) || recibido<=0))return mostrarLocal('Indica cuánto dinero recibiste.');
+  // Apertura sincrónica para evitar bloqueo de ventanas emergentes tras await.
+  const ventana=window.open('','_blank','width=410,height=680');
+  const url='/api/v1/ventas/pedidos/'+pedidoId+(reimpresion?'':'/cobrar');
+  const resultado=await api(url,reimpresion?'GET':'POST',
+      reimpresion?null:{montoRecibido:recibido});
+  mostrar((reimpresion?'GET ':'POST ')+url,resultado);
+  if(resultado.ok){
+    pintarTicket(ventana,resultado.data);
+    cargarMesas();refrescarResumen();cargarPedidosCaja();
+  }else if(ventana){ventana.close();}
+}
+$('cashCharge').addEventListener('click',()=>cobrarPedido(false));
+$('cashReprint').addEventListener('click',()=>cobrarPedido(true));
+
+async function refrescarResumen(){
+  if(!['CAJA','SUPERVISOR','ADMIN'].includes(rol))return;
+  const r=await api('/api/v1/ventas/resumen');
+  if(!r.ok)return mostrar('GET /api/v1/ventas/resumen',r);
+  $('salesCount').textContent=String(r.data.ventasRegistradas);
+  $('salesTotal').textContent=formatPrice(r.data.totalVentas);
+  $('salesToday').textContent=formatPrice(r.data.ventasHoy);
+  const chart=$('salesChart');chart.replaceChildren();
+  const valores=Object.entries(r.data.ventasPorDia||{}).slice(-7);
+  if(!valores.length){chart.textContent='No hay ventas pagadas todavía.';return;}
+  const max=Math.max(1,...valores.map(([,m])=>Number(m)));
+  for(const [fecha,monto] of valores){
+    const grupo=document.createElement('div');grupo.className='bar-group';
+    const bar=document.createElement('div');bar.className='bar';
+    bar.style.height=(Math.max(4,Number(monto)/max*145))+'px';
+    const label=document.createElement('small');label.textContent=fecha.slice(5);
+    const total=document.createElement('b');total.textContent=formatPrice(monto);
+    grupo.append(total,bar,label);chart.append(grupo);
+  }
+}
+
+function pintarAdminProductos(){
+  const list=$('productAdminList');list.replaceChildren();
+  for(const p of listaProductos){
+    const row=document.createElement('div');row.className='cash-row';
+    const txt=document.createElement('span');
+    txt.textContent=p.codigo+' · '+p.nombre+' · '+(Number(p.precio)>0?formatPrice(p.precio):'Precio pendiente')+' · '+(p.disponible?'Activo':'No disponible');
+    row.append(txt,crearBoton('Editar',()=>{$('productManageSelect').value=String(p.id);seleccionarProductoAdmin();}));
+    list.append(row);
+  }
+}
+function seleccionarProductoAdmin(){
+  const p=listaProductos.find(p=>String(p.id)===$('productManageSelect').value);
+  $('productCode').value=p?.codigo||'';
+  $('productName').value=p?.nombre||'';
+  $('productDescription').value=p?.descripcion||'';
+  $('productPrice').value=p?.precio??'';
+  $('productCategory').value=p?.categoria?.id??'';
+  $('productAvailable').value=p?.disponible?'true':'false';
+}
+$('productManageSelect').addEventListener('change',seleccionarProductoAdmin);
+$('productNew').addEventListener('click',()=>{$('productManageSelect').value='';seleccionarProductoAdmin();});
+function productoFormulario(){
+  return {codigo:$('productCode').value.trim(),nombre:$('productName').value.trim(),
+    descripcion:$('productDescription').value.trim(),precio:Number($('productPrice').value),
+    disponible:$('productAvailable').value==='true',
+    categoria:{id:Number($('productCategory').value)}};
+}
+$('productSave').addEventListener('click',async()=>{
+  const id=$('productManageSelect').value,data=productoFormulario();
+  if(!data.codigo||!data.nombre||!data.categoria.id || !Number.isFinite(data.precio)||data.precio<0)
+    return mostrarLocal('Código, nombre, categoría y precio deben ser válidos.');
+  const path='/api/productos'+(id?'/'+id:'');
+  const r=await api(path,id?'PUT':'POST',data);mostrar((id?'PUT ':'POST ')+path,r);
+  if(r.ok)consultarCatalogo();
+});
+$('productDisable').addEventListener('click',async()=>{
+  const id=$('productManageSelect').value;
+  if(!id)return mostrarLocal('Selecciona un producto que ya exista.');
+  const p=listaProductos.find(p=>String(p.id)===id);
+  const r=await api('/api/productos/'+id,'PUT',{...p,disponible:false});
+  mostrar('PUT /api/productos/'+id,r);if(r.ok)consultarCatalogo();
+});
+$('productDelete').addEventListener('click',async()=>{
+  const id=$('productManageSelect').value;
+  if(!id||!confirm('¿Eliminar este producto? Si tiene pedidos históricos, primero desactívalo.'))return;
+  const r=await api('/api/productos/'+id,'DELETE');
+  mostrar('DELETE /api/productos/'+id,r);
+  if(r.ok)consultarCatalogo();
+});
+
+function pintarCategorias(){
+  $('categorySelect').replaceChildren();$('productCategory').replaceChildren();
+  $('categorySelect').add(new Option('Nueva categoría',''));
+  for(const c of listaCategorias){
+    $('categorySelect').add(new Option(c.nombre,String(c.id)));
+    $('productCategory').add(new Option(c.nombre,String(c.id)));
+  }
+}
+$('categorySelect').addEventListener('change',()=>{
+  const c=listaCategorias.find(c=>String(c.id)===$('categorySelect').value);
+  $('categoryName').value=c?.nombre||'';
+  $('categoryType').value=c?.tipo||'COMIDA';
+  $('categoryDescription').value=c?.descripcion||'';
+});
+$('categoryNew').addEventListener('click',()=>{$('categorySelect').value='';$('categoryName').value='';$('categoryDescription').value='';});
+$('categorySave').addEventListener('click',async()=>{
+  const id=$('categorySelect').value;
+  const d={nombre:$('categoryName').value.trim(),tipo:$('categoryType').value,
+           descripcion:$('categoryDescription').value.trim()};
+  if(!d.nombre)return mostrarLocal('Indica un nombre de categoría.');
+  const url='/api/categorias'+(id?'/'+id:'');
+  const r=await api(url,id?'PUT':'POST',d);
+  mostrar((id?'PUT ':'POST ')+url,r);if(r.ok)consultarCatalogo();
+});
+$('categoryDelete').addEventListener('click',async()=>{
+  const id=$('categorySelect').value;
+  if(!id||!confirm('¿Eliminar esta categoría? Solo es posible si no contiene productos.'))return;
+  const r=await api('/api/categorias/'+id,'DELETE');
+  mostrar('DELETE /api/categorias/'+id,r);if(r.ok)consultarCatalogo();
+});
+async function cargarCategorias(){
+  const r=await api('/api/categorias');
+  if(r.ok&&Array.isArray(r.data)){listaCategorias=r.data;pintarCategorias();}
+}
+
+function pintarUsuarios(){
+  $('userSelect').replaceChildren();$('userSelect').add(new Option('Nuevo usuario',''));
+  $('usersList').replaceChildren();
+  for(const u of usuariosAdmin){
+    $('userSelect').add(new Option(u.nombre+' · '+u.rol+(u.activo?'':' · BAJA'),String(u.id)));
+    const row=document.createElement('div');row.className='cash-row';
+    const txt=document.createElement('span');
+    txt.textContent=u.nombre+' · '+u.correo+' · '+u.rol+(u.activo?'':' · INACTIVO');
+    row.append(txt,crearBoton('Editar',()=>{$('userSelect').value=String(u.id);seleccionarUsuario();}));
+    $('usersList').append(row);
+  }
+}
+async function cargarUsuarios(){
+  if(rol!=='ADMIN')return;
+  const r=await api('/api/v1/usuarios');
+  if(r.ok&&Array.isArray(r.data)){usuariosAdmin=r.data;pintarUsuarios();}
+  else mostrar('GET /api/v1/usuarios',r);
+}
+function seleccionarUsuario(){
+  const u=usuariosAdmin.find(u=>String(u.id)===$('userSelect').value);
+  $('userNameInput').value=u?.nombre||'';
+  $('userEmailInput').value=u?.correo||'';
+  $('userEmailInput').disabled=!!u;
+  $('userPhoneInput').value=u?.telefono||'';
+  $('userRoleSelect').value=u?.rol||'CLIENTE';
+  $('userPasswordInput').value='';
+  $('userPasswordInput').disabled=!!u;
+}
+$('userSelect').addEventListener('change',seleccionarUsuario);
+$('userNew').addEventListener('click',()=>{$('userSelect').value='';seleccionarUsuario();});
+$('usersRefresh').addEventListener('click',cargarUsuarios);
+$('userSave').addEventListener('click',async()=>{
+  const id=$('userSelect').value;
+  const base={nombre:$('userNameInput').value.trim(),telefono:$('userPhoneInput').value.trim(),
+    rol:$('userRoleSelect').value};
+  if(!base.nombre)return mostrarLocal('Indica el nombre del usuario.');
+  const url='/api/v1/usuarios'+(id?'/'+id:'');
+  const data=id?{...base,activo:usuariosAdmin.find(u=>String(u.id)===id).activo}:
+    {...base,correo:$('userEmailInput').value.trim(),password:$('userPasswordInput').value};
+  if(!id && (!data.correo||data.password.length<8))return mostrarLocal('Un usuario nuevo requiere correo y contraseña de ocho caracteres.');
+  const r=await api(url,id?'PUT':'POST',data);
+  mostrar((id?'PUT ':'POST ')+url,r);
+  if(r.ok){$('userPasswordInput').value='';cargarUsuarios();}
+});
+for(const [button,activo] of [['userDisable',false],['userEnable',true]]){
+  $(button).addEventListener('click',async()=>{
+    const id=$('userSelect').value;
+    if(!id)return mostrarLocal('Selecciona un usuario existente.');
+    const u=usuariosAdmin.find(u=>String(u.id)===id);
+    if(!u)return;
+    if(!activo&&!confirm('¿Dar de baja al usuario conservando su historial?'))return;
+    const url='/api/v1/usuarios/'+id;
+    const r=await api(url,activo?'PUT':'DELETE',
+        activo?{nombre:u.nombre,telefono:u.telefono,rol:u.rol,activo:true}:null);
+    mostrar((activo?'PUT ':'DELETE ')+url,r);
+    if(r.ok)cargarUsuarios();
+  });
+}
+
+async function cargarConfiguracion(){
+  const r=await api('/api/v1/configuracion');
+  if(!r.ok)return;
+  configuracionLocal=r.data;
+  $('settingName').value=r.data.nombre||'';
+  $('settingPhone').value=r.data.telefono||'';
+  $('settingLogo').value=r.data.logoRuta||'';
+  $('settingPreview').textContent=(r.data.nombre||'Delicias Peruanas')+' · '+(r.data.telefono||'');
+  document.querySelectorAll('.side-brand strong,.brand strong').forEach(x=>{x.textContent=r.data.nombre;});
+}
+$('settingsSave').addEventListener('click',async()=>{
+  const data={nombre:$('settingName').value.trim(),telefono:$('settingPhone').value.trim(),
+    logoRuta:$('settingLogo').value.trim()||null};
+  const r=await api('/api/v1/configuracion','PUT',data);
+  mostrar('PUT /api/v1/configuracion',r);if(r.ok)cargarConfiguracion();
+});
