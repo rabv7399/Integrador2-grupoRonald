@@ -59,7 +59,7 @@ public class SecurityConfig {
                         ).permitAll()
 
                         // Portal gastronómico público APF3, sin acceso a operaciones protegidas
-                        .requestMatchers("/portal/**").permitAll()
+                        .requestMatchers("/portal/**", "/soa-demo/**").permitAll()
 
                         // Documentación de la API; las operaciones conservan sus permisos
                         .requestMatchers(
