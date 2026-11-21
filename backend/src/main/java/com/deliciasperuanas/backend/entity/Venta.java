@@ -32,6 +32,12 @@ public class Venta {
     @Column(name="medio_pago", nullable=false, length=20)
     private String medioPago="EFECTIVO";
 
+    @Column(name="referencia_pago",length=80)
+    private String referenciaPago;
+
+    @Column(name="cajero_correo",nullable=false,length=150)
+    private String cajeroCorreo="sistema";
+
     public Long getId(){return id;}
     public Pedido getPedido(){return pedido;}
     public void setPedido(Pedido p){pedido=p;}

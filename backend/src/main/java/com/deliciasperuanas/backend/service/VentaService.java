@@ -106,11 +106,11 @@ public class VentaService {
 
     @Transactional(readOnly=true)
     public Map<String,Object> resumen(LocalDate fecha) {
-        if(fecha==null)fecha=LocalDate.now();
-        YearMonth mes=YearMonth.from(fecha);
+        final LocalDate diaConsultado=fecha==null?LocalDate.now():fecha;
+        YearMonth mes=YearMonth.from(diaConsultado);
         List<Venta> registros=ventas.findAll();
         List<Venta> dia=registros.stream()
-            .filter(v->v.getFechaPago().toLocalDate().equals(fecha)).toList();
+            .filter(v->v.getFechaPago().toLocalDate().equals(diaConsultado)).toList();
         List<Venta> mesVentas=registros.stream()
             .filter(v->YearMonth.from(v.getFechaPago()).equals(mes)).toList();
         Map<String,BigDecimal> totalMetodoDia=totalesMetodo(dia);
@@ -125,7 +125,7 @@ public class VentaService {
             .sorted(Comparator.comparing(Venta::getFechaPago).reversed())
             .map(this::registro).toList();
         Map<String,Object> datos=new LinkedHashMap<>();
-        datos.put("fecha",fecha.toString());datos.put("mes",mes.toString());
+        datos.put("fecha",diaConsultado.toString());datos.put("mes",mes.toString());
         datos.put("ventasRegistradas",registros.size());
         datos.put("ventasDia",dia.size());datos.put("ventasMes",mesVentas.size());
         datos.put("totalVentas",sumar(registros));
@@ -137,7 +137,7 @@ public class VentaService {
         datos.put("efectivoEsperado",totalMetodoDia.get("EFECTIVO"));
         datos.put("ventasPorDia",porDia);datos.put("ventasPorMes",porMes);
         datos.put("operacionesDia",operaciones);
-        datos.put("cuadreRegistrado",cierres.findByFecha(fecha).map(this::dtoCierre).orElse(null));
+        datos.put("cuadreRegistrado",cierres.findByFecha(diaConsultado).map(this::dtoCierre).orElse(null));
         datos.put("moneda","PEN");
         datos.put("fuente","Ventas efectivamente cobradas en la base de datos activa");
         return datos;
