@@ -2,7 +2,7 @@ name: CI Backend Java 21
 
 on:
   push:
-    branches: [main, develop, apf3-ci]
+    branches: [main, develop, apf3-ci, 'feature/**']
   pull_request:
     branches: [main, develop]
   workflow_dispatch:
