@@ -97,6 +97,36 @@ class SoaDemoProfileIntegrationTest {
             .andExpect(status().isOk()).andExpect(jsonPath("$.totalPreparado").value(31));
     }
 
+    @Test
+    void clienteSoloCreaReservasYPuedeLeerlasElPersonal() throws Exception {
+        String cliente=iniciar("cliente.demo@delicias.local", "ClienteDemoTest123!");
+        String mozo=iniciar("mozo.demo@delicias.local", "MozoDemoTest123!");
+        mvc.perform(get("/api/reservas").header("Authorization", "Bearer "+cliente))
+            .andExpect(status().isForbidden());
+        mvc.perform(get("/api/reservas").header("Authorization", "Bearer "+mozo))
+            .andExpect(status().isOk());
+        mvc.perform(get("/api/mesas").header("Authorization", "Bearer "+mozo))
+            .andExpect(status().isOk());
+        String cuerpo = """
+            {"cliente":"Cliente de prueba","fecha":"2026-12-05",
+             "horaInicio":"18:00","horaFin":"19:00","cantidadPersonas":2,
+             "mesa":{"id":1},"estado":"CONFIRMADA"}
+            """;
+        String reserva = mvc.perform(post("/api/reservas")
+                .header("Authorization", "Bearer "+cliente)
+                .contentType(MediaType.APPLICATION_JSON).content(cuerpo))
+            .andExpect(status().isCreated())
+            .andExpect(jsonPath("$.estado").value("PENDIENTE"))
+            .andReturn().getResponse().getContentAsString();
+        Number id=JsonPath.read(reserva,"$.id");
+        mvc.perform(patch("/api/reservas/{id}/cancelar",id.longValue())
+                .header("Authorization", "Bearer "+cliente))
+            .andExpect(status().isForbidden());
+        mvc.perform(patch("/api/reservas/{id}/cancelar",id.longValue())
+                .header("Authorization", "Bearer "+mozo))
+            .andExpect(status().isNoContent());
+    }
+
     private String iniciar(String correo, String pass) throws Exception {
         String json = "{\"correo\":\""+correo+"\",\"password\":\""+pass+"\"}";
         String response = mvc.perform(post("/api/auth/login")
