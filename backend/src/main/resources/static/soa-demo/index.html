@@ -54,12 +54,19 @@
     <div class="side-brand"><span class="mark">DP</span><span><strong>DELICIAS PERUANAS</strong><small>PANEL DE GESTIÓN</small></span></div>
     <p class="side-heading">ESPACIO DE TRABAJO</p>
     <nav id="sideNav" class="side-menu">
-      <button type="button" data-module="inicio" data-roles="CLIENTE,MOZO,SUPERVISOR,ADMIN,OPERADOR"><span>▦</span> Resumen</button>
-      <button type="button" data-module="menu" data-roles="CLIENTE,MOZO,SUPERVISOR,ADMIN,OPERADOR"><span>▤</span> Carta y productos</button>
-      <button type="button" data-module="orders" data-roles="CLIENTE,MOZO,SUPERVISOR,ADMIN,OPERADOR"><span>▣</span> Pedidos</button>
-      <button type="button" data-module="reservations" data-roles="CLIENTE,MOZO,SUPERVISOR,ADMIN,OPERADOR"><span>▦</span> Reservas de mesas</button>
-      <button type="button" data-module="stock" data-roles="MOZO,SUPERVISOR,ADMIN,OPERADOR"><span>◈</span> Inventario</button>
-      <button type="button" data-module="api" data-roles="CLIENTE,MOZO,SUPERVISOR,ADMIN,OPERADOR"><span>{ }</span> Laboratorio REST</button>
+      <button type="button" data-module="inicio" data-roles="CLIENTE,MOZO,CAJA,COCINERO,SUPERVISOR,ADMIN,OPERADOR"><span>▦</span> Resumen</button>
+      <button type="button" data-module="menu" data-roles="CLIENTE,MOZO,CAJA,COCINERO,SUPERVISOR,ADMIN,OPERADOR"><span>▤</span> Carta y productos</button>
+      <button type="button" data-module="orders" data-roles="MOZO,CAJA,SUPERVISOR,ADMIN,OPERADOR"><span>▣</span> Pedidos</button>
+      <button type="button" data-module="reservations" data-roles="CLIENTE,MOZO,CAJA,SUPERVISOR,ADMIN,OPERADOR"><span>▦</span> Reservas de mesas</button>
+      <button type="button" data-module="stock" data-roles="MOZO,CAJA,SUPERVISOR,ADMIN,OPERADOR"><span>◈</span> Inventario</button>
+      
+      <button type="button" data-module="kitchen" data-roles="COCINERO,SUPERVISOR,ADMIN"><span>♨</span> Cocina · preparación</button>
+      <button type="button" data-module="sales" data-roles="CAJA,SUPERVISOR,ADMIN"><span>▤</span> Caja y cobros</button>
+      <button type="button" data-module="productsAdmin" data-roles="ADMIN"><span>✎</span> Productos · CRUD</button>
+      <button type="button" data-module="categoriesAdmin" data-roles="ADMIN"><span>▧</span> Categorías · CRUD</button>
+      <button type="button" data-module="usersAdmin" data-roles="ADMIN"><span>♙</span> Usuarios · CRUD</button>
+      <button type="button" data-module="settings" data-roles="ADMIN"><span>⚙</span> Configuración</button>
+      <button type="button" data-module="api" data-roles="MOZO,CAJA,COCINERO,SUPERVISOR,ADMIN,OPERADOR"><span>{ }</span> Laboratorio REST</button>
     </nav>
     <div class="side-bottom"><span class="online-dot"></span><span>SOA APF3 · Modo de pruebas<br><small>Los cambios no afectan Aiven</small></span></div>
   </aside>
@@ -90,6 +97,11 @@
           <div class="kpi"><span>PRODUCTOS DISPONIBLES</span><strong id="dashboardProductsCount">—</strong><small>Datos de Spring Boot</small></div>
           <div class="kpi"><span>MI PERFIL</span><strong id="dashboardRole">—</strong><small>Acceso según permisos</small></div>
         </div>
+        <div class="panel" id="salesDashboard" data-roles="CAJA,SUPERVISOR,ADMIN">
+          <div class="section-heading"><h3>Ventas registradas</h3><p>Indicadores de la API S06. Solo pagos confirmados; no se simulan ventas.</p></div>
+          <div class="metric-strip"><div><small>Ventas registradas</small><strong id="salesCount">0</strong></div><div><small>Ventas de hoy</small><strong id="salesToday">S/ 0.00</strong></div><div><small>Total histórico</small><strong id="salesTotal">S/ 0.00</strong></div></div>
+          <div id="salesChart" class="bar-chart" aria-label="Ventas por día">Aún no hay cobros para graficar.</div>
+        </div>
         <div class="section-heading"><h3>Accesos disponibles</h3><p>Selecciona una opción para continuar.</p></div>
         <div id="quickActions" class="quick-grid"></div>
         <div class="permissions-box"><strong>Control de seguridad</strong><p id="permissionsText">El menú de la izquierda muestra solo las operaciones de tu perfil.</p><p class="hint">La autorización real se comprueba en el backend. Ocultar un menú no sustituye a los permisos del servidor.</p></div>
@@ -110,12 +122,18 @@
       <section id="module-orders" class="view-module" hidden>
         <div class="module-heading"><div><span class="eyebrow">SERVICIO S03 · ORQUESTACIÓN CON S05</span><h2>Gestión de pedidos</h2><p>Registra pedidos con reserva de porciones e idempotencia.</p></div><span class="module-label">REST · POST</span></div>
         <div class="panel order-card">
+          <div class="two">
+            <label>Modalidad<select id="orderType"><option value="MESA">En mesa</option><option value="LLEVAR">Para llevar · sin mesa</option></select></label>
+            <label id="orderTableWrap">Mesa<select id="orderTable"><option value="">Cargando mesas…</option></select></label>
+          </div>
+          <div id="mesaCards" class="mesa-grid" aria-label="Estado de las mesas"></div>
           <label>Producto<select id="orderProduct"></select></label>
+          <p id="orderAvailability" class="status">Selecciona un plato para comprobar sus porciones disponibles.</p>
           <label>Porciones<input id="orderQty" type="number" min="1" max="20" value="2"></label>
           <label>Referencia de operación (Idempotency-Key)<input id="orderKey" type="text" readonly></label>
           <div class="buttons"><button type="button" id="newKey" class="outline">Nueva referencia</button><button type="button" id="createOrder" class="primary">Registrar pedido</button></div>
           <label>ID del pedido<input type="number" id="orderId" min="1" placeholder="Aparecerá al registrar"></label>
-          <div class="buttons"><button type="button" id="repeatOrder" class="outline">Repetir solicitud (200)</button><button type="button" id="confirmOrder" class="primary" data-roles="MOZO,SUPERVISOR,ADMIN,OPERADOR">Confirmar pedido</button><button type="button" id="cancelOrder" class="danger">Cancelar pendiente</button></div>
+          <div class="buttons"><button type="button" id="repeatOrder" class="outline">Repetir solicitud (200)</button><button type="button" id="confirmOrder" class="primary" data-roles="MOZO,CAJA,SUPERVISOR,ADMIN,OPERADOR">Confirmar pedido</button><button type="button" id="cancelOrder" class="danger">Cancelar pendiente</button></div>
           <p class="hint">El cliente registra y cancela sus pedidos pendientes. El personal autorizado puede confirmarlos. El precio se conserva al crear el pedido.</p>
         </div>
       </section>
@@ -138,12 +156,86 @@
         <div class="panel">
           <label>Seleccionar producto<select id="stockProduct"></select></label>
           <div class="buttons"><button type="button" id="getStock" class="primary">Consultar inventario</button></div>
+          <div class="control-divider" id="stockReplenishControls" data-roles="ADMIN,CAJA,SUPERVISOR">
+             <strong>Reponer porciones de cocina</strong>
+             <p>Agrega la nueva producción. Por ejemplo: +15 lomo saltado.</p>
+             <label>Porciones nuevas<input type="number" id="stockReplenishQty" min="1" value="15"></label>
+             <button type="button" id="replenishStock" class="primary">Agregar porciones</button>
+          </div>
           <div id="stockAdminControls" data-roles="ADMIN">
             <div class="control-divider"><strong>Configuración administrativa</strong><p>Solo ADMIN puede modificar la cantidad total preparada.</p></div>
             <label>Total preparado<input type="number" id="prepared" min="0" max="10000" value="30"></label>
             <button type="button" id="setStock" class="outline">Actualizar porciones (ADMIN)</button>
           </div>
           <p class="hint">Inventario terminado por producto, no de ingredientes. Los pedidos pendientes reservan porciones; al confirmarse pasan a vendidas.</p>
+        </div>
+      </section>
+
+
+      <section id="module-kitchen" class="view-module" hidden>
+        <div class="module-heading"><div><span class="eyebrow">COCINA · PREPARACIÓN POR PLATO</span><h2>Órdenes en cocina</h2><p>El cocinero puede marcar cada plato LISTO; no accede al cobro.</p></div><span class="module-label">S03 · OPERACIÓN</span></div>
+        <div class="panel"><button type="button" id="refreshKitchen" class="primary">Actualizar comandas</button>
+          <div id="kitchenOrders" class="command-list">Consulta pedidos confirmados para empezar.</div>
+        </div>
+      </section>
+
+      <section id="module-sales" class="view-module" hidden>
+        <div class="module-heading"><div><span class="eyebrow">CAJA · S06 VENTAS</span><h2>Cobrar y emitir ticket</h2><p>El cobro requiere un pedido confirmado y todos sus platos listos.</p></div><span class="module-label">PEN · EFECTIVO</span></div>
+        <div class="panel">
+          <button type="button" id="refreshSalesOrders" class="outline">Ver pedidos pendientes de cobro</button>
+          <div id="cashOrders" class="command-list"></div>
+          <label>ID del pedido<input type="number" id="cashPedidoId" min="1" placeholder="Indica el pedido a cobrar"></label>
+          <label>Monto recibido (S/)<input type="number" id="cashRecibido" min="0.01" step="0.01" placeholder="Ejemplo: 50.00"></label>
+          <div class="buttons"><button type="button" id="cashCharge" class="primary">Cobrar y generar ticket</button><button type="button" id="cashReprint" class="outline">Consultar último comprobante por pedido</button></div>
+          <p class="hint">El ticket se abre en otra pestaña. Utiliza «Imprimir» y «Guardar como PDF». Es un comprobante interno académico, no una boleta tributaria.</p>
+        </div>
+      </section>
+
+      <section id="module-productsAdmin" class="view-module" hidden>
+        <div class="module-heading"><div><span class="eyebrow">ADMINISTRACIÓN · S02</span><h2>Platos y bebidas (CRUD)</h2><p>Crear, consultar, modificar y desactivar o eliminar productos.</p></div><span class="module-label">ADMIN</span></div>
+        <div class="panel">
+          <label>Producto existente<select id="productManageSelect"><option value="">Nuevo producto</option></select></label>
+          <div class="two"><label>Código<input id="productCode" maxlength="50" placeholder="DP-023"></label><label>Nombre<input id="productName" maxlength="150"></label></div>
+          <label>Descripción<input id="productDescription" maxlength="255"></label>
+          <div class="three"><label>Precio S/<input id="productPrice" type="number" min="0" step="0.01"></label><label>Categoría<select id="productCategory"></select></label><label>Disponible<select id="productAvailable"><option value="true">Sí</option><option value="false">No</option></select></label></div>
+          <div class="buttons"><button type="button" id="productNew" class="outline">Nuevo</button><button type="button" id="productSave" class="primary">Guardar producto</button><button type="button" id="productDisable" class="danger">Desactivar</button><button type="button" id="productDelete" class="danger">Eliminar sin ventas asociadas</button></div>
+          <p class="hint">Para preservar el historial, desactiva un producto con ventas registradas en lugar de eliminarlo. Configura sus porciones en Inventario.</p>
+          <div id="productAdminList" class="admin-list"></div>
+        </div>
+      </section>
+
+      <section id="module-categoriesAdmin" class="view-module" hidden>
+        <div class="module-heading"><div><span class="eyebrow">ADMINISTRACIÓN · S02</span><h2>Categorías</h2><p>Gestiona almuerzos, cenas y bebidas.</p></div><span class="module-label">ADMIN</span></div>
+        <div class="panel">
+          <label>Categoría<select id="categorySelect"><option value="">Nueva categoría</option></select></label>
+          <div class="two"><label>Nombre<input id="categoryName"></label><label>Tipo<select id="categoryType"><option value="COMIDA">COMIDA</option><option value="BEBIDA">BEBIDA</option></select></label></div>
+          <label>Descripción<input id="categoryDescription"></label>
+          <div class="buttons"><button id="categoryNew" class="outline" type="button">Nueva</button><button id="categorySave" class="primary" type="button">Guardar</button><button id="categoryDelete" class="danger" type="button">Eliminar categoría vacía</button></div>
+        </div>
+      </section>
+
+      <section id="module-usersAdmin" class="view-module" hidden>
+        <div class="module-heading"><div><span class="eyebrow">ADMINISTRACIÓN · IDENTIDAD</span><h2>Usuarios y permisos</h2><p>Altas, cambios de rol y bajas lógicas. La contraseña nunca se muestra al consultar.</p></div><span class="module-label">SOLO ADMIN</span></div>
+        <div class="panel">
+          <button type="button" class="outline" id="usersRefresh">Actualizar usuarios</button>
+          <label>Seleccionar usuario<select id="userSelect"><option value="">Nuevo usuario</option></select></label>
+          <div class="two"><label>Nombre<input id="userNameInput"></label><label>Correo<input id="userEmailInput" type="email"></label></div>
+          <div class="two"><label>Teléfono<input id="userPhoneInput"></label><label>Rol<select id="userRoleSelect"><option value="CLIENTE">CLIENTE</option><option value="MOZO">MOZO</option><option value="CAJA">CAJA</option><option value="COCINERO">COCINERO</option><option value="SUPERVISOR">SUPERVISOR</option><option value="ADMIN">ADMIN</option></select></label></div>
+          <label>Contraseña solo para NUEVO usuario<input id="userPasswordInput" type="password" autocomplete="new-password" minlength="8"></label>
+          <div class="buttons"><button type="button" id="userNew" class="outline">Nuevo</button><button type="button" id="userSave" class="primary">Guardar usuario</button><button type="button" id="userDisable" class="danger">Dar de baja</button><button type="button" id="userEnable" class="outline">Reactivar</button></div>
+          <div id="usersList" class="admin-list"></div>
+        </div>
+      </section>
+
+      <section id="module-settings" class="view-module" hidden>
+        <div class="module-heading"><div><span class="eyebrow">ADMINISTRACIÓN · AJUSTES</span><h2>Configuración del local</h2><p>Nombre, número de contacto y ruta de logotipo.</p></div><span class="module-label">ADMIN</span></div>
+        <div class="panel">
+          <label>Nombre del restaurante<input id="settingName" maxlength="100"></label>
+          <label>Teléfono<input id="settingPhone" maxlength="25"></label>
+          <label>Ruta de logo (archivo local dentro de /portal/images/)<input id="settingLogo" placeholder="/portal/images/logo.png"></label>
+          <div class="buttons"><button type="button" id="settingsSave" class="primary">Guardar configuración</button></div>
+          <p class="hint">Para cambiar el logo, coloca primero la imagen en <code>backend/src/main/resources/static/portal/images/</code>. No existe carga automática de archivos en esta versión.</p>
+          <div id="settingPreview" class="config-preview"></div>
         </div>
       </section>
 
