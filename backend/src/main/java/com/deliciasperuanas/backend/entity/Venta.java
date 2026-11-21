@@ -5,7 +5,8 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "ventas")
+@Table(name = "ventas", uniqueConstraints = @UniqueConstraint(
+    name="uq_ventas_metodo_referencia",columnNames={"medio_pago","referencia_pago"}))
 public class Venta {
     @Id @GeneratedValue(strategy=GenerationType.IDENTITY)
     private Long id;
