@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Delicias Peruanas: conoce nuestra gastronomía, explora el menú y accede al sistema de atención.">
+  <title>Delicias Peruanas | Nuestra carta</title>
+  <link rel="stylesheet" href="./site.css">
+  <script src="./site.js" defer></script>
+</head>
+<body>
+<a class="skip-link" href="#contenido">Ir al contenido</a>
+<header class="site-header">
+  <nav class="nav container" aria-label="Navegación principal">
+    <a class="brand" href="#inicio" aria-label="Delicias Peruanas, inicio"><span class="brand-mark" aria-hidden="true">DP</span><span><strong>DELICIAS</strong><small>PERUANAS</small></span></a>
+    <button class="menu-toggle" id="menuToggle" type="button" aria-controls="primaryMenu" aria-expanded="false">☰ <span>Menú</span></button>
+    <div class="nav-links" id="primaryMenu">
+      <a href="#inicio">Inicio</a><a href="#carta">Nuestra carta</a><a href="#nosotros">Nosotros</a><a href="#contacto">Contacto</a>
+      <a class="nav-button" href="#registro">Registrarme</a><a class="nav-login" href="/" title="Acceder al panel existente">Ingresar al sistema <span aria-hidden="true">↗</span></a>
+    </div>
+  </nav>
+</header>
+<main id="contenido">
+  <section id="inicio" class="hero">
+    <div class="container hero-grid">
+      <div class="hero-copy">
+        <div class="eyebrow">Sabores del Perú · Arequipa</div>
+        <h1>Tradición peruana en <em>cada plato.</em></h1>
+        <p>Conoce nuestros almuerzos, cenas y bebidas. Un espacio pensado para compartir la riqueza de nuestra gastronomía.</p>
+        <div class="hero-actions"><a class="btn btn-primary" href="#carta">Explorar la carta <span aria-hidden="true">↗</span></a><a class="btn btn-outline" href="#nosotros">Conocer el restaurante</a></div>
+        <div class="hero-foot"><span>✦ Carta actualizada desde el sistema</span><span>✦ Gestión digital de reservas</span></div>
+      </div>
+      <div class="hero-visual">
+        <div class="hero-photo" role="img" aria-label="Presentación gastronómica de platos peruanos">
+          <div class="hero-photo-label"><span>La cocina nos reúne</span><strong>DELICIAS PERUANAS</strong></div>
+        </div>
+        <div class="float-note"><span class="note-symbol">✳</span><span><strong>Tradición y sabor</strong><small>Una experiencia peruana</small></span></div>
+      </div>
+    </div>
+  </section>
+  <section class="highlights" aria-label="Nuestros valores">
+    <div class="container highlight-grid">
+      <div><span class="highlight-icon" aria-hidden="true">🍲</span><span><strong>Identidad peruana</strong><small>Sabores representativos</small></span></div>
+      <div><span class="highlight-icon" aria-hidden="true">🍽️</span><span><strong>Menú para compartir</strong><small>Almuerzos, cenas y bebidas</small></span></div>
+      <div><span class="highlight-icon" aria-hidden="true">📱</span><span><strong>Atención digital</strong><small>Servicios en evolución</small></span></div>
+    </div>
+  </section>
+  <section id="carta" class="section menu-section">
+    <div class="container">
+      <div class="section-head"><div><span class="section-kicker">Nuestros sabores</span><h2>Explora la carta</h2><p>Los productos y precios se consultan directamente desde el servicio REST de Delicias Peruanas.</p></div><span class="live-indicator" id="catalogStatus" aria-live="polite">Conectando con el catálogo…</span></div>
+      <div class="filter-row" role="group" aria-label="Filtrar carta">
+        <button class="filter active" type="button" data-filter="todos" aria-pressed="true">Todos</button>
+        <button class="filter" type="button" data-filter="almuerzos" aria-pressed="false">Almuerzos</button>
+        <button class="filter" type="button" data-filter="cenas" aria-pressed="false">Cenas</button>
+        <button class="filter" type="button" data-filter="bebidas" aria-pressed="false">Bebidas</button>
+      </div>
+      <div id="categoryFilters" class="category-row" role="group" aria-label="Filtrar por categorías registradas"></div>
+      <div class="menu-grid" id="catalogGrid" aria-live="polite">
+        <div class="loading-state">Cargando platos desde la API…</div>
+      </div>
+      <p class="catalog-caption">La disponibilidad indicada corresponde al estado comercial del producto. El control de porciones se incorporará en la siguiente fase del APF3.</p>
+      <div class="menu-footer"><button class="btn btn-outline" id="reloadCatalog" type="button">↻ Actualizar carta</button><span>¿Deseas reservar? <a href="/">Ingresa al sistema</a> para usar el módulo de reservas existente.</span></div>
+    </div>
+  </section>
+  <section id="nosotros" class="section about-section">
+    <div class="container about-grid">
+      <div class="about-picture"><div class="about-badge"><strong>Delicias Peruanas</strong><span>Identidad gastronómica · Arequipa</span></div></div>
+      <div class="about-copy"><span class="section-kicker">Nuestra historia</span><h2>Más que una carta, una forma de compartir.</h2><p>Delicias Peruanas es un proyecto de restaurante enfocado en la gastronomía peruana. Su propuesta busca mejorar la experiencia del cliente y fortalecer los procesos de atención, pedidos, mesas y reservas.</p><p>Estamos desarrollando una plataforma que integra información del menú y los procesos internos mediante servicios web. Esta web pública es el primer paso de esa evolución.</p><div class="about-metrics"><div><strong>Arequipa</strong><small>Ciudad del proyecto</small></div><div><strong>REST/JSON</strong><small>Integración tecnológica</small></div></div></div>
+    </div>
+  </section>
+  <section id="registro" class="section account-section">
+    <div class="container account-grid">
+      <div><span class="section-kicker">Tu cuenta</span><h2>Regístrate para acceder a los servicios.</h2><p>Con una cuenta de cliente podrás acceder al sistema. El registro utiliza la API existente de autenticación; los paneles de Mozo, Supervisor y Administrador se implementarán de forma separada.</p><p class="account-callout">¿Ya tienes cuenta? <a href="/">Inicia sesión en el panel actual →</a></p></div>
+      <form id="registerForm" class="register-form" novalidate>
+        <div class="form-title">Crear cuenta de cliente</div>
+        <label>Nombre completo <input name="nombre" type="text" minlength="2" maxlength="100" autocomplete="name" required></label>
+        <label>Correo electrónico <input name="correo" type="email" maxlength="150" autocomplete="email" required></label>
+        <label>Teléfono (opcional) <input name="telefono" type="tel" maxlength="20" autocomplete="tel"></label>
+        <label>Contraseña <input name="password" type="password" minlength="8" autocomplete="new-password" required></label>
+        <button class="btn btn-primary full" type="submit" id="submitRegister">Registrar cliente</button>
+        <p class="form-help">Por seguridad, el registro público asigna exclusivamente el rol CLIENTE.</p>
+        <div class="form-message" id="registerMessage" aria-live="polite" role="status"></div>
+      </form>
+    </div>
+  </section>
+  <section id="contacto" class="section contact-section">
+    <div class="container contact-grid"><div><span class="section-kicker">Conversemos</span><h2>Estamos en Arequipa, Perú.</h2><p>Este portal forma parte de la evolución digital de Delicias Peruanas. La información de contacto específica se publicará cuando esté confirmada.</p></div><div class="contact-card"><span class="contact-icon">📍</span><strong>Arequipa, Perú</strong><p>Consulta la carta en línea o inicia sesión para utilizar los servicios disponibles del prototipo.</p><a class="btn btn-primary" href="#carta">Ver nuestra carta</a></div></div>
+  </section>
+</main>
+<footer class="site-footer"><div class="container footer-flex"><a class="brand footer-brand" href="#inicio"><span class="brand-mark">DP</span><span><strong>DELICIAS</strong><small>PERUANAS</small></span></a><p>Proyecto académico de Ingeniería de Sistemas e Informática. Portal público del APF3.</p><a href="#inicio">Volver arriba ↑</a></div></footer>
+</body>
+</html>
