@@ -20,7 +20,7 @@ public class OpenApiConfig {
                 .info(new Info()
                         .title("Delicias Peruanas API")
                         .version("APF3")
-                        .description("API REST de autenticación, categorías, productos, mesas y reservas. "
+                        .description("API REST de autenticación, categorías, productos, mesas, reservas, pedidos e inventario de porciones. "
                                 + "Las operaciones protegidas requieren JWT y el rol correspondiente."))
                 .components(new Components().addSecuritySchemes("bearerAuth",
                         new SecurityScheme()

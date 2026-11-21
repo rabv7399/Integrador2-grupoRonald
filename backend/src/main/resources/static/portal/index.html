@@ -17,7 +17,7 @@
     <button class="menu-toggle" id="menuToggle" type="button" aria-controls="primaryMenu" aria-expanded="false">☰ <span>Menú</span></button>
     <div class="nav-links" id="primaryMenu">
       <a href="#inicio">Inicio</a><a href="#carta">Nuestra carta</a><a href="#nosotros">Nosotros</a><a href="#contacto">Contacto</a>
-      <a class="nav-button" href="#registro">Registrarme</a><a class="nav-login" href="/" title="Acceder al panel existente">Ingresar al sistema <span aria-hidden="true">↗</span></a>
+      <a class="nav-button" href="#registro">Registrarme</a><a class="nav-login" href="/soa-demo/index.html" title="Iniciar sesión y acceder al panel según el rol">Ingresar al sistema <span aria-hidden="true">↗</span></a>
     </div>
   </nav>
 </header>
@@ -77,8 +77,8 @@
       <div class="menu-grid" id="catalogGrid" aria-live="polite">
         <div class="loading-state">Cargando platos desde la API…</div>
       </div>
-      <p class="catalog-caption">Los precios antiguos provienen de los HTML de Botanero Venta; son referencias académicas, no tarifas confirmadas. El stock real de porciones se implementará con el servicio S05.</p>
-      <div class="menu-footer"><button class="btn btn-outline" id="reloadCatalog" type="button">↻ Actualizar carta</button><span>¿Deseas reservar? <a href="/">Ingresa al sistema</a> para usar el módulo de reservas existente.</span></div>
+      <p class="catalog-caption">Los precios antiguos provienen de los HTML de Botanero Venta; son referencias académicas, no tarifas confirmadas. El control de porciones S05 puede probarse en el panel de demostración SOA.</p>
+      <div class="menu-footer"><button class="btn btn-outline" id="reloadCatalog" type="button">↻ Actualizar carta</button><span>¿Deseas reservar? <a href="/soa-demo/index.html">Inicia sesión</a> para entrar al panel de reservas.</span></div>
     </div>
   </section>
   <section id="nosotros" class="section about-section">
@@ -89,7 +89,7 @@
   </section>
   <section id="registro" class="section account-section">
     <div class="container account-grid">
-      <div><span class="section-kicker">Tu cuenta</span><h2>Regístrate para acceder a los servicios.</h2><p>Con una cuenta de cliente podrás acceder al sistema. El registro utiliza la API existente de autenticación; los paneles de Mozo, Supervisor y Administrador se implementarán de forma separada.</p><p class="account-callout">¿Ya tienes cuenta? <a href="/">Inicia sesión en el panel actual →</a></p></div>
+      <div><span class="section-kicker">Tu cuenta</span><h2>Regístrate para acceder a los servicios.</h2><p>Con una cuenta de cliente podrás acceder al sistema. El registro utiliza la API existente de autenticación; los perfiles de Mozo, Supervisor y Administrador requieren credenciales internas y no se crean desde el registro público.</p><p class="account-callout">¿Ya tienes cuenta? <a href="/soa-demo/index.html">Inicia sesión en tu panel →</a></p></div>
       <form id="registerForm" class="register-form" novalidate>
         <div class="form-title">Crear cuenta de cliente</div>
         <label>Nombre completo <input name="nombre" type="text" minlength="2" maxlength="100" autocomplete="name" required></label>

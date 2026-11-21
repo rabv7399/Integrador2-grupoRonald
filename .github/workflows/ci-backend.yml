@@ -2,7 +2,7 @@ name: CI Backend Java 21
 
 on:
   push:
-    branches: [main, develop, apf3-ci]
+    branches: [main, develop, apf3-ci, 'feature/**']
   pull_request:
     branches: [main, develop]
   workflow_dispatch:
@@ -41,4 +41,4 @@ jobs:
           cache-dependency-path: backend/pom.xml
 
       - name: Compilar y ejecutar pruebas Maven
-        run: bash ./mvnw -B -ntp clean verify
+        run: mvn -B -ntp clean verify

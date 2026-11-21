@@ -30,6 +30,8 @@ public class ReservaController {
 
     @PostMapping
     public ResponseEntity<Reserva> crear(@RequestBody Reserva reserva) {
+        // El usuario no puede autoasignar estados confirmados desde JSON.
+        reserva.setEstado("PENDIENTE");
         Reserva nueva = reservaService.guardar(reserva);
         return ResponseEntity.status(HttpStatus.CREATED).body(nueva);
     }

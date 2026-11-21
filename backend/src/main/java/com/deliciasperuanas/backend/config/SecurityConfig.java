@@ -59,7 +59,7 @@ public class SecurityConfig {
                         ).permitAll()
 
                         // Portal gastronómico público APF3, sin acceso a operaciones protegidas
-                        .requestMatchers("/portal/**").permitAll()
+                        .requestMatchers("/portal/**", "/soa-demo/**").permitAll()
 
                         // Documentación de la API; las operaciones conservan sus permisos
                         .requestMatchers(
@@ -118,16 +118,35 @@ public class SecurityConfig {
                         // Mesas
                         .requestMatchers(
                                 "/api/mesas/**"
-                        ).hasAnyRole("ADMIN", "OPERADOR")
+                        ).hasAnyRole("ADMIN", "OPERADOR", "MOZO", "SUPERVISOR")
 
-                        // Reservas
-                        .requestMatchers(
-                                "/api/reservas/**"
-                        ).hasAnyRole(
-                                "ADMIN",
-                                "OPERADOR",
-                                "CLIENTE"
-                        )
+                        // Reservas: el cliente puede crear; consultas globales y cancelaciones son internas.
+                        // Se evita que un cliente lea o cancele reservas ajenas sin identidad vinculada.
+                        .requestMatchers(HttpMethod.POST, "/api/reservas/**")
+                        .hasAnyRole("ADMIN", "OPERADOR", "MOZO", "SUPERVISOR", "CLIENTE")
+
+                        .requestMatchers(HttpMethod.GET, "/api/reservas/**")
+                        .hasAnyRole("ADMIN", "OPERADOR", "MOZO", "SUPERVISOR")
+
+                        .requestMatchers(HttpMethod.PATCH, "/api/reservas/**")
+                        .hasAnyRole("ADMIN", "OPERADOR", "MOZO", "SUPERVISOR")
+
+                        // APF3 SOA: lectura interna de porciones, ajustes solo por ADMIN
+                        .requestMatchers(HttpMethod.GET, "/api/v1/inventario/**")
+                        .hasAnyRole("ADMIN", "OPERADOR", "MOZO", "SUPERVISOR")
+
+                        .requestMatchers(HttpMethod.PUT, "/api/v1/inventario/**")
+                        .hasRole("ADMIN")
+
+                        // El personal confirma pedidos; clientes registran, consultan y cancelan los suyos
+                        .requestMatchers(HttpMethod.POST, "/api/v1/pedidos/*/confirmacion")
+                        .hasAnyRole("ADMIN", "OPERADOR", "MOZO", "SUPERVISOR")
+
+                        .requestMatchers(HttpMethod.POST, "/api/v1/pedidos/**")
+                        .hasAnyRole("ADMIN", "OPERADOR", "MOZO", "SUPERVISOR", "CLIENTE")
+
+                        .requestMatchers(HttpMethod.GET, "/api/v1/pedidos/**")
+                        .authenticated()
 
                         .anyRequest().authenticated()
                 )

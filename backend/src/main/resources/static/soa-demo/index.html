@@ -1,0 +1,165 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="description" content="Delicias Peruanas APF3 SOA: acceso y panel de servicios por roles">
+<title>Delicias Peruanas | Gestión de servicios SOA</title>
+<link rel="stylesheet" href="./demo.css">
+<script src="./demo.js" defer></script>
+</head>
+<body>
+<div id="loginView" class="access-view">
+  <header class="access-header">
+    <div class="shell top-row">
+      <div class="brand"><span class="mark">DP</span><span><strong>DELICIAS PERUANAS</strong><small>Plataforma de gestión · SOA APF3</small></span></div>
+      <a href="/portal/index.html" class="portal-link">Ir a la web del restaurante ↗</a>
+    </div>
+  </header>
+  <main class="access-layout shell">
+    <div class="access-message">
+      <span class="eyebrow">UN SISTEMA · CUATRO PERFILES DE ACCESO</span>
+      <h1>Bienvenido a<br><em>Delicias Peruanas.</em></h1>
+      <p>El trabajo del restaurante, organizado en un solo lugar. Inicia sesión para entrar al panel que corresponde a tus permisos.</p>
+      <div class="access-roles" aria-label="Perfiles del sistema">
+        <div><span>01</span><strong>Cliente</strong><small>Mi carta, mis pedidos y reservas</small></div>
+        <div><span>02</span><strong>Mozo</strong><small>Atención y confirmación de pedidos</small></div>
+        <div><span>03</span><strong>Supervisor</strong><small>Seguimiento operativo e inventario</small></div>
+        <div><span>04</span><strong>Administrador</strong><small>Configuración y control de porciones</small></div>
+      </div>
+      <div class="access-footnote">APF3 · REST/JSON · Spring Boot · JWT · Base H2 local de demostración</div>
+    </div>
+    <section class="login-card" aria-labelledby="loginTitle">
+      <span class="login-symbol" aria-hidden="true">DP</span>
+      <span class="login-kicker">ACCESO SEGURO</span>
+      <h2 id="loginTitle">Iniciar sesión</h2>
+      <p class="login-desc">Ingresa con una cuenta de demostración para acceder a las funciones de tu perfil.</p>
+      <form id="loginForm">
+        <label for="correo">Correo electrónico
+          <input id="correo" type="email" autocomplete="username" placeholder="usuario@delicias.local" required>
+        </label>
+        <label for="contrasena">Contraseña
+          <input id="contrasena" type="password" autocomplete="current-password" placeholder="Tu contraseña temporal" required>
+        </label>
+        <button type="submit" class="primary full">Ingresar al panel <span aria-hidden="true">→</span></button>
+      </form>
+      <p id="loginMessage" class="login-feedback" role="status" aria-live="polite">Selecciona una de las cuentas de demostración creadas al iniciar el servidor.</p>
+      <div class="login-hint"><strong>¿Cómo se asignan los accesos?</strong><br>El servidor valida el JWT y el rol antes de autorizar cada operación. Las contraseñas no se almacenan en esta página.</div>
+    </section>
+  </main>
+</div>
+
+<div id="appView" class="dashboard-view" hidden>
+  <aside class="side" aria-label="Menú de servicios">
+    <div class="side-brand"><span class="mark">DP</span><span><strong>DELICIAS PERUANAS</strong><small>PANEL DE GESTIÓN</small></span></div>
+    <p class="side-heading">ESPACIO DE TRABAJO</p>
+    <nav id="sideNav" class="side-menu">
+      <button type="button" data-module="inicio" data-roles="CLIENTE,MOZO,SUPERVISOR,ADMIN,OPERADOR"><span>▦</span> Resumen</button>
+      <button type="button" data-module="menu" data-roles="CLIENTE,MOZO,SUPERVISOR,ADMIN,OPERADOR"><span>▤</span> Carta y productos</button>
+      <button type="button" data-module="orders" data-roles="CLIENTE,MOZO,SUPERVISOR,ADMIN,OPERADOR"><span>▣</span> Pedidos</button>
+      <button type="button" data-module="reservations" data-roles="CLIENTE,MOZO,SUPERVISOR,ADMIN,OPERADOR"><span>▦</span> Reservas de mesas</button>
+      <button type="button" data-module="stock" data-roles="MOZO,SUPERVISOR,ADMIN,OPERADOR"><span>◈</span> Inventario</button>
+      <button type="button" data-module="api" data-roles="CLIENTE,MOZO,SUPERVISOR,ADMIN,OPERADOR"><span>{ }</span> Laboratorio REST</button>
+    </nav>
+    <div class="side-bottom"><span class="online-dot"></span><span>SOA APF3 · Modo de pruebas<br><small>Los cambios no afectan Aiven</small></span></div>
+  </aside>
+  <div class="dashboard-main">
+    <header class="workspace-header">
+      <div><span class="workspace-eyebrow">SISTEMA DE GESTIÓN GASTRONÓMICA</span><h2 id="workspaceTitle">Resumen</h2></div>
+      <div class="workspace-user">
+        <div class="user-info"><strong id="userName">Usuario</strong><span id="userMail"></span></div>
+        <span id="userRole" class="role-pill">ROL</span>
+        <button type="button" id="logout" class="outline logout-button">Salir</button>
+      </div>
+    </header>
+    <main class="workspace-content">
+      <div id="responseBar" class="response-banner" role="status" aria-live="polite">
+        <span id="responseHeadline">Sesión segura iniciada.</span>
+        <button type="button" id="viewJson" class="text-action">Ver respuesta JSON →</button>
+      </div>
+
+      <section id="module-inicio" class="view-module">
+        <div class="welcome-band">
+          <span class="eyebrow">BIENVENIDO A TU ESPACIO</span>
+          <h1 id="welcomeTitle">Tu panel de trabajo</h1>
+          <p id="welcomeDescription">Aquí encontrarás las operaciones autorizadas para tu rol.</p>
+          <div class="welcome-label">🔒 Permisos administrados por JWT + Spring Security</div>
+        </div>
+        <div class="kpi-grid">
+          <div class="kpi"><span>SERVICIOS INTEGRADOS</span><strong>05</strong><small>S01–S05 · REST</small></div>
+          <div class="kpi"><span>PRODUCTOS DISPONIBLES</span><strong id="dashboardProductsCount">—</strong><small>Datos de Spring Boot</small></div>
+          <div class="kpi"><span>MI PERFIL</span><strong id="dashboardRole">—</strong><small>Acceso según permisos</small></div>
+        </div>
+        <div class="section-heading"><h3>Accesos disponibles</h3><p>Selecciona una opción para continuar.</p></div>
+        <div id="quickActions" class="quick-grid"></div>
+        <div class="permissions-box"><strong>Control de seguridad</strong><p id="permissionsText">El menú de la izquierda muestra solo las operaciones de tu perfil.</p><p class="hint">La autorización real se comprueba en el backend. Ocultar un menú no sustituye a los permisos del servidor.</p></div>
+      </section>
+
+      <section id="module-menu" class="view-module" hidden>
+        <div class="module-heading"><div><span class="eyebrow">SERVICIO S02 · CONSULTA PÚBLICA</span><h2>Carta y productos</h2><p>Consulta en tiempo real los platos y categorías del restaurante.</p></div><span class="module-label">REST · GET</span></div>
+        <div class="panel">
+          <button type="button" id="getCatalog" class="primary">Actualizar carta desde la API</button>
+          <div class="metric-strip">
+            <div><small>Productos</small><strong id="productsCount">—</strong></div>
+            <div><small>Categorías</small><strong id="categoriesCount">—</strong></div>
+          </div>
+          <div id="productList" class="product-list">Consulta el catálogo para visualizar los productos.</div>
+        </div>
+      </section>
+
+      <section id="module-orders" class="view-module" hidden>
+        <div class="module-heading"><div><span class="eyebrow">SERVICIO S03 · ORQUESTACIÓN CON S05</span><h2>Gestión de pedidos</h2><p>Registra pedidos con reserva de porciones e idempotencia.</p></div><span class="module-label">REST · POST</span></div>
+        <div class="panel order-card">
+          <label>Producto<select id="orderProduct"></select></label>
+          <label>Porciones<input id="orderQty" type="number" min="1" max="20" value="2"></label>
+          <label>Referencia de operación (Idempotency-Key)<input id="orderKey" type="text" readonly></label>
+          <div class="buttons"><button type="button" id="newKey" class="outline">Nueva referencia</button><button type="button" id="createOrder" class="primary">Registrar pedido</button></div>
+          <label>ID del pedido<input type="number" id="orderId" min="1" placeholder="Aparecerá al registrar"></label>
+          <div class="buttons"><button type="button" id="repeatOrder" class="outline">Repetir solicitud (200)</button><button type="button" id="confirmOrder" class="primary" data-roles="MOZO,SUPERVISOR,ADMIN,OPERADOR">Confirmar pedido</button><button type="button" id="cancelOrder" class="danger">Cancelar pendiente</button></div>
+          <p class="hint">El cliente registra y cancela sus pedidos pendientes. El personal autorizado puede confirmarlos. El precio se conserva al crear el pedido.</p>
+        </div>
+      </section>
+
+      <section id="module-reservations" class="view-module" hidden>
+        <div class="module-heading"><div><span class="eyebrow">SERVICIO S04 · MESAS</span><h2>Reservas de mesas</h2><p>Registra reservas y prueba la detección de horarios superpuestos.</p></div><span class="module-label">REST · POST</span></div>
+        <div class="panel">
+          <form id="reserveForm">
+            <label>Nombre del cliente<input id="reserveName" required value="Cliente de demostración"></label>
+            <div class="two"><label>Fecha<input id="reserveDate" type="date" required></label><label>ID de mesa<input id="mesaId" type="number" min="1" value="1" required></label></div>
+            <div class="three"><label>Inicio<input id="reserveStart" type="time" value="19:00" required></label><label>Fin<input id="reserveEnd" type="time" value="20:00" required></label><label>Personas<input id="reserveCount" type="number" min="1" max="20" value="2" required></label></div>
+            <button type="submit" class="primary">Registrar reserva</button>
+          </form>
+          <p class="hint">El caso de solapamiento de horarios devuelve HTTP 409 desde el servidor.</p>
+        </div>
+      </section>
+
+      <section id="module-stock" class="view-module" hidden>
+        <div class="module-heading"><div><span class="eyebrow">SERVICIO S05 · PORCIONES</span><h2>Inventario de platos</h2><p>Control de porciones preparadas, reservadas y vendidas.</p></div><span class="module-label">REST · GET/PUT</span></div>
+        <div class="panel">
+          <label>Seleccionar producto<select id="stockProduct"></select></label>
+          <div class="buttons"><button type="button" id="getStock" class="primary">Consultar inventario</button></div>
+          <div id="stockAdminControls" data-roles="ADMIN">
+            <div class="control-divider"><strong>Configuración administrativa</strong><p>Solo ADMIN puede modificar la cantidad total preparada.</p></div>
+            <label>Total preparado<input type="number" id="prepared" min="0" max="10000" value="30"></label>
+            <button type="button" id="setStock" class="outline">Actualizar porciones (ADMIN)</button>
+          </div>
+          <p class="hint">Inventario terminado por producto, no de ingredientes. Los pedidos pendientes reservan porciones; al confirmarse pasan a vendidas.</p>
+        </div>
+      </section>
+
+      <section id="module-api" class="view-module" hidden>
+        <div class="module-heading"><div><span class="eyebrow">EVIDENCIA TÉCNICA · SOA APF3</span><h2>Laboratorio REST</h2><p>Inspecciona las respuestas HTTP y JSON generadas por la aplicación.</p></div><span class="module-label">HTTP · JSON</span></div>
+        <div class="panel panel-result">
+          <div class="panel-title"><span class="service-id">API</span><div><h2>Última respuesta</h2><p>Prueba observable de integración</p></div></div>
+          <div class="response-status" id="httpStatus" role="status">Sin solicitudes</div>
+          <pre id="responseJson">Elige una operación del panel y consulta aquí la respuesta JSON.</pre>
+          <button type="button" id="clearResponse" class="outline">Limpiar respuesta</button>
+          <p class="hint">Los tokens y las contraseñas no se muestran en el laboratorio. Utiliza este apartado para evidencias reales.</p>
+        </div>
+      </section>
+      <footer class="dashboard-footer">Delicias Peruanas · Ingeniería de Sistemas · APF3 SOA · Prototipo de demostración local</footer>
+    </main>
+  </div>
+</div>
+</body>
+</html>
