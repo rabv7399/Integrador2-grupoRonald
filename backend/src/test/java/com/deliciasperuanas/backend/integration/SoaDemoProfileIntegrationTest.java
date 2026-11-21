@@ -6,6 +6,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.test.context.ActiveProfiles;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import org.springframework.test.web.servlet.MockMvc;
@@ -18,6 +19,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @SpringBootTest
 @AutoConfigureMockMvc
 @ActiveProfiles("soa-demo")
+@Transactional
 class SoaDemoProfileIntegrationTest {
     private static final String SECRET;
     static {
@@ -37,7 +39,7 @@ class SoaDemoProfileIntegrationTest {
     @Test
     void perfilDemoCargaCincoServiciosYPermiteProcesarPedido() throws Exception {
         mvc.perform(get("/soa-demo/index.html")).andExpect(status().isOk())
-            .andExpect(content().string(org.hamcrest.Matchers.containsString("Iniciar sesión")));
+            .andExpect(content().string(org.hamcrest.Matchers.containsString("id=\"loginView\"")));
         mvc.perform(get("/api/productos")).andExpect(status().isOk())
             .andExpect(jsonPath("$.length()").value(4));
 
