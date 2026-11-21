@@ -232,7 +232,8 @@
     const r=await api('/api/v1/pedidos');
     if(!r.ok||!Array.isArray(r.data)||moduloActual()!=='orders'||!token)return;
     pintarPedidos(r.data);
-    if(['ADMIN','CAJA','MOZO','SUPERVISOR','OPERADOR'].includes(rol))await cargarMesas();
+    if(['ADMIN','CAJA','MOZO','SUPERVISOR','OPERADOR'].includes(rol))
+      await Promise.all([cargarMesas(),consultarDisponibilidad()]);
   }
   e('appendOrderItems').addEventListener('click',async()=>{
     const id=Number(e('orderId').value);
