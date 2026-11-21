@@ -25,6 +25,12 @@ public class Pedido {
     @Column(nullable = false, length = 20)
     private String estado;
 
+    @Column(name = "tipo_atencion", nullable = false, length = 12)
+    private String tipoAtencion = "LLEVAR";
+
+    @Column(name = "mesa_id")
+    private Long mesaId;
+
     @Column(nullable = false, precision = 12, scale = 2)
     private BigDecimal total;
 
@@ -49,6 +55,10 @@ public class Pedido {
     public void setCliente(Usuario v) { cliente = v; }
     public String getEstado() { return estado; }
     public void setEstado(String v) { estado = v; }
+    public String getTipoAtencion() { return tipoAtencion; }
+    public void setTipoAtencion(String v) { tipoAtencion = v; }
+    public Long getMesaId() { return mesaId; }
+    public void setMesaId(Long v) { mesaId = v; }
     public BigDecimal getTotal() { return total; }
     public void setTotal(BigDecimal v) { total = v; }
     public LocalDateTime getFechaCreacion() { return fechaCreacion; }

@@ -20,6 +20,9 @@ public class DetallePedido {
     @Column(nullable = false)
     private int cantidad;
 
+    @Column(name = "estado_preparacion", nullable = false, length = 15)
+    private String estadoPreparacion = "PENDIENTE";
+
     @Column(name = "precio_unitario", nullable = false, precision = 10, scale = 2)
     private BigDecimal precioUnitario;
 
@@ -27,6 +30,8 @@ public class DetallePedido {
     private BigDecimal subtotal;
 
     public Long getId() { return id; }
+    public String getEstadoPreparacion() { return estadoPreparacion; }
+    public void setEstadoPreparacion(String v) { estadoPreparacion = v; }
     public Pedido getPedido() { return pedido; }
     public void setPedido(Pedido v) { pedido = v; }
     public Producto getProducto() { return producto; }
