@@ -84,8 +84,8 @@ function cardFor(p){
   const footer=textNode('div','food-bottom','');
   const raw=p.precio==null?'':String(p.precio);
   const price=raw===''?NaN:Number(raw);
-  footer.append(textNode('strong','',Number.isFinite(price)?money.format(price):'Precio a consultar'));
-  const tag=reference?'Precio histórico · Referencial':(available?'Precio en MySQL':'Producto no disponible');
+  footer.append(textNode('strong','',Number.isFinite(price)&&price>0?money.format(price):'Precio por confirmar'));
+  const tag=reference?'Precio histórico · Referencial':(available?'Precio publicado por la API':'Producto no disponible');
   footer.append(textNode('small','',tag));
   body.append(footer);card.append(photo,body);
   return card;
@@ -145,7 +145,7 @@ async function loadCatalog(){
     products=ps.filter(p=>p && typeof p==='object');
     categories=cs.filter(c=>c && typeof c==='object');
     categoryChips();showMenu();
-    setStatus('API conectada · '+products.length+' productos reales');
+    setStatus('API conectada · '+products.length+' productos registrados');
   }catch(err){
     products=[];categories=[];categoryChips();showMenu();
     setStatus('API desconectada · Solo referencias históricas',true);
@@ -208,3 +208,24 @@ registerForm.addEventListener('submit',async(event)=>{
   }finally{submitRegister.disabled=false;submitRegister.textContent='Registrar cliente';}
 });
 loadCatalog();
+async function cargarDatosLocal(){
+  try {
+    const config=await getJSON('/api/v1/configuracion');
+    if(!config || !config.nombre)return;
+    document.querySelectorAll('.brand').forEach(e=>{
+      const a=e.querySelector('strong');if(a)a.textContent=config.nombre;
+    });
+    const telefono=document.querySelector('#contactPhone');
+    if(telefono && config.telefono)telefono.textContent='Teléfono de contacto: '+config.telefono;
+    if(config.logoRuta && /^\/portal\/images\/[a-zA-Z0-9_-]+\.(png|jpg|jpeg|webp)$/.test(config.logoRuta)){
+      document.querySelectorAll('.brand-mark').forEach(marca=>{
+        const imagen=document.createElement('img');
+        imagen.src=config.logoRuta;imagen.alt='';imagen.loading='lazy';
+        imagen.style.cssText='width:100%;height:100%;object-fit:cover;border-radius:50%';
+        imagen.addEventListener('error',()=>{imagen.remove();marca.textContent='DP';},{once:true});
+        marca.textContent='';marca.append(imagen);
+      });
+    }
+  }catch(err){console.warn('No se pudo obtener la configuración pública del restaurante',err);}
+}
+cargarDatosLocal();
