@@ -91,8 +91,10 @@ public class ProductoService {
         return productoRepository.save(producto);
     }
 
+    // DELETE administrativo = baja lógica para conservar detalles de pedidos y ventas.
     public void eliminar(Long id) {
         Producto producto = buscarPorId(id);
-        productoRepository.delete(producto);
+        producto.setDisponible(false);
+        productoRepository.save(producto);
     }
 }

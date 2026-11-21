@@ -159,7 +159,7 @@ public class SecurityConfig {
                         .requestMatchers("/api/v1/ventas/**")
                         .hasAnyRole("ADMIN","SUPERVISOR","CAJA")
 
-                        // S01 gestión interna de usuarios y S07 configuración del local
+                        // Gestión interna de usuarios y configuración del local
                         .requestMatchers("/api/v1/usuarios/**")
                         .hasRole("ADMIN")
                         .requestMatchers(HttpMethod.GET, "/api/v1/configuracion/**").permitAll()
