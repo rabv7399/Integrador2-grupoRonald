@@ -445,6 +445,56 @@ class SoaDemoProfileIntegrationTest {
             .andExpect(jsonPath("$.cambio").value(0));
     }
 
+
+    @Test
+    void agregarUnPlatoALaMesaYaConfirmadaSeVeEnCocinaYSeBloqueaPagoPendiente() throws Exception {
+        String mozo=iniciar("mozo.demo@delicias.local","MozoDemoTest123!");
+        String cliente=iniciar("cliente.demo@delicias.local","ClienteDemoTest123!");
+        String caja=iniciar("caja.demo@delicias.local","CajaDemoTest123!");
+
+        String inicial=mvc.perform(post("/api/v1/pedidos")
+                .header("Authorization","Bearer "+mozo)
+                .header("Idempotency-Key","orden-confirmada-001")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"tipoAtencion\":\"MESA\",\"mesaId\":3,\"items\":[{\"productoId\":1,\"cantidad\":1}]}"))
+            .andExpect(status().isCreated()).andReturn().getResponse().getContentAsString();
+        Number id=JsonPath.read(inicial,"$.pedidoId");
+        mvc.perform(post("/api/v1/pedidos/{id}/confirmacion",id.longValue())
+                .header("Authorization","Bearer "+mozo))
+            .andExpect(status().isOk());
+
+        String url="/api/v1/pedidos/"+id+"/items";
+        String adicion="{\"items\":[{\"productoId\":2,\"cantidad\":1}]}";
+        mvc.perform(post(url)
+                .header("Authorization","Bearer "+cliente)
+                .header("Idempotency-Key","adicion-cliente-no-permitida")
+                .contentType(MediaType.APPLICATION_JSON).content(adicion))
+            .andExpect(status().isForbidden());
+
+        mvc.perform(post(url)
+                .header("Authorization","Bearer "+mozo)
+                .header("Idempotency-Key","adicion-confirmada-001")
+                .contentType(MediaType.APPLICATION_JSON).content(adicion))
+            .andExpect(status().isCreated())
+            .andExpect(jsonPath("$.estado").value("CONFIRMADO"))
+            .andExpect(jsonPath("$.total").value(47.00))
+            .andExpect(jsonPath("$.items.length()").value(2))
+            .andExpect(jsonPath("$.items[1].estadoPreparacion").value("PENDIENTE"));
+
+        mvc.perform(get("/api/v1/inventario/2")
+                .header("Authorization","Bearer "+mozo))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.vendidas").value(1))
+            .andExpect(jsonPath("$.disponibles").value(19));
+
+        mvc.perform(post("/api/v1/ventas/pedidos/{id}/cobrar",id.longValue())
+                .header("Authorization","Bearer "+caja)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"montoRecibido\":50.00,\"medioPago\":\"EFECTIVO\"}"))
+            .andExpect(status().isConflict())
+            .andExpect(jsonPath("$.codigo").value("PLATOS_PENDIENTES"));
+    }
+
     private String iniciar(String correo, String pass) throws Exception {
         String json = "{\"correo\":\""+correo+"\",\"password\":\""+pass+"\"}";
         String response = mvc.perform(post("/api/auth/login")
