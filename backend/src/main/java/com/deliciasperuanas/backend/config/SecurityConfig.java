@@ -58,6 +58,9 @@ public class SecurityConfig {
                                 "/favicon.ico"
                         ).permitAll()
 
+                        // Portal gastronómico público APF3, sin acceso a operaciones protegidas
+                        .requestMatchers("/portal/**").permitAll()
+
                         // Documentación de la API; las operaciones conservan sus permisos
                         .requestMatchers(
                                 HttpMethod.GET,
@@ -74,7 +77,7 @@ public class SecurityConfig {
                         .requestMatchers(
                                 HttpMethod.GET,
                                 "/api/categorias/**"
-                        ).authenticated()
+                        ).permitAll()
 
                         .requestMatchers(
                                 HttpMethod.POST,
@@ -95,7 +98,7 @@ public class SecurityConfig {
                         .requestMatchers(
                                 HttpMethod.GET,
                                 "/api/productos/**"
-                        ).authenticated()
+                        ).permitAll()
 
                         .requestMatchers(
                                 HttpMethod.POST,

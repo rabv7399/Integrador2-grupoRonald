@@ -137,13 +137,35 @@ class SecurityIntegrationTest {
     }
 
     @Test
-    void endpointProtegidoSinTokenDebeRetornar401()
+    void consultaPublicaCategoriasSinTokenDebeRetornar200()
             throws Exception {
+        mockMvc.perform(get("/api/categorias"))
+                .andExpect(status().isOk());
+    }
 
-        mockMvc.perform(
-                        get("/api/categorias")
-                )
+    @Test
+    void consultaPublicaProductosSinTokenDebeRetornar200()
+            throws Exception {
+        mockMvc.perform(get("/api/productos"))
+                .andExpect(status().isOk());
+    }
+
+    @Test
+    void operacionesAdministrativasSinTokenSiguenProtegidas()
+            throws Exception {
+        mockMvc.perform(post("/api/categorias")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"nombre\":\"Sin permiso\"}"))
                 .andExpect(status().isUnauthorized());
+        mockMvc.perform(get("/api/mesas"))
+                .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    void portalPublicoCargaSinToken() throws Exception {
+        mockMvc.perform(get("/portal/index.html"))
+                .andExpect(status().isOk())
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("Delicias Peruanas")));
     }
 
     @Test
