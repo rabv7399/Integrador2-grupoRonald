@@ -16,6 +16,7 @@ import java.util.Map;
 import java.util.TreeMap;
 import java.util.List;
 import java.util.Locale;
+import java.time.LocalDateTime;
 
 @Service
 public class PedidoService {
@@ -24,14 +25,17 @@ public class PedidoService {
     private final UsuarioRepository usuarios;
     private final MesaRepository mesas;
     private final InventarioService inventario;
+    private final AdicionPedidoRepository adiciones;
 
     public PedidoService(PedidoRepository pedidos, ProductoRepository productos,
-                         UsuarioRepository usuarios, MesaRepository mesas, InventarioService inventario) {
+                         UsuarioRepository usuarios, MesaRepository mesas,
+                         InventarioService inventario,AdicionPedidoRepository adiciones) {
         this.pedidos = pedidos;
         this.productos = productos;
         this.usuarios = usuarios;
         this.mesas = mesas;
         this.inventario = inventario;
+        this.adiciones = adiciones;
     }
 
     public record ResultadoRegistro(PedidoRespuesta respuesta, boolean creado) {}
@@ -175,9 +179,95 @@ public class PedidoService {
             .filter(d->d.getId().equals(detalleId)).findFirst().orElseThrow(() ->
                 error(HttpStatus.NOT_FOUND,"DETALLE_NO_ENCONTRADO",
                     "El plato no pertenece a ese pedido"));
-        // Un segundo toque es seguro e idempotente.
-        detalle.setEstadoPreparacion("LISTO");
+        // No deshacer una entrega al volver a pulsar LISTO.
+        if("PENDIENTE".equals(detalle.getEstadoPreparacion())){
+            detalle.setEstadoPreparacion("LISTO");
+            detalle.setFechaListo(LocalDateTime.now());
+        }
         return respuesta(pedido);
+    }
+
+    @Transactional
+    public PedidoRespuesta marcarEntregado(Long pedidoId,Long detalleId,String correo) {
+        Usuario usuario=buscarUsuario(correo);
+        if(!List.of("MOZO","SUPERVISOR","ADMIN","OPERADOR").contains(usuario.getRol()))
+            throw error(HttpStatus.FORBIDDEN,"SOLO_MOZO",
+                "La entrega solo la registra Mozo, Supervisor o Administrador");
+        Pedido pedido=bloquear(pedidoId);
+        if(!"CONFIRMADO".equals(pedido.getEstado()))
+            throw error(HttpStatus.CONFLICT,"PEDIDO_NO_CONFIRMADO",
+                "No se puede entregar un pedido no confirmado o ya cobrado");
+        DetallePedido detalle=pedido.getDetalles().stream()
+            .filter(d->d.getId().equals(detalleId)).findFirst().orElseThrow(() ->
+                error(HttpStatus.NOT_FOUND,"DETALLE_NO_ENCONTRADO",
+                    "El plato no pertenece a este pedido"));
+        if("PENDIENTE".equals(detalle.getEstadoPreparacion()))
+            throw error(HttpStatus.CONFLICT,"PLATO_NO_LISTO",
+                "Cocina debe marcar LISTO antes de que el Mozo entregue el plato");
+        if("LISTO".equals(detalle.getEstadoPreparacion())){
+            detalle.setEstadoPreparacion("ENTREGADO");
+            detalle.setFechaEntrega(LocalDateTime.now());
+        }
+        return respuesta(pedido);
+    }
+
+    @Transactional
+    public ResultadoRegistro adicionar(Long pedidoId,AdicionPedidoSolicitud solicitud,
+                                        String clave,String correo) {
+        if(clave==null||!clave.matches("[A-Za-z0-9._:-]{8,100}"))
+            throw error(HttpStatus.BAD_REQUEST,"REFERENCIA_INVALIDA",
+                "La Idempotency-Key debe tener de 8 a 100 caracteres");
+        Usuario usuario=buscarUsuario(correo);
+        verificarPersonal(usuario);
+        if(solicitud==null)
+            throw error(HttpStatus.BAD_REQUEST,"PEDIDO_INVALIDO","Indica uno o más platos");
+        TreeMap<Long,Integer> cantidades=normalizar(new CrearPedidoSolicitud(solicitud.items()));
+        String hash=firma(usuario.getId(),cantidades,"ADICION",pedidoId);
+        Pedido pedido=bloquear(pedidoId);
+
+        AdicionPedido registrada=adiciones.findByClave(clave).orElse(null);
+        if(registrada!=null){
+            if(!registrada.getPedido().getId().equals(pedidoId)||!registrada.getFirma().equals(hash))
+                throw error(HttpStatus.CONFLICT,"REFERENCIA_REUTILIZADA",
+                    "Esta referencia de adición fue utilizada con otros datos");
+            return new ResultadoRegistro(respuesta(pedido),false);
+        }
+        if(!List.of("PENDIENTE","CONFIRMADO").contains(pedido.getEstado()))
+            throw error(HttpStatus.CONFLICT,"PEDIDO_CERRADO",
+                "No se pueden agregar platos después de cancelar o cobrar");
+        if(pedido.getDetalles().size()+cantidades.size()>30)
+            throw error(HttpStatus.BAD_REQUEST,"DEMASIADAS_LINEAS",
+                "Se permiten hasta 30 líneas por pedido");
+
+        BigDecimal nuevoTotal=pedido.getTotal();
+        // Bloqueo de stock por ID ascendente y bloqueo de pedido para sincronizar con Caja.
+        for(Map.Entry<Long,Integer> item:cantidades.entrySet()){
+            Producto producto=productos.findById(item.getKey()).orElseThrow(() ->
+                error(HttpStatus.NOT_FOUND,"PRODUCTO_NO_ENCONTRADO","No existe el plato"));
+            if(!Boolean.TRUE.equals(producto.getDisponible())||producto.getPrecio()==null||
+                    producto.getPrecio().signum()<=0)
+                throw error(HttpStatus.UNPROCESSABLE_CONTENT,"PRODUCTO_NO_DISPONIBLE",
+                    "Este plato no está habilitado para pedidos");
+            inventario.reservar(producto.getId(),item.getValue());
+            if("CONFIRMADO".equals(pedido.getEstado()))
+                inventario.confirmar(producto.getId(),item.getValue());
+            DetallePedido d=new DetallePedido();
+            d.setProducto(producto);
+            d.setCantidad(item.getValue());
+            d.setEstadoPreparacion("PENDIENTE");
+            d.setFechaInicio(LocalDateTime.now());
+            d.setPrecioUnitario(producto.getPrecio());
+            d.setSubtotal(producto.getPrecio().multiply(BigDecimal.valueOf(item.getValue())));
+            pedido.agregarDetalle(d);
+            nuevoTotal=nuevoTotal.add(d.getSubtotal());
+        }
+        pedido.setTotal(nuevoTotal);
+        pedidos.saveAndFlush(pedido);
+
+        AdicionPedido adicion=new AdicionPedido();
+        adicion.setClave(clave);adicion.setFirma(hash);adicion.setPedido(pedido);
+        adiciones.saveAndFlush(adicion);
+        return new ResultadoRegistro(respuesta(pedido),true);
     }
 
     @Transactional
@@ -265,7 +355,8 @@ public class PedidoService {
         List<PedidoRespuesta.Item> items=pedido.getDetalles().stream()
             .map(d->new PedidoRespuesta.Item(d.getId(),d.getProducto().getId(),
                 d.getProducto().getNombre(),d.getCantidad(),d.getPrecioUnitario(),
-                d.getSubtotal(),d.getEstadoPreparacion())).toList();
+                d.getSubtotal(),d.getEstadoPreparacion(),d.getFechaInicio(),d.getFechaListo(),
+                d.getFechaEntrega())).toList();
         return new PedidoRespuesta(pedido.getId(),pedido.getReferenciaOperacion(),
             pedido.getEstado(),pedido.getCliente().getCorreo(),pedido.getTotal(),
             pedido.getFechaCreacion(),items,pedido.getTipoAtencion(),pedido.getMesaId());

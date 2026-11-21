@@ -37,6 +37,22 @@ public class PedidoController {
         return service.marcarListo(id,detalleId,auth.getName());
     }
 
+    @PostMapping("/{id}/detalles/{detalleId}/entregado")
+    public PedidoRespuesta entregar(@PathVariable Long id,@PathVariable Long detalleId,
+                                     Authentication auth) {
+        return service.marcarEntregado(id,detalleId,auth.getName());
+    }
+
+    @PostMapping("/{id}/items")
+    public ResponseEntity<PedidoRespuesta> adicionar(@PathVariable Long id,
+            @RequestHeader(name="Idempotency-Key") String clave,
+            @Valid @RequestBody com.deliciasperuanas.backend.dto.AdicionPedidoSolicitud datos,
+            Authentication auth) {
+        PedidoService.ResultadoRegistro resultado=service.adicionar(id,datos,clave,auth.getName());
+        return ResponseEntity.status(resultado.creado()?HttpStatus.CREATED:HttpStatus.OK)
+            .body(resultado.respuesta());
+    }
+
     @GetMapping("/{id}")
     public PedidoRespuesta consultar(@PathVariable Long id, Authentication auth) {
         return service.consultar(id, auth.getName());

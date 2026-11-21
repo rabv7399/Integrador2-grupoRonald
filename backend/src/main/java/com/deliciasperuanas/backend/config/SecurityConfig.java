@@ -153,6 +153,12 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.POST, "/api/v1/pedidos/*/detalles/*/listo")
                         .hasAnyRole("ADMIN", "SUPERVISOR", "COCINERO")
 
+                        .requestMatchers(HttpMethod.POST,"/api/v1/pedidos/*/detalles/*/entregado")
+                        .hasAnyRole("ADMIN","SUPERVISOR","MOZO","OPERADOR")
+
+                        .requestMatchers(HttpMethod.POST,"/api/v1/pedidos/*/items")
+                        .hasAnyRole("ADMIN","SUPERVISOR","MOZO","OPERADOR","CAJA")
+
                         .requestMatchers(HttpMethod.POST, "/api/v1/pedidos/*/confirmacion")
                         .hasAnyRole("ADMIN", "OPERADOR", "MOZO", "SUPERVISOR", "CAJA")
 
