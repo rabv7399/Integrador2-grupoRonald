@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="description" content="Prototipo APF3 SOA: servicios web de Delicias Peruanas">
+<title>Delicias Peruanas | Laboratorio de servicios SOA</title>
+<link rel="stylesheet" href="./demo.css">
+<script src="./demo.js" defer></script>
+</head>
+<body>
+<header class="top"><div class="shell top-row"><div class="brand"><span class="mark">DP</span><span><strong>DELICIAS PERUANAS</strong><small>Demostración SOA · APF3</small></span></div><a href="/portal/index.html">Ver portal público ↗</a></div></header>
+<main class="shell">
+<section class="intro"><div><span class="eyebrow">Prototipo de integración REST · JSON · JWT</span><h1>Servicios que trabajan juntos.</h1><p>Demuestra en vivo el proceso de atención: autenticación del usuario, consulta de platos, reserva de porciones, registro de pedidos y reservas de mesas.</p></div><div class="overview"><span>5 servicios SOA representativos</span><strong>S01 · S02 · S03 · S04 · S05</strong><small>Los datos se consultan desde Spring Boot. Este es un prototipo académico.</small></div></section>
+<div class="step-track" aria-label="Flujo de servicios"><span>Cliente S01</span><b>→</b><span>Productos S02</span><b>→</b><span>Stock S05</span><b>→</b><span>Pedidos S03</span><b>+</b><span>Reservas S04</span></div>
+<section class="notice"><strong>Entorno de demostración seguro</strong><span>Usa el perfil local <code>soa-demo</code> y una base H2 temporal. No requiere ejecutar migraciones ni alterar los datos de Aiven.</span></section>
+<div class="layout">
+  <section class="panel" aria-labelledby="authTitle">
+    <div class="panel-title"><span class="service-id">S01</span><div><h2 id="authTitle">Acceso de usuarios</h2><p>Autenticación y permisos con JWT</p></div></div>
+    <form id="loginForm">
+      <label>Correo<input id="correo" type="email" autocomplete="username" placeholder="admin.demo@delicias.local" required></label>
+      <label>Contraseña<input id="contrasena" type="password" autocomplete="current-password" required></label>
+      <button type="submit" class="primary">Iniciar sesión</button>
+    </form>
+    <div id="session" class="status" role="status">Sin sesión · las operaciones protegidas requieren JWT</div>
+    <button type="button" id="logout" class="subtle">Cerrar sesión</button>
+  </section>
+  <section class="panel" aria-labelledby="catTitle">
+    <div class="panel-title"><span class="service-id">S02</span><div><h2 id="catTitle">Productos y categorías</h2><p>Consultas públicas desde la API</p></div></div>
+    <button type="button" id="getCatalog" class="primary">Consultar menú REST</button>
+    <div class="metric-strip"><div><small>Productos</small><strong id="productsCount">—</strong></div><div><small>Categorías</small><strong id="categoriesCount">—</strong></div></div>
+    <div id="productList" class="product-list">Todavía no hay productos consultados.</div>
+  </section>
+  <section class="panel" aria-labelledby="stockTitle">
+    <div class="panel-title"><span class="service-id">S05</span><div><h2 id="stockTitle">Inventario de porciones</h2><p>Preparadas − reservadas − vendidas</p></div></div>
+    <label>Seleccionar plato<select id="stockProduct"></select></label>
+    <div class="buttons"><button type="button" class="primary" id="getStock">Consultar stock</button><button type="button" id="setStock" class="outline">Configurar total (ADMIN)</button></div>
+    <label>Total preparado<input type="number" id="prepared" min="0" max="10000" value="30"></label>
+    <p class="hint">La configuración requiere ADMIN. El stock se reserva al registrar un pedido pendiente.</p>
+  </section>
+  <section class="panel" aria-labelledby="orderTitle">
+    <div class="panel-title"><span class="service-id">S03</span><div><h2 id="orderTitle">Pedidos</h2><p>Registro idempotente y cambios de estado</p></div></div>
+    <label>Producto<select id="orderProduct"></select></label>
+    <label>Porciones<input id="orderQty" type="number" min="1" max="20" value="2"></label>
+    <label>Referencia de operación<input id="orderKey" type="text" readonly></label>
+    <div class="buttons"><button type="button" id="newKey" class="outline">Nueva referencia</button><button type="button" id="createOrder" class="primary">Registrar pedido</button></div>
+    <label>ID del pedido<input type="number" id="orderId" min="1" placeholder="Se completará al registrar"></label>
+    <div class="buttons"><button type="button" id="repeatOrder" class="outline">Repetir misma solicitud</button><button type="button" id="confirmOrder" class="primary">Confirmar (personal)</button><button type="button" id="cancelOrder" class="danger">Cancelar pendiente</button></div>
+    <p class="hint">Una referencia repetida sin cambios devuelve 200, no un pedido duplicado. Un pedido confirmado ya no libera stock automáticamente.</p>
+  </section>
+  <section class="panel" aria-labelledby="reservationTitle">
+    <div class="panel-title"><span class="service-id">S04</span><div><h2 id="reservationTitle">Reservas de mesas</h2><p>Evita horarios superpuestos (409)</p></div></div>
+    <form id="reserveForm">
+      <label>Nombre del cliente<input id="reserveName" required value="Cliente de demostración"></label>
+      <div class="two"><label>Fecha<input id="reserveDate" type="date" required></label><label>ID de mesa<input id="mesaId" type="number" min="1" value="1" required></label></div>
+      <div class="three"><label>Inicio<input id="reserveStart" type="time" value="19:00" required></label><label>Fin<input id="reserveEnd" type="time" value="20:00" required></label><label>Personas<input id="reserveCount" type="number" min="1" max="20" value="2" required></label></div>
+      <button type="submit" class="primary">Registrar reserva</button>
+    </form>
+    <p class="hint">Repite el mismo horario en la misma mesa para comprobar el HTTP 409.</p>
+  </section>
+  <section class="panel panel-result" aria-labelledby="responseTitle">
+    <div class="panel-title"><span class="service-id">API</span><div><h2 id="responseTitle">Respuesta del servicio</h2><p>HTTP + JSON para evidencias de SOA</p></div></div>
+    <div class="response-status" id="httpStatus" role="status">Sin solicitudes</div>
+    <pre id="responseJson">Selecciona una operación para visualizar su respuesta JSON.</pre>
+    <button type="button" id="clearResponse" class="outline">Limpiar respuesta</button>
+    <p class="hint">Esta pantalla nunca muestra ni guarda el token JWT. Las respuestas pueden capturarse para el informe.</p>
+  </section>
+</div>
+<footer>Delicias Peruanas · Prototipo SOA APF3 · Java 21 + Spring Boot + REST + H2 local</footer>
+</main>
+</body>
+</html>
