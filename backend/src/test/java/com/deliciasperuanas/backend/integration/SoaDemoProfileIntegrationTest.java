@@ -33,6 +33,8 @@ class SoaDemoProfileIntegrationTest {
         r.add("soa.demo.client-password", () -> "ClienteDemoTest123!");
         r.add("soa.demo.mozo-password", () -> "MozoDemoTest123!");
         r.add("soa.demo.supervisor-password", () -> "SupervisorDemoTest123!");
+        r.add("soa.demo.caja-password", () -> "CajaDemoTest123!");
+        r.add("soa.demo.cocinero-password", () -> "CocineroDemoTest123!");
     }
     @Autowired MockMvc mvc;
 
@@ -41,7 +43,7 @@ class SoaDemoProfileIntegrationTest {
         mvc.perform(get("/soa-demo/index.html")).andExpect(status().isOk())
             .andExpect(content().string(org.hamcrest.Matchers.containsString("id=\"loginView\"")));
         mvc.perform(get("/api/productos")).andExpect(status().isOk())
-            .andExpect(jsonPath("$.length()").value(4));
+            .andExpect(jsonPath("$.length()").value(22));
 
         String admin = iniciar("admin.demo@delicias.local", "AdminDemoTest123!");
         String cliente = iniciar("cliente.demo@delicias.local", "ClienteDemoTest123!");
