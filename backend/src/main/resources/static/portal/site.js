@@ -15,27 +15,40 @@ let products = [];
 let categories = [];
 let activeGroup = 'todos';
 let activeCategory = '';
+let activeMode = 'completa';
+const legacyCatalog = (window.DELICIAS_MENU_ORIGINAL || []).map(p => ({...p, __legacy:true, __grupo:p.grupo, __image:p.imagen, categoria:{nombre:p.grupo === 'almuerzos'?'Almuerzos':p.grupo==='cenas'?'Cenas':'Bebidas'}}));
+const menuSearch = document.querySelector('#menuSearch');
+const modeButtons = [...document.querySelectorAll('[data-mode]')];
 const normalize = (v) => String(v == null ? '' : v).normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().trim();
 function categoryName(product){
   const c = product && product.categoria;
   return String((c && (c.nombre || c.descripcion)) || 'Sin categoría');
 }
 function menuGroup(product){
+  if(product.__grupo)return product.__grupo;
+  const name = normalize(product.nombre);
+  const legacyMatch = legacyCatalog.find(p=>normalize(p.nombre)===name);
+  if(legacyMatch)return legacyMatch.__grupo;
   const category = normalize(categoryName(product));
-  if(/bebida|refresco|jugos?|gaseosa|infusion|chicha|coctel|cerveza|vino/.test(category))return 'bebidas';
+  const tipo=normalize(product.categoria && product.categoria.tipo);
+  if(tipo==='bebida'||/bebida|refresco|jugos?|gaseosa|infusion|chicha|coctel/.test(category))return 'bebidas';
   if(/cena|noche|parrilla/.test(category))return 'cenas';
-  if(/almuerzo|menu|principal|comida|plato|entrada/.test(category))return 'almuerzos';
+  if(/almuerzo|menu|principal|comida|plato|entrada|fondo/.test(category))return 'almuerzos';
   return 'otros';
 }
 function imageFor(product){
   const name = normalize(product.nombre);
-  if(name.includes('lomo saltado'))return {src:'./images/lomo.jpg',icon:'🍛'};
-  if(name.includes('rocoto'))return {src:'./images/rocoto.jpg',icon:'🌶️'};
-  if(name.includes('ceviche'))return {src:'./images/ceviche.jpg',icon:'🐟'};
-  if(name.includes('anticucho'))return {src:'./images/anticucho.jpg',icon:'🍢'};
-  if(name.includes('chaufa'))return {src:'./images/chaufa.jpg',icon:'🍚'};
-  if(name.includes('chicha morada'))return {src:'./images/chicha.jpg',icon:'🥤'};
-  return {src:null,icon:menuGroup(product)==='bebidas'?'🥤':'🍽️'};
+  const match = legacyCatalog.find(p => normalize(p.nombre)===name);
+  let filename = product.__image || (match && match.__image);
+  if(!filename){
+    const hints = [
+      [/lomo saltado/,'lomo.jpg'],[/rocoto/,'rocoto.jpg'],[/ceviche/,'ceviche.jpg'],
+      [/anticucho/,'anticucho.jpg'],[/chaufa/,'chaufa.jpg'],[/chicha morada/,'chicha.jpg'],
+      [/huancaina/,'papa.jpg'],[/juane/,'juane.jpg'],[/caldo/,'caldo.jpg']
+    ];
+    filename=(hints.find(([regex])=>regex.test(name))||[])[1];
+  }
+  return {src:filename?'./images/'+filename:null, icon: menuGroup(product)==='bebidas'?'🥤':'🍽️'};
 }
 function setStatus(message,failed=false){
   catalogStatus.textContent=message;
@@ -48,41 +61,49 @@ function textNode(tag,className,value){
   return el;
 }
 function cardFor(p){
-  const card=document.createElement('article');card.className='food-card';
+  const reference=Boolean(p.__legacy);
+  const card=document.createElement('article');card.className='food-card'+(reference?' food-card--reference':'');
   const photo=textNode('div','food-photo','');
-  const fallback=textNode('span','food-fallback',imageFor(p).icon);
-  fallback.setAttribute('aria-hidden','true');
-  photo.append(fallback);
   const asset=imageFor(p);
+  const fallback=textNode('span','food-fallback',asset.icon);
+  fallback.setAttribute('aria-hidden','true');photo.append(fallback);
   if(asset.src){
-    const image=document.createElement('img');
-    image.src=asset.src;image.alt=String(p.nombre||'Plato');
-    image.loading='lazy';image.decoding='async';
-    image.addEventListener('load',()=>fallback.remove(),{once:true});
-    image.addEventListener('error',()=>image.remove(),{once:true});
-    photo.append(image);
+    const img=document.createElement('img');img.src=asset.src;img.alt=String(p.nombre||'Plato tradicional');
+    img.loading='lazy';img.decoding='async';
+    img.addEventListener('load',()=>fallback.remove(),{once:true});
+    img.addEventListener('error',()=>img.remove(),{once:true});photo.append(img);
   }
   const available=p.disponible===true;
-  const badge=textNode('span','food-badge'+(available?'':' unavailable'),available?'Disponible':'No disponible');
+  const badge=textNode('span','food-badge'+(reference?' reference':(!available?' unavailable':'')),reference?'Carta original':(available?'En sistema':'No disponible'));
   photo.append(badge);
   const body=textNode('div','food-body','');
-  body.append(textNode('span','food-category',categoryName(p)));
+  const cat=reference?(p.__grupo==='almuerzos'?'Almuerzo':p.__grupo==='cenas'?'Cena':'Bebida'):categoryName(p);
+  body.append(textNode('span','food-category',cat));
   body.append(textNode('h3','',p.nombre||'Producto'));
   body.append(textNode('p','',p.descripcion||'Conoce este producto en nuestra carta.'));
   const footer=textNode('div','food-bottom','');
-  const price=Number(p.precio);
+  const raw=p.precio==null?'':String(p.precio);
+  const price=raw===''?NaN:Number(raw);
   footer.append(textNode('strong','',Number.isFinite(price)?money.format(price):'Precio a consultar'));
-  footer.append(textNode('small','',available?'En carta':'Agotado en carta'));
+  const tag=reference?'Precio histórico · Referencial':(available?'Precio en MySQL':'Producto no disponible');
+  footer.append(textNode('small','',tag));
   body.append(footer);card.append(photo,body);
   return card;
 }
 function showMenu(){
   catalogGrid.replaceChildren();
-  const shown=products.filter(p=>(activeGroup==='todos'||menuGroup(p)===activeGroup)&&(!activeCategory||normalize(categoryName(p))===activeCategory));
+  const names=new Set(products.map(p=>normalize(p.nombre)).filter(Boolean));
+  const combined=activeMode==='sistema'?products:[...products,...legacyCatalog.filter(p=>!names.has(normalize(p.nombre)))];
+  const query=normalize(menuSearch.value);
+  const shown=combined.filter(p=>
+    (activeGroup==='todos'||menuGroup(p)===activeGroup)
+    &&(!activeCategory||normalize(categoryName(p))===activeCategory)
+    &&(!query||normalize([p.nombre,p.descripcion,categoryName(p)].join(' ')).includes(query))
+  );
   if(!shown.length){
     const empty=textNode('div','empty-state','');
-    empty.append(textNode('strong','','No hay productos para esta selección.'));
-    empty.append(textNode('p','','Selecciona “Todos” o comprueba las categorías publicadas en la base de datos.'));
+    empty.append(textNode('strong','','No encontramos productos con esos filtros.'));
+    empty.append(textNode('p','','Prueba otra categoría o selecciona “Carta completa”.'));
     catalogGrid.append(empty);return;
   }
   shown.forEach(p=>catalogGrid.append(cardFor(p)));
@@ -116,25 +137,28 @@ async function getJSON(url){
   }finally{clearTimeout(timeout);}
 }
 async function loadCatalog(){
-  setStatus('Consultando API…');
-  catalogGrid.replaceChildren(textNode('div','loading-state','Cargando productos desde el backend…'));
+  setStatus('Consultando catálogo REST…');
+  catalogGrid.replaceChildren(textNode('div','loading-state','Cargando productos desde Spring Boot…'));
   try{
-    // Mostrar solamente productos reales del sistema: sin precios o platos inventados.
     const [ps,cs]=await Promise.all([getJSON(API.productos),getJSON(API.categorias)]);
     if(!Array.isArray(ps)||!Array.isArray(cs))throw new Error('Formato JSON inesperado');
     products=ps.filter(p=>p && typeof p==='object');
     categories=cs.filter(c=>c && typeof c==='object');
     categoryChips();showMenu();
-    setStatus('Conectado · '+products.length+' productos');
+    setStatus('API conectada · '+products.length+' productos reales');
   }catch(err){
-    products=[];categories=[];categoryFilters.replaceChildren();
-    catalogGrid.replaceChildren();
-    const error=textNode('div','empty-state','No se pudo cargar el catálogo. Revisa que Spring Boot esté disponible y vuelve a intentar.');
-    catalogGrid.append(error);
-    setStatus('Sin conexión al catálogo',true);
-    console.error('Error al consultar el catálogo:',err);
+    products=[];categories=[];categoryChips();showMenu();
+    setStatus('API desconectada · Solo referencias históricas',true);
+    console.error('No se pudo consultar el catálogo REST:',err);
   }
 }
+modeButtons.forEach(button=>button.addEventListener('click',()=>{
+  activeMode=button.dataset.mode;
+  modeButtons.forEach(b=>{const selected=b===button;b.classList.toggle('active',selected);b.setAttribute('aria-pressed',String(selected));});
+  activeCategory='';categoryChips();showMenu();
+}));
+menuSearch.addEventListener('input',showMenu);
+
 filters.forEach(button=>button.addEventListener('click',()=>{
   activeGroup=button.dataset.filter;
   activeCategory='';
