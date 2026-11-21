@@ -7,6 +7,7 @@
 <title>Delicias Peruanas | Gestión de servicios SOA</title>
 <link rel="stylesheet" href="./demo.css">
 <script src="./demo.js" defer></script>
+<script src="./operaciones-extra.js" defer></script>
 </head>
 <body>
 <div id="loginView" class="access-view">
@@ -118,6 +119,9 @@
             <div><small>Categorías</small><strong id="categoriesCount">—</strong></div>
           </div>
           <div id="productList" class="product-list">Consulta el catálogo para visualizar los productos.</div>
+          <div class="ops-section-label"><strong>Carta, precios y stock</strong><span>Datos de la API</span></div>
+          <div class="ops-table-wrap"><table class="ops-table"><thead><tr><th>Plato / bebida</th><th>Precio</th><th>Porciones</th><th>Estado</th></tr></thead><tbody id="menuStockTable"><tr><td colspan="4">Consultando…</td></tr></tbody></table></div>
+          <p class="hint">Las porciones se muestran al personal autorizado; el cliente puede consultar el catálogo sin acceder al inventario interno.</p>
         </div>
       </section>
 
@@ -137,8 +141,14 @@
           <label>Referencia de operación (Idempotency-Key)<input id="orderKey" type="text" readonly></label>
           <div class="buttons"><button type="button" id="newKey" class="outline">Nueva referencia</button><button type="button" id="createOrder" class="primary">Registrar pedido</button></div>
           <label>ID del pedido<input type="number" id="orderId" min="1" placeholder="Aparecerá al registrar"></label>
+          <div class="ops-section-label"><strong>Agregar platos a pedido abierto</strong><span>Se conserva el historial</span></div>
+          <p class="hint">Elige un pedido, agrega platos al carrito superior y utiliza esta opción. El importe se actualiza sin crear otra mesa.</p>
+          <button type="button" id="appendOrderItems" class="outline">+ Añadir platos a este pedido</button>
           <div class="buttons"><button type="button" id="repeatOrder" class="outline">Repetir solicitud (200)</button><button type="button" id="confirmOrder" class="primary" data-roles="MOZO,CAJA,SUPERVISOR,ADMIN,OPERADOR">Confirmar pedido</button><button type="button" id="cancelOrder" class="danger">Cancelar pendiente</button></div>
           <p class="hint">El cliente registra y cancela sus pedidos pendientes. El personal autorizado puede confirmarlos. El precio se conserva al crear el pedido.</p>
+          <div class="ops-section-label"><strong>Órdenes en atención · mesas y llevar</strong><span id="ordersSyncStatus">Actualización automática cada 5 segundos</span></div>
+          <div id="activeOrders" class="ops-order-grid" aria-live="polite">Consultando pedidos…</div>
+          <p class="hint">El Mozo puede marcar la entrega plato por plato, agregar más productos y cancelar órdenes PENDIENTES. El cobro corresponde exclusivamente a Caja.</p>
         </div>
       </section>
 
@@ -152,6 +162,10 @@
             <button type="submit" class="primary">Registrar reserva</button>
           </form>
           <p class="hint">El caso de solapamiento de horarios devuelve HTTP 409 desde el servidor.</p>
+          <div id="reservationsStaffPanel" data-roles="MOZO,CAJA,SUPERVISOR,ADMIN,OPERADOR">
+            <div class="ops-section-label"><strong>Reservas registradas</strong><span>Solicitudes PENDIENTES y sus horarios</span></div>
+            <div class="ops-table-wrap"><table class="ops-table"><thead><tr><th>Mesa</th><th>Cliente</th><th>Fecha</th><th>Horario</th><th>Personas</th><th>Estado</th><th>Acción</th></tr></thead><tbody id="reservationsTable"><tr><td colspan="7">Consultando reservas…</td></tr></tbody></table></div>
+          </div>
         </div>
       </section>
 
