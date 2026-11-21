@@ -15,6 +15,7 @@ public record PedidoRespuesta(
     String tipoAtencion,
     Long mesaId
 ) {
-    public record Item(Long detalleId, Long productoId, String nombre, int cantidad,
-                       BigDecimal precioUnitario, BigDecimal subtotal, String estadoPreparacion) {}
+    public record Item(Long detalleId,Long productoId,String nombre,int cantidad,
+        BigDecimal precioUnitario,BigDecimal subtotal,String estadoPreparacion,
+        LocalDateTime fechaInicio,LocalDateTime fechaListo,LocalDateTime fechaEntrega) {}
 }

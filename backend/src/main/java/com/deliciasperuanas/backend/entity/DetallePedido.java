@@ -2,6 +2,7 @@ package com.deliciasperuanas.backend.entity;
 
 import jakarta.persistence.*;
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "detalle_pedidos")
@@ -23,6 +24,15 @@ public class DetallePedido {
     @Column(name = "estado_preparacion", nullable = false, length = 15)
     private String estadoPreparacion = "PENDIENTE";
 
+    @Column(name="fecha_inicio", nullable=false)
+    private LocalDateTime fechaInicio=LocalDateTime.now();
+
+    @Column(name="fecha_listo")
+    private LocalDateTime fechaListo;
+
+    @Column(name="fecha_entrega")
+    private LocalDateTime fechaEntrega;
+
     @Column(name = "precio_unitario", nullable = false, precision = 10, scale = 2)
     private BigDecimal precioUnitario;
 
@@ -30,6 +40,12 @@ public class DetallePedido {
     private BigDecimal subtotal;
 
     public Long getId() { return id; }
+    public LocalDateTime getFechaInicio(){return fechaInicio;}
+    public void setFechaInicio(LocalDateTime v){fechaInicio=v;}
+    public LocalDateTime getFechaListo(){return fechaListo;}
+    public void setFechaListo(LocalDateTime v){fechaListo=v;}
+    public LocalDateTime getFechaEntrega(){return fechaEntrega;}
+    public void setFechaEntrega(LocalDateTime v){fechaEntrega=v;}
     public String getEstadoPreparacion() { return estadoPreparacion; }
     public void setEstadoPreparacion(String v) { estadoPreparacion = v; }
     public Pedido getPedido() { return pedido; }

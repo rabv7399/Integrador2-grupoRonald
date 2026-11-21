@@ -47,4 +47,8 @@ public class Venta {
     public void setFechaPago(LocalDateTime x){fechaPago=x;}
     public String getMedioPago(){return medioPago;}
     public void setMedioPago(String x){medioPago=x;}
+    public String getReferenciaPago(){return referenciaPago;}
+    public void setReferenciaPago(String x){referenciaPago=x;}
+    public String getCajeroCorreo(){return cajeroCorreo;}
+    public void setCajeroCorreo(String x){cajeroCorreo=x;}
 }
