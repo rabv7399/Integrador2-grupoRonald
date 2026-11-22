@@ -126,26 +126,33 @@
       </section>
 
       <section id="module-orders" class="view-module" hidden>
-        <div class="module-heading"><div><span class="eyebrow">SERVICIO S03 · ORQUESTACIÓN CON S05</span><h2>Gestión de pedidos</h2><p>Registra pedidos con reserva de porciones e idempotencia.</p></div><span class="module-label">REST · POST</span></div>
+        <div class="module-heading"><div><span class="eyebrow">SERVICIO S03 · ORQUESTACIÓN CON S05</span><h2>Atención de mesas y pedidos para llevar</h2><p>Selecciona una mesa para consultar su comanda, o registra pedidos para llevar sin ocupar mesa. Un solo envío comunica el pedido a Cocina.</p></div><span class="module-label">REST · POST</span></div>
         <div class="panel order-card">
           <div class="two">
             <label>Modalidad<select id="orderType"><option value="MESA">En mesa</option><option value="LLEVAR">Para llevar · sin mesa</option></select></label>
             <label id="orderTableWrap">Mesa<select id="orderTable"><option value="">Cargando mesas…</option></select></label>
           </div>
           <div id="mesaCards" class="mesa-grid" aria-label="Estado de las mesas"></div>
+          <div class="ops-section-label ops-operation-section"><strong id="orderWorkspaceTitle">Selecciona una mesa o la modalidad para llevar</strong><span id="orderWorkspaceHint">Las mesas ocupadas pueden abrir su comanda</span></div>
+          <div id="selectedOrderDetails" class="ops-selected-order" hidden aria-live="polite"></div>
+          <div id="orderEntry" class="ops-order-entry">
           <label>Producto<select id="orderProduct"></select></label>
           <p id="orderAvailability" class="status">Selecciona un plato para comprobar sus porciones disponibles.</p>
           <label>Porciones<input id="orderQty" type="number" min="1" max="20" value="1"></label>
           <div class="buttons"><button type="button" id="addOrderLine" class="outline">+ Añadir plato a esta orden</button><button type="button" id="clearOrderLines" class="outline">Vaciar platos</button></div>
           <div id="orderLines" class="admin-list">Selecciona uno o varios platos. Si no agregas una línea, se usa el producto seleccionado.</div>
-          <label>Referencia de operación (Idempotency-Key)<input id="orderKey" type="text" readonly></label>
-          <div class="buttons"><button type="button" id="newKey" class="outline">Nueva referencia</button><button type="button" id="createOrder" class="primary">Registrar pedido</button></div>
-          <label>ID del pedido<input type="number" id="orderId" min="1" placeholder="Aparecerá al registrar"></label>
-          <div class="ops-section-label"><strong>Agregar platos a pedido abierto</strong><span>Se conserva el historial</span></div>
-          <p class="hint">Elige un pedido, agrega platos al carrito superior y utiliza esta opción. El importe se actualiza sin crear otra mesa.</p>
-          <button type="button" id="appendOrderItems" class="outline">+ Añadir platos a este pedido</button>
-          <div class="buttons"><button type="button" id="repeatOrder" class="outline">Repetir solicitud (200)</button><button type="button" id="confirmOrder" class="primary" data-roles="MOZO,CAJA,SUPERVISOR,ADMIN,OPERADOR">Confirmar pedido</button><button type="button" id="cancelOrder" class="danger">Cancelar pendiente</button></div>
-          <p class="hint">El cliente registra y cancela sus pedidos pendientes. El personal autorizado puede confirmarlos. El precio se conserva al crear el pedido.</p>
+          <div class="buttons" id="newOrderActions"><button type="button" id="createOrder" class="primary">Enviar pedido a Cocina</button></div>
+          <div class="buttons" id="addToExistingActions" hidden><button type="button" id="appendOrderItems" class="primary">+ Agregar platos a la orden abierta</button><button type="button" id="stopAddingItems" class="outline">Volver a la comanda</button></div>
+          <p class="hint" id="orderFlowHelp">Añade uno o varios platos y pulsa «Enviar pedido a Cocina». El sistema registra y confirma la orden en una sola operación.</p>
+          </div>
+          <details id="advancedOrderTools" class="ops-technical-tools">
+            <summary>Opciones técnicas APF3 · idempotencia y estados REST</summary>
+            <p class="hint">Estos controles permiten demostrar HTTP 200 y el estado PENDIENTE de pedidos creados por otros clientes. No son necesarios para atender una mesa.</p>
+            <label>Referencia de operación (Idempotency-Key)<input id="orderKey" type="text" readonly></label>
+            <button type="button" id="newKey" class="outline">Nueva referencia</button>
+            <label>ID del pedido<input type="number" id="orderId" min="1" placeholder="Se completa al seleccionar una comanda"></label>
+            <div class="buttons"><button type="button" id="repeatOrder" class="outline">Repetir solicitud (HTTP 200)</button><button type="button" id="confirmOrder" class="outline" data-roles="MOZO,CAJA,SUPERVISOR,ADMIN,OPERADOR">Confirmar pendiente (API)</button><button type="button" id="cancelOrder" class="danger">Cancelar pendiente (API)</button></div>
+          </details>
           <div class="ops-section-label"><strong>Órdenes en atención · mesas y llevar</strong><span id="ordersSyncStatus">Actualización automática cada 5 segundos</span></div>
           <div id="activeOrders" class="ops-order-grid" aria-live="polite">Consultando pedidos…</div>
           <p class="hint">El Mozo puede marcar la entrega plato por plato, agregar más productos y cancelar órdenes PENDIENTES. El cobro corresponde exclusivamente a Caja.</p>
@@ -163,7 +170,10 @@
           </form>
           <p class="hint">El caso de solapamiento de horarios devuelve HTTP 409 desde el servidor.</p>
           <div id="reservationsStaffPanel" data-roles="MOZO,CAJA,SUPERVISOR,ADMIN,OPERADOR">
-            <div class="ops-section-label"><strong>Reservas registradas</strong><span>Solicitudes PENDIENTES y sus horarios</span></div>
+            <div class="ops-section-label"><strong>Mesas separadas · agenda de reservas</strong><span id="reservationSyncStatus">Actualización cada 5 segundos</span></div>
+            <p class="hint">Las solicitudes pendientes están separadas para un horario específico. No se marcan como ocupadas hasta que se abra un pedido de mesa.</p>
+            <div id="reservedCards" class="ops-reservation-grid" aria-live="polite">Consultando reservas…</div>
+            <div class="ops-section-label"><strong>Historial y detalle de solicitudes</strong><span>ID, fecha, horas y estado</span></div>
             <div class="ops-table-wrap"><table class="ops-table"><thead><tr><th>Mesa</th><th>Cliente</th><th>Fecha</th><th>Horario</th><th>Personas</th><th>Estado</th><th>Acción</th></tr></thead><tbody id="reservationsTable"><tr><td colspan="7">Consultando reservas…</td></tr></tbody></table></div>
           </div>
         </div>
