@@ -114,12 +114,13 @@
     if(!cuerpo)return;
     cuerpo.replaceChildren();
     const porId=new Map(datosCarta().map(x=>[Number(x.id),x]));
-    if(!stock.length){vacio(cuerpo,6,'No hay inventario configurado.');return;}
+    if(!stock.length){vacio(cuerpo,7,'No hay inventario configurado.');return;}
     for(const item of stock){
       const plato=porId.get(Number(item.productoId));
       cuerpo.append(fila([
         item.producto,String(item.totalPreparado),String(item.reservadas),
-        String(item.vendidas),String(item.disponibles),estado(item,plato||{disponible:true,precio:1})
+        String(item.vendidas),String(item.salidasManuales??0),
+        String(item.disponibles),estado(item,plato||{disponible:true,precio:1})
       ]));
     }
     // Si había un producto seleccionado, actualizar sus números con el mismo resultado.
@@ -475,22 +476,59 @@
     const r=await api('/api/v1/pedidos');
     if(r.ok&&Array.isArray(r.data)&&moduloActual()==='kitchen')dibujarCocina(r.data);
   }
+  function pedidoListoParaCobro(p){
+    return p.estado==='CONFIRMADO' && Array.isArray(p.items) && p.items.length>0 &&
+      p.items.every(item=>['LISTO','ENTREGADO'].includes(item.estadoPreparacion));
+  }
+  function limpiarSeleccionCaja(mensaje='Selecciona un pedido listo para cobrar.'){
+    e('cashPedidoId').value='';
+    e('cashRecibido').value='';
+    e('cashReference').value='';
+    e('cashPosConsent').checked=false;
+    e('cashCharge').disabled=true;
+    ultimaCotizacion=null;
+    e('cashQuote').textContent=mensaje;
+  }
+  window.limpiarSeleccionCaja=limpiarSeleccionCaja;
+  window.registrarCobroEnCaja=(id)=>{
+    e('cashReceiptId').value=String(id);
+    limpiarSeleccionCaja('Cobro registrado. El pedido pasó al historial. Selecciona una nueva orden lista.');
+    actualizarReporte();
+  };
   function actualizarCajaPedidos(pedidos){
     const lista=e('cashOrders');lista.replaceChildren();
     const activos=pedidos.filter(p=>p.estado==='PENDIENTE'||p.estado==='CONFIRMADO');
-    if(!activos.length){lista.append(elemento('p','No hay pedidos activos para cobrar.'));return;}
+    const seleccionado=Number(e('cashPedidoId').value);
+    const vigente=activos.find(p=>p.pedidoId===seleccionado);
+    if(seleccionado>0 && (!vigente || !pedidoListoParaCobro(vigente))){
+      limpiarSeleccionCaja(!vigente
+        ? 'El último pedido ya no está pendiente de cobro (pagado o cancelado). Selecciona otro.'
+        : 'La orden volvió a preparación; espera a que Cocina termine todos los platos.');
+    }
+    if(!activos.length){
+      lista.append(elemento('p','No hay pedidos por cobrar. Los ya pagados figuran en «Ventas del día».'));
+      return;
+    }
     for(const p of activos){
+      const cobrable=pedidoListoParaCobro(p);
       const row=elemento('div',undefined,'cash-row');
       row.append(elemento('span','#'+p.pedidoId+' · '+(p.tipoAtencion==='MESA'?'Mesa '+p.mesaId:'Llevar')
-          +' · '+moneda(p.total)+' · '+p.estado));
-      row.append(boton('Seleccionar',()=>{
-        e('cashPedidoId').value=p.pedidoId;
+          +' · '+moneda(p.total)+' · '+(cobrable?'LISTO PARA COBRAR':'ESPERANDO COCINA')));
+      const seleccionar=boton(cobrable?'Seleccionar':'No listo',()=>{
+        if(!cobrable)return;
+        e('cashPedidoId').value=String(p.pedidoId);
         e('cashRecibido').value=n(p.total).toFixed(2);
+        e('cashReference').value='';
+        e('cashPosConsent').checked=false;
+        e('cashCharge').disabled=true;
         refrescarCotizacionCaja();
-      }));
+      });
+      seleccionar.disabled=!cobrable;
+      row.append(seleccionar);
       lista.append(row);
     }
   }
+  window.pintarPedidosCaja=actualizarCajaPedidos;
   async function actualizarCajaPedidosAsync(){
     const r=await api('/api/v1/pedidos');
     if(r.ok&&Array.isArray(r.data)&&moduloActual()==='sales')actualizarCajaPedidos(r.data);
@@ -596,13 +634,28 @@
     const metodo=e('cashMethod').value;
     const caja=e('cashQuote');
     if(!Number.isInteger(id)||id<1){
-      caja.textContent='Selecciona una comanda para conocer el total a cobrar.';
+      e('cashCharge').disabled=true;
+      caja.textContent='Selecciona una orden lista para conocer el total a cobrar.';
       return;
     }
+    e('cashCharge').disabled=true;
     const r=await api('/api/v1/ventas/pedidos/'+id+'/cotizacion?medioPago='+metodo);
-    if(!r.ok||!r.data || e('cashMethod').value!==metodo ||
-       Number(e('cashPedidoId').value)!==id)return;
+    if(e('cashMethod').value!==metodo||Number(e('cashPedidoId').value)!==id)return;
+    if(!r.ok||!r.data){
+      if(r.data?.codigo==='PEDIDO_YA_PAGADO'){
+        limpiarSeleccionCaja('Este pedido ya fue COBRADO. Busca el comprobante en «Ventas del día».');
+      }else{
+        caja.textContent='No es posible cobrar este pedido: '+(r.data?.mensaje||('HTTP '+r.status));
+        e('cashCharge').disabled=true;
+      }
+      return;
+    }
+    if(r.data.estado!=='CONFIRMADO'){
+      limpiarSeleccionCaja('Solo se cobran pedidos confirmados y completamente preparados.');
+      return;
+    }
     ultimaCotizacion=r.data;
+    e('cashCharge').disabled=false;
     const dat=r.data;
     caja.replaceChildren();
     const h=elemento('div',undefined,'ops-payment-row');
@@ -679,6 +732,53 @@
     const resultado=await api('/api/v1/ventas/resumen?fecha='+encodeURIComponent(fecha));
     if(resultado.ok)pintarReporte(resultado.data);
   }
+
+  function mostrarDetalleDia(datos){
+    const tbody=e('dailySalesTable');tbody.replaceChildren();
+    const lineas=Array.isArray(datos.lineas)?datos.lineas:[];
+    if(!lineas.length){
+      vacio(tbody,4,'Sin productos vendidos y cobrados en la fecha seleccionada.');
+    }
+    for(const l of lineas){
+      tbody.append(fila([
+        l.producto,
+        String(l.cantidad),
+        moneda(l.precioUnitario),
+        moneda(l.subtotal)
+      ]));
+    }
+    e('dailySalesTickets').textContent=String(datos.ventasCobradas||0);
+    e('dailySalesUnits').textContent=String(datos.unidadesVendidas||0);
+    e('dailySalesBase').textContent=moneda(datos.subtotalPlatos);
+    e('dailySalesPosFee').textContent=moneda(datos.recargosPos);
+    e('dailySalesTotal').textContent=moneda(datos.totalCobrado);
+    e('dailySalesFooterBase').textContent=moneda(datos.subtotalPlatos);
+    e('dailySalesFooterFee').textContent=moneda(datos.recargosPos);
+    e('dailySalesFooterTotal').textContent=moneda(datos.totalCobrado);
+    const pagos=datos.porMedioPago||{};
+    e('dailySalesCash').textContent=moneda(pagos.EFECTIVO);
+    e('dailySalesYape').textContent=moneda(pagos.YAPE);
+    e('dailySalesPos').textContent=moneda(pagos.POS);
+    e('dailySalesTransfer').textContent=moneda(pagos.TRANSFERENCIA);
+    e('dailySalesCheck').textContent=datos.cuadreDetalle
+      ? 'Verificado: suma de productos + recargos POS = total cobrado. Las salidas manuales no constituyen ventas.'
+      : 'ADVERTENCIA: el detalle de productos no cuadra con los cobros. Verifica las operaciones.';
+    e('dailySalesUpdated').textContent='Fecha: '+datos.fecha+
+      ' · Actualizado '+new Date().toLocaleTimeString('es-PE');
+  }
+  async function actualizarVentasDiarias(){
+    if(!['ADMIN','SUPERVISOR','CAJA'].includes(rol))return;
+    const fecha=e('dailySalesDate').value||fechaLocal();
+    const respuesta=await api('/api/v1/ventas/detalle-diario?fecha='+encodeURIComponent(fecha));
+    if(!token || e('dailySalesDate').value!==fecha)return;
+    if(respuesta.ok)mostrarDetalleDia(respuesta.data);
+    else e('dailySalesUpdated').textContent=
+      'No fue posible consultar la fecha (HTTP '+respuesta.status+').';
+  }
+  e('dailySalesDate').value=fechaLocal();
+  e('dailySalesRefresh').addEventListener('click',actualizarVentasDiarias);
+  e('dailySalesDate').addEventListener('change',actualizarVentasDiarias);
+
   e('cashReportDate').value=fechaLocal();
   e('cashReportRefresh').addEventListener('click',actualizarReporte);
   e('cashCounted').addEventListener('input',actualizarReporte);
@@ -725,6 +825,7 @@
         await Promise.all([actualizarCajaPedidosAsync(),actualizarReporte()]);
         await refrescarCotizacionCaja();
       }
+      else if(mod==='salesDaily')await actualizarVentasDiarias();
       else if(mod==='reservations')await actualizarReservas();
       else if(mod==='stock')await actualizarInventario();
       else if(mod==='menu')await actualizarCarta();
