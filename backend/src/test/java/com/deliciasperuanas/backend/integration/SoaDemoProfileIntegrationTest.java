@@ -495,6 +495,107 @@ class SoaDemoProfileIntegrationTest {
             .andExpect(jsonPath("$.codigo").value("PLATOS_PENDIENTES"));
     }
 
+
+    @Test
+    void mozoEnviaPedidoMesaEnUnaSolaOperacionYAbreComandaSinDuplicar() throws Exception {
+        String mozo=iniciar("mozo.demo@delicias.local","MozoDemoTest123!");
+        String pedidoJson="{\"tipoAtencion\":\"MESA\",\"mesaId\":1,\"items\":[{\"productoId\":1,\"cantidad\":1}]}";
+        String pedido=mvc.perform(post("/api/v1/pedidos/envio")
+                .header("Authorization","Bearer "+mozo)
+                .header("Idempotency-Key","comanda-mesa-envio-001")
+                .contentType(MediaType.APPLICATION_JSON).content(pedidoJson))
+            .andExpect(status().isCreated())
+            .andExpect(jsonPath("$.estado").value("CONFIRMADO"))
+            .andExpect(jsonPath("$.mesaId").value(1))
+            .andExpect(jsonPath("$.total").value(25.00))
+            .andReturn().getResponse().getContentAsString();
+        Number id=JsonPath.read(pedido,"$.pedidoId");
+
+        mvc.perform(get("/api/v1/pedidos/{id}",id.longValue())
+                .header("Authorization","Bearer "+mozo))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.items[0].nombre").value("Lomo Saltado"));
+
+        mvc.perform(post("/api/v1/pedidos/envio")
+                .header("Authorization","Bearer "+mozo)
+                .header("Idempotency-Key","comanda-mesa-envio-001")
+                .contentType(MediaType.APPLICATION_JSON).content(pedidoJson))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.pedidoId").value(id.longValue()))
+            .andExpect(jsonPath("$.estado").value("CONFIRMADO"));
+        mvc.perform(post("/api/v1/pedidos/envio")
+                .header("Authorization","Bearer "+mozo)
+                .header("Idempotency-Key","comanda-mesa-envio-002")
+                .contentType(MediaType.APPLICATION_JSON).content(pedidoJson))
+            .andExpect(status().isConflict())
+            .andExpect(jsonPath("$.codigo").value("MESA_OCUPADA"));
+        mvc.perform(get("/api/v1/inventario/1")
+                .header("Authorization","Bearer "+mozo))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.disponibles").value(29))
+            .andExpect(jsonPath("$.vendidas").value(1));
+
+        // Puede cancelarse antes de que Cocina marque algún plato LISTO.
+        mvc.perform(post("/api/v1/pedidos/{id}/cancelacion",id.longValue())
+                .header("Authorization","Bearer "+mozo))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.estado").value("CANCELADO"));
+        mvc.perform(get("/api/v1/inventario/1")
+                .header("Authorization","Bearer "+mozo))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.disponibles").value(30))
+            .andExpect(jsonPath("$.vendidas").value(0));
+        mvc.perform(get("/api/mesas").header("Authorization","Bearer "+mozo))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$[?(@.numero == 1)].estado")
+                .value(org.hamcrest.Matchers.hasItem("DISPONIBLE")));
+    }
+
+    @Test
+    void reservaTieneIdentificadorYUnaComandaEnCocinaNoPuedeCancelarse() throws Exception {
+        mvc.perform(get("/soa-demo/index.html")).andExpect(status().isOk())
+            .andExpect(content().string(org.hamcrest.Matchers.containsString("id=\"reservedCards\"")))
+            .andExpect(content().string(org.hamcrest.Matchers.containsString("id=\"selectedOrderDetails\"")))
+            .andExpect(content().string(org.hamcrest.Matchers.containsString("Enviar pedido a Cocina")));
+
+        String mozo=iniciar("mozo.demo@delicias.local","MozoDemoTest123!");
+        String cocinero=iniciar("cocinero.demo@delicias.local","CocineroDemoTest123!");
+        String cuerpo="{\"cliente\":\"Cliente de reserva\",\"fecha\":\"2026-12-14\","
+            +"\"horaInicio\":\"20:00\",\"horaFin\":\"21:00\",\"cantidadPersonas\":3,\"mesa\":{\"id\":2}}";
+        String reserva=mvc.perform(post("/api/reservas")
+                .header("Authorization","Bearer "+mozo)
+                .contentType(MediaType.APPLICATION_JSON).content(cuerpo))
+            .andExpect(status().isCreated())
+            .andExpect(jsonPath("$.estado").value("PENDIENTE"))
+            .andExpect(jsonPath("$.mesa.id").value(2))
+            .andReturn().getResponse().getContentAsString();
+        Number idReserva=JsonPath.read(reserva,"$.id");
+        mvc.perform(get("/api/reservas/{id}",idReserva.longValue())
+                .header("Authorization","Bearer "+mozo))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.cliente").value("Cliente de reserva"))
+            .andExpect(jsonPath("$.horaInicio").value("20:00:00"));
+
+        String pedido=mvc.perform(post("/api/v1/pedidos/envio")
+                .header("Authorization","Bearer "+mozo)
+                .header("Idempotency-Key","comanda-en-cocina-no-anular")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"tipoAtencion\":\"LLEVAR\",\"items\":[{\"productoId\":4,\"cantidad\":1}]}"))
+            .andExpect(status().isCreated())
+            .andExpect(jsonPath("$.estado").value("CONFIRMADO"))
+            .andReturn().getResponse().getContentAsString();
+        Number id=JsonPath.read(pedido,"$.pedidoId");
+        Number detalle=JsonPath.read(pedido,"$.items[0].detalleId");
+        mvc.perform(post("/api/v1/pedidos/{id}/detalles/{detalle}/listo",
+                id.longValue(),detalle.longValue())
+                .header("Authorization","Bearer "+cocinero))
+            .andExpect(status().isOk());
+        mvc.perform(post("/api/v1/pedidos/{id}/cancelacion",id.longValue())
+                .header("Authorization","Bearer "+mozo))
+            .andExpect(status().isConflict())
+            .andExpect(jsonPath("$.codigo").value("ORDEN_EN_PREPARACION"));
+    }
+
     private String iniciar(String correo, String pass) throws Exception {
         String json = "{\"correo\":\""+correo+"\",\"password\":\""+pass+"\"}";
         String response = mvc.perform(post("/api/auth/login")
