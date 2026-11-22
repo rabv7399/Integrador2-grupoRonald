@@ -671,6 +671,45 @@ class SoaDemoProfileIntegrationTest {
             .andExpect(status().isOk()).andExpect(jsonPath("$.imagenUrl").isNotEmpty());
     }
 
+
+    @Test
+    void cajaSupervisionControlanSalidaConMotivoYCartaAdminSeMantieneEnUnMismoPanel() throws Exception {
+        String caja=iniciar("caja.demo@delicias.local","CajaDemoTest123!");
+        String supervisor=iniciar("supervisor.demo@delicias.local","SupervisorDemoTest123!");
+        String mozo=iniciar("mozo.demo@delicias.local","MozoDemoTest123!");
+        mvc.perform(get("/soa-demo/index.html"))
+            .andExpect(status().isOk())
+            .andExpect(content().string(org.hamcrest.Matchers.containsString(
+                "data-module=\"menu\" data-roles=\"ADMIN\"")))
+            .andExpect(content().string(org.hamcrest.Matchers.containsString("productImageUpload")))
+            .andExpect(content().string(org.hamcrest.Matchers.containsString("TRANSFERENCIA")))
+            .andExpect(content().string(org.hamcrest.Matchers.containsString("cashPosConsent")));
+
+        mvc.perform(patch("/api/v1/inventario/1/salida")
+                .header("Authorization","Bearer "+mozo)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"cantidad\":1,\"comentario\":\"Rotura justificada\"}"))
+            .andExpect(status().isForbidden());
+        mvc.perform(patch("/api/v1/inventario/1/salida")
+                .header("Authorization","Bearer "+caja)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"cantidad\":1,\"comentario\":\"Porción con error\"}"))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.disponibles").value(29));
+        mvc.perform(patch("/api/v1/inventario/1/salida")
+                .header("Authorization","Bearer "+supervisor)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"cantidad\":1,\"comentario\":\"Merma registrada\"}"))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.disponibles").value(28));
+        mvc.perform(get("/api/v1/inventario")
+                .header("Authorization","Bearer "+mozo))
+            .andExpect(status().isOk());
+        mvc.perform(get("/api/v1/inventario")
+                .header("Authorization","Bearer "+caja))
+            .andExpect(status().isOk());
+    }
+
     private String iniciar(String correo, String pass) throws Exception {
         String json = "{\"correo\":\""+correo+"\",\"password\":\""+pass+"\"}";
         String response = mvc.perform(post("/api/auth/login")
