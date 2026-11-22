@@ -144,6 +144,7 @@ function iniciarPanel(){
 }
 function cerrarSesion(){
   if(window.detenerOperaciones)window.detenerOperaciones();
+  if(window.limpiarVistaPedidos)window.limpiarVistaPedidos();
   token='';rol='';correoSesion='';
   $('appView').hidden=true;
   $('loginView').hidden=false;
@@ -385,6 +386,7 @@ async function cargarMesas(){
     $('orderTable').add(option);
     const boton=document.createElement('button');
     boton.type='button';boton.className='mesa-button '+(m.estado==='OCUPADA'?'ocupada':'libre');
+    boton.dataset.mesaId=String(m.id);
     const elegido=String(m.id)===String(seleccionado)&&$('orderType').value==='MESA';
     if(elegido)boton.classList.add('seleccionada');
     const nombre=document.createElement('strong');nombre.textContent='Mesa #'+m.numero;
