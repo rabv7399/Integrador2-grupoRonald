@@ -214,8 +214,8 @@
             <button type="button" id="setStock" class="outline">Actualizar porciones (ADMIN)</button>
           </div>
           <p class="hint">Inventario terminado por producto, no de ingredientes. Los pedidos pendientes reservan porciones; al confirmarse pasan a vendidas.</p>
-          <div id="stockOutPanel" data-roles="ADMIN">
-            <div class="control-divider"><strong>Salida de inventario con motivo</strong><p>Solo Administrador. No se permite retirar porciones reservadas ni vendidas.</p></div>
+          <div id="stockOutPanel" data-roles="ADMIN,CAJA,SUPERVISOR">
+            <div class="control-divider"><strong>Salida de inventario con motivo</strong><p>Caja, Supervisor y Administrador. La salida siempre requiere motivo y no afecta porciones comprometidas.</p></div>
             <div class="two"><label>Cantidad<input id="stockOutQuantity" type="number" min="1" value="1"></label>
               <label>Comentario obligatorio<input id="stockOutReason" maxlength="500" placeholder="Ej.: merma o retiro de porciones"></label></div>
             <button type="button" id="stockOutSubmit" class="danger">Registrar salida justificada</button>
@@ -239,18 +239,20 @@
       </section>
 
       <section id="module-sales" class="view-module" hidden>
-        <div class="module-heading"><div><span class="eyebrow">CAJA · S06 VENTAS</span><h2>Cobrar y emitir ticket</h2><p>El cobro requiere un pedido confirmado y todos sus platos listos.</p></div><span class="module-label">PEN · EFECTIVO</span></div>
+        <div class="module-heading"><div><span class="eyebrow">CAJA · S06 VENTAS</span><h2>Cobrar y emitir ticket</h2><p>El cobro requiere un pedido confirmado y todos sus platos listos.</p></div><span class="module-label">PEN · 4 MEDIOS</span></div>
         <div class="panel">
           <button type="button" id="refreshSalesOrders" class="outline">Ver pedidos pendientes de cobro</button>
           <div id="cashOrders" class="command-list"></div>
           <label>ID del pedido<input type="number" id="cashPedidoId" min="1" placeholder="Indica el pedido a cobrar"></label>
-          <label>Medio de pago<select id="cashMethod"><option value="EFECTIVO">Efectivo</option><option value="YAPE">Yape</option><option value="POS">Tarjeta POS</option></select></label>
+          <label>Medio de pago<select id="cashMethod"><option value="EFECTIVO">Efectivo</option><option value="YAPE">Yape</option><option value="POS">Tarjeta POS (+4% y redondeo)</option><option value="TRANSFERENCIA">Transferencia bancaria</option></select></label>
+          <div id="cashQuote" class="ops-payment-quote" aria-live="polite">Selecciona un pedido para calcular el importe por medio de pago.</div>
+          <label id="cashPosDisclosure" hidden class="ops-pos-consent"><input id="cashPosConsent" type="checkbox"> Informé al cliente del recargo POS del 4% y redondeo hacia arriba a S/ 0.50; el cliente aceptó el total mostrado.</label>
           <label id="cashRecibidoWrap">Monto recibido en efectivo (S/)<input type="number" id="cashRecibido" min="0.01" step="0.01" placeholder="Ejemplo: 50.00"></label>
           <label id="cashReferenceWrap" hidden>Referencia de Yape / voucher POS<input id="cashReference" maxlength="80" placeholder="Código de operación / voucher"></label>
           <div class="buttons"><button type="button" id="cashCharge" class="primary">Cobrar y generar ticket</button><button type="button" id="cashReprint" class="outline">Consultar último comprobante por pedido</button></div>
           <p class="hint">El ticket se abre en otra pestaña. Utiliza «Imprimir» y «Guardar como PDF». Es un comprobante interno académico, no una boleta tributaria.</p>
-          <p class="hint">Yape/POS se registra manualmente: esta demo no conecta con bancos ni pasarelas y requiere confirmar la operación externamente.</p>
-          <div class="ops-section-label"><strong>Cuadre de caja y ventas por fecha</strong><span>Efectivo, Yape y POS por separado</span></div>
+          <p class="hint">Yape, POS y Transferencia se registran manualmente; esta demo no procesa pagos bancarios. En POS, el recargo y el redondeo se muestran y aceptan ANTES de cobrar; el precio del plato no se modifica.</p>
+          <div class="ops-section-label"><strong>Cuadre de caja y ventas por fecha</strong><span>Efectivo, Yape, POS y Transferencia por separado</span></div>
           <label>Fecha a consultar<input type="date" id="cashReportDate"></label>
           <button id="cashReportRefresh" class="outline" type="button">Consultar ventas del día</button>
           <div class="ops-summary-grid">
@@ -259,6 +261,8 @@
             <div><small>Efectivo</small><strong id="reportCash">S/ 0.00</strong></div>
             <div><small>Yape</small><strong id="reportYape">S/ 0.00</strong></div>
             <div><small>POS</small><strong id="reportPos">S/ 0.00</strong></div>
+            <div><small>Transferencia</small><strong id="reportTransfer">S/ 0.00</strong></div>
+            <div><small>Recargos POS (incluidos en total)</small><strong id="reportPosFee">S/ 0.00</strong></div>
           </div>
           <div class="two ops-close-form">
             <label>Efectivo contado en la caja (S/)<input id="cashCounted" type="number" min="0" step="0.01" placeholder="Dinero contado"></label>
@@ -278,8 +282,15 @@
           <div class="two"><label>Código<input id="productCode" maxlength="50" placeholder="DP-023"></label><label>Nombre<input id="productName" maxlength="150"></label></div>
           <label>Descripción<input id="productDescription" maxlength="255"></label>
           <div class="three"><label>Precio S/<input id="productPrice" type="number" min="0" step="0.01"></label><label>Categoría<select id="productCategory"></select></label><label>Disponible<select id="productAvailable"><option value="true">Sí</option><option value="false">No</option></select></label></div>
+          <div class="ops-photo-editor">
+            <div><label>Foto del plato o bebida (PNG/JPG, máximo 1.5 MB)<input type="file" id="productImageFile" accept="image/png,image/jpeg"></label>
+              <p class="hint">Primero guarda el producto; después podrás subir su fotografía. La imagen queda guardada en la base de datos activa y aparece en la carta pública al actualizarla.</p>
+              <button type="button" id="productImageUpload" class="outline">Guardar fotografía del producto</button>
+            </div>
+            <div id="productImagePreview" class="ops-photo-preview" role="img" aria-label="Fotografía del producto seleccionado">Sin imagen cargada</div>
+          </div>
           <div class="buttons"><button type="button" id="productNew" class="outline">Nuevo</button><button type="button" id="productSave" class="primary">Guardar producto</button><button type="button" id="productDisable" class="danger">Desactivar</button><button type="button" id="productDelete" class="danger">Dar de baja del menú</button></div>
-          <p class="hint">Para preservar el historial, desactiva un producto con ventas registradas en lugar de eliminarlo. Configura sus porciones en Inventario.</p>
+          <p class="hint">Dar de baja desactiva el producto sin borrar sus ventas ni su foto histórica. En el portal público se ocultarán los productos dados de baja; los nombres, precios e imágenes se consultan desde la API actualizada.</p>
           <div id="productAdminList" class="admin-list"></div>
         </div>
       </section>
