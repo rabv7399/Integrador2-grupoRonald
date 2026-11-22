@@ -32,7 +32,31 @@ La regla de demostración POS es:
 
 ## Inventario
 
-Todos los roles autorizados (MOZO, CAJA, SUPERVISOR, ADMIN) acceden a **la misma tabla** del stock actual (preparadas, reservadas, vendidas, disponibles). Solo ADMIN configura el total; **ADMIN, CAJA y SUPERVISOR** pueden reponer y dar salida a porciones con un comentario obligatorio. MOZO solo consulta y no modifica stock. El backend impide descontar porciones ya comprometidas.
+Todos los roles autorizados (MOZO, CAJA, SUPERVISOR, ADMIN) acceden a **la misma tabla** del stock actual (preparadas, reservadas, porciones en pedidos confirmados, salidas manuales acumuladas y disponibles). Solo ADMIN configura el total; **ADMIN, CAJA y SUPERVISOR** pueden reponer y dar salida a porciones con un comentario obligatorio. MOZO solo consulta y no modifica stock. El backend impide descontar porciones ya comprometidas.
+
+### Aclaración: porciones confirmadas vs. ventas cobradas
+
+- **En pedidos confirmados**: stock ya comprometido con comandas, que puede incluir pedidos NO cobrados; su valor no debe sumarse a los ingresos del día.
+- **Salidas manuales acumuladas**: total de porciones retiradas o mermadas, auditadas por causa/usuario en movimientos de inventario. NO equivalen a ventas. La columna se ve para los roles autorizados a consultar Inventario; el detalle con comentarios/usuario queda restringido a CAJA, SUPERVISOR y ADMIN.
+- Para controlar el dinero, usar únicamente **Ventas del día**, que suma los pedidos PAGADOS; el sistema conserva separados los ajustes de stock.
+
+## Error corregido: importe obsoleto tras cobrar
+
+La lista de Caja puede quedar sin pedidos activos luego de un cobro, pero antes conservaba el ID del último pedido y su monto. Ahora:
+1. La lista distingue órdenes **LISTAS PARA COBRAR** de órdenes que esperan Cocina. Solo permite seleccionar las primeras.
+2. Al cobrar, limpia el ID, el monto recibido, el código de operación, la aceptación POS y la cotización. Deshabilita el botón hasta seleccionar otra orden lista.
+3. El ticket histórico tiene un **campo independiente de consulta por ID** para no confundirlo con un cobro pendiente.
+4. `GET /api/v1/ventas/pedidos/{id}/cotizacion` rechaza órdenes PAGADAS con HTTP 409 `PEDIDO_YA_PAGADO`, evitando que la interfaz siga mostrando como deuda un importe liquidado.
+
+## Nueva pestaña: Ventas del día
+
+Menú visible para **CAJA, SUPERVISOR y ADMIN**. Filtro por fecha, lista de cada producto vendido, cantidad de unidades, precio unitario guardado al registrar cada pedido y subtotal del producto. Las ventas de un mismo producto con precios históricos diferentes aparecen en líneas distintas, evitando reescribir ventas anteriores tras un cambio de precio. Se suman únicamente tickets cobrados.
+
+Totales: subtotal de platos, recargos POS, **TOTAL FINAL COBRADO**, cuatro medios de pago, unidades y tickets. La API `GET /api/v1/ventas/detalle-diario?fecha=AAAA-MM-DD` devuelve `lineas`, `subtotalPlatos`, `recargosPos`, `totalCobrado`, `porMedioPago` y `cuadreDetalle`.
+
+La fecha comercial se interpreta usando la zona horaria **America/Lima** incluso si la aplicación se ejecuta en servidores de otra zona. En la demo local H2, solo persiste hasta detener/reiniciar el servidor.
+
+**Ecuación de verificación:** suma subtotales por producto + recargos POS = total de ingresos del día; Efectivo + Yape + POS + Transferencia = mismo total. Mermas y salidas NO se contabilizan como ingreso.
 
 ## Producto CRUD e imagen pública
 
@@ -50,11 +74,12 @@ Todos los roles autorizados (MOZO, CAJA, SUPERVISOR, ADMIN) acceden a **la misma
 | POST | `/api/v1/pedidos/envio` | Personal autorizado; crea y confirma de forma atómica |
 | POST | `/api/v1/pedidos/{id}/detalles/{detalleId}/listo` | Cocina/roles autorizados de preparación |
 | POST | `/api/v1/pedidos/{id}/detalles/{detalleId}/entregado` | **Solo MOZO** |
-| GET | `/api/v1/inventario` | Personal que consulta stock |
+| GET | `/api/v1/inventario` | Personal que consulta stock, incluida cifra de salidas manuales |
 | PATCH | `/api/v1/inventario/{id}/salida` | CAJA/SUPERVISOR/ADMIN; `{cantidad,comentario}` |
 | GET | `/api/v1/ventas/pedidos/{id}/cotizacion?medioPago=POS` | CAJA/SUPERVISOR/ADMIN; cotización con recargo |
 | POST | `/api/v1/ventas/pedidos/{id}/cobrar` | CAJA/SUPERVISOR/ADMIN; `{medioPago,referenciaPago,montoRecibido,recargoInformadoAceptado}` |
 | GET | `/api/v1/ventas/resumen?fecha=AAAA-MM-DD` | Caja; resumen por medio y día |
+| GET | `/api/v1/ventas/detalle-diario?fecha=AAAA-MM-DD` | Caja/Supervisor/Admin; listado de productos cobrados y total final |
 | POST | `/api/productos/{id}/imagen` | ADMIN multipart `archivo` |
 | GET | `/api/productos/{id}/imagen` | Público |
 
@@ -66,7 +91,9 @@ Todos los roles autorizados (MOZO, CAJA, SUPERVISOR, ADMIN) acceden a **la misma
 4. Como CAJA seleccionar pedido y cambiar EFECTIVO → YAPE → POS → TRANSFERENCIA: observar nueva cotización. Para POS aceptar explícitamente el recargo, cobrar y verificar subtotal, recargo y total del ticket.
 5. En SUPERVISOR seleccionar la fecha, verificar que Efectivo + Yape + POS + Transferencia = venta total; guardar arqueo de efectivo.
 6. Como CAJA entrar a Inventario y registrar salida de una porción con comentario; como MOZO ver el nuevo stock sin modificarlo.
-7. Como ADMIN entrar a Productos · CRUD, actualizar nombre/precio de un producto, elegir imagen y Guardar fotografía. En otra pestaña del portal actualizar la carta y verificar foto/nombre/precio. Probar baja lógica y comprobar que desaparezca de la carta ACTUAL.
+7. Después de cobrar, comprobar que Caja **no muestre el ID y monto antiguo**: «No hay pedidos por cobrar», campos limpios y botón deshabilitado. Consultar el ticket mediante campo independiente.
+8. Abrir **Ventas del día**, filtrar fecha y fotografiar unidades, precios, subtotal y total. Comparar con Resumen de Caja y su distribución por cuatro medios.
+9. Como ADMIN entrar a Productos · CRUD, actualizar nombre/precio de un producto, elegir imagen y Guardar fotografía. En otra pestaña del portal actualizar la carta y verificar foto/nombre/precio. Probar baja lógica y comprobar que desaparezca de la carta ACTUAL.
 
 ## Evidencias nuevas
 
@@ -77,6 +104,9 @@ Guardar capturas reales en `evidencias/SOA/APF3/`:
 - `SOA_APF3_52_Admin_Carga_Foto_CRUD.png`
 - `SOA_APF3_53_Portal_Carta_Foto_Actualizada.png`
 - `SOA_APF3_54_Caja_Salida_Stock_Motivo.png`
+- `SOA_APF3_55_Inventario_Salidas_Separadas_De_Pedidos.png`
+- `SOA_APF3_56_Caja_Limpia_Tras_Cobro.png`
+- `SOA_APF3_57_Ventas_Dia_Productos_Precios_Total.png`
 
 Sin contraseñas, JWT ni referencias bancarias personales. El ticket es académico, no factura ni boleta SUNAT.
 
