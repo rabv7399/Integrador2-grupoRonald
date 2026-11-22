@@ -317,3 +317,10 @@ body{background:#f7f8f5}
  .ops-kitchen-pending-list .ops-kitchen-compact-line{align-items:flex-start}
  .ops-kitchen-end{flex-direction:column;align-items:end}
 }
+
+/* Bandeja de múltiples comandas: tarjetas breves y scroll interno */
+#activeOrders{max-height:430px;overflow-y:auto;overscroll-behavior:contain;align-content:start;padding-right:5px;scrollbar-width:thin}
+#activeOrders .ops-order-card{padding:12px 14px}
+#activeOrders .ops-order-short-summary{font-size:11px;color:#48634f;background:#f3f8f2;border-radius:7px;padding:8px 10px;margin:9px 0}
+#activeOrders .ops-order-actions{margin-top:9px}
+#activeOrders .ops-order-sub{font-size:11px}

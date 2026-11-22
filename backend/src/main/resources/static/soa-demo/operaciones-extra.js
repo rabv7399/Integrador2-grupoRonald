@@ -477,30 +477,16 @@
     cabeza.append(titulo,badgeEstado(p.estado));card.append(cabeza);
     const sub=elemento('p',fechaCorta(p.fechaCreacion)+' · TOTAL: '+moneda(p.total),'ops-order-sub');
     card.append(sub);
-    const lista=elemento('div',undefined,'ops-order-lines');
-    for(const item of p.items||[]){
-      const linea=elemento('div',undefined,'ops-order-line');
-      const texto=elemento('span',item.cantidad+' × '+item.nombre+
-        ' · '+(item.estadoPreparacion==='ANULADO'?'ANULADO':moneda(item.subtotal))+
-        (item.observacion?' · Obs.: '+item.observacion:'')+
-        (item.estadoPreparacion==='ANULADO'&&item.motivoAnulacion?' · Motivo: '+item.motivoAnulacion:''));
-      const estadoLinea=badgeEstado(item.estadoPreparacion);
-      const tiempo=elemento('small','Tiempo: —','ops-age');
-      tiempo.dataset.inicioPlato=item.fechaInicio||p.fechaCreacion;
-      if(item.fechaListo)tiempo.dataset.finPlato=item.fechaListo;
-      linea.append(texto,estadoLinea,tiempo);
-      if(rol==='MOZO'
-          && p.estado==='CONFIRMADO' && item.estadoPreparacion==='LISTO'){
-        linea.append(boton('Marcar ENTREGADO',async()=>{
-          const url='/api/v1/pedidos/'+p.pedidoId+'/detalles/'+item.detalleId+'/entregado';
-          const r=await api(url,'POST');
-          mostrar('POST '+url,r);
-          if(r.ok)refrescarOperaciones();
-        },'primary'));
-      }
-      lista.append(linea);
-    }
-    card.append(lista);
+    // Una sola línea-resumen por pedido; el detalle completo está en Ver comanda.
+    // Esto impide que 20 pedidos con 5 platos llenen toda la pantalla del Mozo.
+    const vigentes=(p.items||[]).filter(i=>i.estadoPreparacion!=='ANULADO');
+    const pendientes=vigentes.filter(i=>i.estadoPreparacion==='PENDIENTE').length;
+    const listos=vigentes.filter(i=>i.estadoPreparacion==='LISTO').length;
+    const entregados=vigentes.filter(i=>i.estadoPreparacion==='ENTREGADO').length;
+    const resumen=elemento('p',vigentes.length+' plato(s) · '+pendientes+
+      ' pendientes · '+listos+' listos · '+entregados+' entregados','ops-order-short-summary');
+    card.append(resumen);
+
     const acciones=elemento('div',undefined,'buttons ops-order-actions');
     acciones.append(boton('Ver comanda / total',()=>seleccionarPedidoOperativo(p), 'outline'));
     if(p.estado==='PENDIENTE'){
