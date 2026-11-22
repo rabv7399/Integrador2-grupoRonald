@@ -534,7 +534,9 @@ function pintarTicket(ventana,venta){
   <p>COMPROBANTE INTERNO<br>${escapeTicket(venta.comprobante)}<br>${escapeTicket(venta.fechaPago)}</p>
   <p>${escapeTicket(venta.tipoAtencion)} ${venta.mesaId?'· Mesa '+venta.mesaId:''}<br>Pedido #${venta.pedidoId}</p>
   <hr><table>${lineas}</table><hr>
-  <table><tr><td><strong>TOTAL</strong></td><td class="r"><strong>${formatPrice(venta.total)}</strong></td></tr>
+  <table><tr><td>SUBTOTAL PLATOS</td><td class="r">${formatPrice(venta.subtotalBase)}</td></tr>
+  <tr><td>RECARGO POS</td><td class="r">${formatPrice(venta.recargoPos)}</td></tr>
+  <tr><td><strong>TOTAL COBRADO</strong></td><td class="r"><strong>${formatPrice(venta.total)}</strong></td></tr>
   <tr><td>RECIBIDO</td><td class="r">${formatPrice(venta.montoRecibido)}</td></tr>
   <tr><td>CAMBIO</td><td class="r">${formatPrice(venta.cambio)}</td></tr>
   <tr><td>MEDIO DE PAGO</td><td class="r">${escapeTicket(venta.medioPago)}</td></tr></table>
@@ -553,15 +555,20 @@ async function cobrarPedido(reimpresion=false){
   if(!reimpresion && medioPago==='EFECTIVO' && (!Number.isFinite(recibido)||recibido<=0))
     return mostrarLocal('Indica cuánto dinero recibiste en efectivo.');
   if(!reimpresion && medioPago!=='EFECTIVO' && referenciaPago.length<4)
-    return mostrarLocal('Indica un código Yape o voucher POS de al menos 4 caracteres.');
+    return mostrarLocal('Indica un código de operación para Yape, POS o Transferencia de al menos 4 caracteres.');
+  if(!reimpresion && medioPago==='POS' && !$('cashPosConsent').checked)
+    return mostrarLocal('Debes informar al cliente y registrar su aceptación del total POS antes de cobrar.');
   // Apertura sincrónica para evitar bloqueo de ventanas emergentes tras await.
   const ventana=window.open('','_blank','width=410,height=680');
   const url='/api/v1/ventas/pedidos/'+pedidoId+(reimpresion?'':'/cobrar');
   const resultado=await api(url,reimpresion?'GET':'POST',
-      reimpresion?null:{montoRecibido:recibido,medioPago,referenciaPago:medioPago==='EFECTIVO'?null:referenciaPago});
+      reimpresion?null:{montoRecibido:recibido,medioPago,
+        referenciaPago:medioPago==='EFECTIVO'?null:referenciaPago,
+        recargoInformadoAceptado:medioPago==='POS'&&$('cashPosConsent').checked});
   mostrar((reimpresion?'GET ':'POST ')+url,resultado);
   if(resultado.ok){
     pintarTicket(ventana,resultado.data);
+    if(window.refrescarCotizacionCaja)window.refrescarCotizacionCaja();
     cargarMesas();refrescarResumen();cargarPedidosCaja();
     if(window.refrescarOperaciones)window.refrescarOperaciones();
   }else if(ventana){ventana.close();}
@@ -608,6 +615,14 @@ function seleccionarProductoAdmin(){
   $('productPrice').value=p?.precio??'';
   $('productCategory').value=p?.categoria?.id??'';
   $('productAvailable').value=p?.disponible?'true':'false';
+  $('productImageFile').value='';
+  const preview=$('productImagePreview');preview.replaceChildren();
+  if(p?.imagenUrl){
+    const imagen=document.createElement('img');imagen.alt='Fotografía: '+p.nombre;
+    imagen.src=p.imagenUrl;imagen.loading='lazy';
+    imagen.addEventListener('error',()=>{preview.textContent='Imagen no disponible';});
+    preview.append(imagen);
+  }else preview.textContent='Selecciona y guarda una foto para mostrarla en la web pública.';
 }
 $('productManageSelect').addEventListener('change',seleccionarProductoAdmin);
 $('productNew').addEventListener('click',()=>{$('productManageSelect').value='';seleccionarProductoAdmin();});
@@ -623,7 +638,34 @@ $('productSave').addEventListener('click',async()=>{
     return mostrarLocal('Código, nombre, categoría y precio deben ser válidos.');
   const path='/api/productos'+(id?'/'+id:'');
   const r=await api(path,id?'PUT':'POST',data);mostrar((id?'PUT ':'POST ')+path,r);
-  if(r.ok)consultarCatalogo();
+  if(r.ok){
+    await consultarCatalogo();
+    $('productManageSelect').value=String(r.data.id);
+    seleccionarProductoAdmin();
+  }
+});
+$('productImageUpload').addEventListener('click',async()=>{
+  if(rol!=='ADMIN')return mostrarLocal('Solo Administración puede agregar fotografías.');
+  const id=Number($('productManageSelect').value);
+  const archivo=$('productImageFile').files?.[0];
+  if(!id)return mostrarLocal('Guarda primero el producto para obtener su ID.');
+  if(!archivo||!['image/jpeg','image/png'].includes(archivo.type)||
+     archivo.size>1500000)return mostrarLocal('Selecciona foto JPG o PNG, máximo 1.5 MB.');
+  const boton=$('productImageUpload');boton.disabled=true;
+  try{
+    const datos=new FormData();datos.append('archivo',archivo);
+    const response=await fetch('/api/productos/'+id+'/imagen',{
+      method:'POST',headers:{Authorization:'Bearer '+token},body:datos,cache:'no-store'
+    });
+    const body=await response.json().catch(()=>({message:'Error de carga'}));
+    mostrar('POST /api/productos/'+id+'/imagen',
+      {ok:response.ok,status:response.status,data:body});
+    if(response.ok){
+      await consultarCatalogo();
+      $('productManageSelect').value=String(id);seleccionarProductoAdmin();
+    }
+  }catch(error){mostrarLocal('No se pudo cargar la imagen: '+String(error.message));}
+  finally{boton.disabled=false;}
 });
 $('productDisable').addEventListener('click',async()=>{
   const id=$('productManageSelect').value;
