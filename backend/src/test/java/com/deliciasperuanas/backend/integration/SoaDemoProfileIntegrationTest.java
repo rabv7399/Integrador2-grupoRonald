@@ -379,7 +379,7 @@ class SoaDemoProfileIntegrationTest {
             .andExpect(status().isConflict())
             .andExpect(jsonPath("$.codigo").value("PEDIDO_CERRADO"));
 
-        String hoy=java.time.LocalDate.now().toString();
+        String hoy=java.time.LocalDate.now(java.time.ZoneId.of("America/Lima")).toString();
         mvc.perform(get("/api/v1/ventas/resumen").param("fecha",hoy)
                 .header("Authorization","Bearer "+caja))
             .andExpect(status().isOk())
