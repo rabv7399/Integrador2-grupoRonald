@@ -40,6 +40,27 @@ Todos los roles autorizados (MOZO, CAJA, SUPERVISOR, ADMIN) acceden a **la misma
 - **Salidas manuales acumuladas**: total de porciones retiradas o mermadas, auditadas por causa/usuario en movimientos de inventario. NO equivalen a ventas. La columna se ve para los roles autorizados a consultar Inventario; el detalle con comentarios/usuario queda restringido a CAJA, SUPERVISOR y ADMIN.
 - Para controlar el dinero, usar únicamente **Ventas del día**, que suma los pedidos PAGADOS; el sistema conserva separados los ajustes de stock.
 
+## Filtro de fecha y tipo en el historial de Inventario
+
+En el módulo **Inventario → Historial de movimientos** (acceso a detalle de auditoría solo **ADMIN, CAJA y SUPERVISOR**) se agregaron:
+- Selector de **fecha del movimiento**; vacío = movimientos recientes.
+- Selector de tipo: **Todos**, **Solo salidas**, **Solo entradas**, **Solo ajustes**.
+- Botón **Consultar movimientos**, búsqueda automática al cambiar filtros y **Limpiar filtros**.
+- Resumen visible: número de movimientos, número de SALIDAS y suma de porciones retiradas manualmente en el resultado.
+- Cada movimiento muestra fecha/hora, producto, tipo, cantidad, comentario y usuario. Los movimientos se ordenan del más reciente al más antiguo.
+- Filtro **en el servidor** para recuperar también fechas antiguas más allá de los 200 movimientos recientes; sin filtro se conserva la vista previa de últimos 200.
+
+**Contrato REST:** `GET /api/v1/inventario/movimientos?fecha=AAAA-MM-DD&tipo=SALIDA`; ambos parámetros opcionales, tipo `TODOS|SALIDA|ENTRADA|AJUSTE`. Tipos desconocidos devuelven HTTP 400. La seguridad REST restringe este recurso; MOZO recibe HTTP 403 incluso cuando indica una fecha, y un visitante anónimo HTTP 401.
+
+Importante: este historial registra **entradas, salidas manuales y ajustes**, no es el historial monetario de las ventas. Los platos facturados se consultan en `Ventas del día`. Durante la demo `soa-demo`, H2 se reinicia con el servidor; para consultar fechas reales de meses anteriores se requiere base persistente.
+
+Evidencia real propuesta:
+- `SOA_APF3_62_Historial_Salidas_Por_Fecha.png`: rol CAJA/ADMIN/SUPERVISOR, tipo SALIDA, fecha seleccionada, resultado con usuario y motivo.
+- `SOA_APF3_63_Historial_Todas_Entradas_Salidas.png`: tipo TODOS y comparación con entradas/ajustes.
+- Opcional: mostrar otra fecha sin resultados para evidenciar el filtro.
+
+Prueba automatizada: salida y reposición reales, tipos SALIDA/ENTRADA, fecha con movimientos, fecha sin movimientos, 400 por tipo inválido, 403 Mozo y 401 anónimo.
+
 ## Error corregido: importe obsoleto tras cobrar
 
 La lista de Caja puede quedar sin pedidos activos luego de un cobro, pero antes conservaba el ID del último pedido y su monto. Ahora:
