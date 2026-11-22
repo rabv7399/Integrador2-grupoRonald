@@ -140,7 +140,7 @@ public class SecurityConfig {
                         .hasAnyRole("ADMIN", "OPERADOR", "MOZO", "SUPERVISOR", "CAJA")
 
                         .requestMatchers(HttpMethod.PATCH,"/api/v1/inventario/*/salida")
-                        .hasRole("ADMIN")
+                        .hasAnyRole("ADMIN","SUPERVISOR","CAJA")
 
                         .requestMatchers(HttpMethod.PATCH, "/api/v1/inventario/*/reponer")
                         .hasAnyRole("ADMIN", "SUPERVISOR", "CAJA")
@@ -154,7 +154,7 @@ public class SecurityConfig {
                         .hasAnyRole("ADMIN", "SUPERVISOR", "COCINERO")
 
                         .requestMatchers(HttpMethod.POST,"/api/v1/pedidos/*/detalles/*/entregado")
-                        .hasAnyRole("ADMIN","SUPERVISOR","MOZO","OPERADOR")
+                        .hasRole("MOZO")
 
                         .requestMatchers(HttpMethod.POST,"/api/v1/pedidos/*/items")
                         .hasAnyRole("ADMIN","SUPERVISOR","MOZO","OPERADOR","CAJA")

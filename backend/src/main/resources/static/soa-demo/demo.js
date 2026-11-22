@@ -468,7 +468,7 @@ function articuloPedido(p){
     const descripcion=document.createElement('span');descripcion.textContent=i.cantidad+' × '+i.nombre+' · '+i.estadoPreparacion;
     li.append(descripcion);
     if(['ADMIN','COCINERO','SUPERVISOR'].includes(rol) &&
-      p.estado==='CONFIRMADO' && i.estadoPreparacion!=='LISTO'){
+      p.estado==='CONFIRMADO' && i.estadoPreparacion==='PENDIENTE'){
       li.append(crearBoton('Marcar LISTO',async()=>{
         const x=await api('/api/v1/pedidos/'+p.pedidoId+'/detalles/'+i.detalleId+'/listo','POST');
         mostrar('POST cocina LISTO',x);if(x.ok)cargarComandas();
@@ -484,7 +484,8 @@ async function cargarComandas(){
   const resultado=await api('/api/v1/pedidos');
   mostrar('GET /api/v1/pedidos',resultado);
   if(!resultado.ok || !Array.isArray(resultado.data))return;
-  const activos=resultado.data.filter(p=>['PENDIENTE','CONFIRMADO'].includes(p.estado));
+  const activos=resultado.data.filter(p=>p.estado==='CONFIRMADO' &&
+    (p.items||[]).some(i=>i.estadoPreparacion==='PENDIENTE'));
   $('kitchenOrders').replaceChildren();
   if(!activos.length)$('kitchenOrders').textContent='No hay comandas activas.';
   for(const pedido of activos)$('kitchenOrders').append(articuloPedido(pedido));

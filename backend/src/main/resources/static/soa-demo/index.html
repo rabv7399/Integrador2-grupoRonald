@@ -28,7 +28,7 @@
         <div><span>03</span><strong>Supervisor</strong><small>Seguimiento operativo e inventario</small></div>
         <div><span>04</span><strong>Administrador</strong><small>Configuración y control de porciones</small></div>
         <div><span>05</span><strong>Caja</strong><small>Cobros, tickets y reposición de porciones</small></div>
-        <div><span>06</span><strong>Cocinero</strong><small>Comandas y entrega de cada plato</small></div>
+        <div><span>06</span><strong>Cocinero</strong><small>Comandas y preparación de cada plato</small></div>
       </div>
       <div class="access-footnote">APF3 · REST/JSON · Spring Boot · JWT · Base H2 local de demostración</div>
     </div>
@@ -58,7 +58,7 @@
     <p class="side-heading">ESPACIO DE TRABAJO</p>
     <nav id="sideNav" class="side-menu">
       <button type="button" data-module="inicio" data-roles="CLIENTE,MOZO,CAJA,COCINERO,SUPERVISOR,ADMIN,OPERADOR"><span>▦</span> Resumen</button>
-      <button type="button" data-module="menu" data-roles="CLIENTE,CAJA,SUPERVISOR,ADMIN,OPERADOR"><span>▤</span> Carta y productos</button>
+      <button type="button" data-module="menu" data-roles="ADMIN"><span>▤</span> Carta y productos</button>
       <button type="button" data-module="orders" data-roles="MOZO,CAJA,SUPERVISOR,ADMIN,OPERADOR"><span>▣</span> Pedidos</button>
       <button type="button" data-module="reservations" data-roles="CLIENTE,MOZO,CAJA,SUPERVISOR,ADMIN,OPERADOR"><span>▦</span> Reservas de mesas</button>
       <button type="button" data-module="stock" data-roles="MOZO,CAJA,SUPERVISOR,ADMIN,OPERADOR"><span>◈</span> Inventario</button>
@@ -156,7 +156,7 @@
           </details>
           <div class="ops-section-label"><strong>Órdenes en atención · mesas y llevar</strong><span id="ordersSyncStatus">Actualización automática cada 5 segundos</span></div>
           <div id="activeOrders" class="ops-order-grid" aria-live="polite">Consultando pedidos…</div>
-          <p class="hint">El Mozo puede marcar la entrega plato por plato, agregar más productos y cancelar órdenes PENDIENTES. El cobro corresponde exclusivamente a Caja.</p>
+          <p class="hint">Mozo es el único rol que marca un plato como ENTREGADO. Caja y Administración comparten la vista de pedidos, pero no pueden confirmar entregas. Cocina marca LISTO y Caja cobra.</p>
         </div>
       </section>
 

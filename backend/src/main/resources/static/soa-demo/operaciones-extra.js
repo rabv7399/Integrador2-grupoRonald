@@ -222,7 +222,7 @@
     tiempo.dataset.inicioPlato=item.fechaInicio||p.fechaCreacion;
     if(item.fechaListo)tiempo.dataset.finPlato=item.fechaListo;
     linea.append(nombre,estadoPlato,tiempo);
-    if(['MOZO','SUPERVISOR','ADMIN','OPERADOR'].includes(rol) &&
+    if(rol==='MOZO' &&
         p.estado==='CONFIRMADO'&&item.estadoPreparacion==='LISTO'){
       linea.append(boton('✓ Marcar ENTREGADO',async()=>{
         const url='/api/v1/pedidos/'+p.pedidoId+'/detalles/'+item.detalleId+'/entregado';
@@ -361,7 +361,7 @@
       tiempo.dataset.inicioPlato=item.fechaInicio||p.fechaCreacion;
       if(item.fechaListo)tiempo.dataset.finPlato=item.fechaListo;
       linea.append(texto,estadoLinea,tiempo);
-      if(['MOZO','SUPERVISOR','ADMIN','OPERADOR'].includes(rol)
+      if(rol==='MOZO'
           && p.estado==='CONFIRMADO' && item.estadoPreparacion==='LISTO'){
         linea.append(boton('Marcar ENTREGADO',async()=>{
           const url='/api/v1/pedidos/'+p.pedidoId+'/detalles/'+item.detalleId+'/entregado';
@@ -440,8 +440,9 @@
 
   function dibujarCocina(pedidos){
     const vista=e('kitchenOrders');vista.replaceChildren();
-    const activos=pedidos.filter(p=>p.estado==='PENDIENTE'||p.estado==='CONFIRMADO');
-    if(!activos.length){vista.append(elemento('p','No hay comandas pendientes. Los pedidos PAGADOS están en el historial de Caja.'));return;}
+    const activos=pedidos.filter(p=>p.estado==='CONFIRMADO' &&
+      (p.items||[]).some(i=>i.estadoPreparacion==='PENDIENTE'));
+    if(!activos.length){vista.append(elemento('p','No hay platos pendientes de preparación. Las comandas LISTAS o ENTREGADAS salen de esta cola; el cobro sigue en Caja.'));return;}
     for(const p of activos){
       const card=elemento('article',undefined,'command-card');
       const cab=elemento('div',undefined,'command-heading');

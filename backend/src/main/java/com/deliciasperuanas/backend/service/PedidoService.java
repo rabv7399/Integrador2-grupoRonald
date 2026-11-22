@@ -204,7 +204,7 @@ public class PedidoService {
     @Transactional
     public PedidoRespuesta marcarEntregado(Long pedidoId,Long detalleId,String correo) {
         Usuario usuario=buscarUsuario(correo);
-        if(!List.of("MOZO","SUPERVISOR","ADMIN","OPERADOR").contains(usuario.getRol()))
+        if(!"MOZO".equals(usuario.getRol()))
             throw error(HttpStatus.FORBIDDEN,"SOLO_MOZO",
                 "La entrega solo la registra Mozo, Supervisor o Administrador");
         Pedido pedido=bloquear(pedidoId);
