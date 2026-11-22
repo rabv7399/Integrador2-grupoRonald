@@ -129,6 +129,20 @@ public class PedidoService {
         return new ResultadoRegistro(respuesta(pedido),true);
     }
 
+    // Un solo paso de negocio para el Mozo: registrar + reservar + enviar a Cocina.
+    // Si confirmar falla, la transacción completa revierte la creación y la ocupación.
+    // Reintentos con la misma Idempotency-Key no duplican el pedido.
+    @Transactional
+    public ResultadoRegistro enviarACocina(CrearPedidoSolicitud solicitud,String clave,String correo) {
+        Usuario usuario=buscarUsuario(correo);
+        verificarPersonal(usuario);
+        ResultadoRegistro registro=registrar(solicitud,clave,correo);
+        if("PENDIENTE".equals(registro.respuesta().estado())) {
+            return new ResultadoRegistro(confirmar(registro.respuesta().pedidoId(),correo),registro.creado());
+        }
+        return registro;
+    }
+
     @Transactional(readOnly=true)
     public List<PedidoRespuesta> listar(String correo) {
         Usuario usuario=buscarUsuario(correo);
@@ -275,13 +289,26 @@ public class PedidoService {
         Usuario usuario=buscarUsuario(correo);
         Pedido pedido=bloquear(pedidoId);
         verificarAcceso(usuario,pedido);
-        if (!"PENDIENTE".equals(pedido.getEstado())) {
+        if (!List.of("PENDIENTE","CONFIRMADO").contains(pedido.getEstado())) {
             throw error(HttpStatus.CONFLICT,"ESTADO_PEDIDO_INVALIDO",
-                "Solo puede cancelarse un pedido pendiente. Una venta pagada no se revierte aquí.");
+                "No se puede cancelar una orden ya pagada o previamente cancelada.");
         }
+        if("CONFIRMADO".equals(pedido.getEstado())) {
+            // No anular entregas o producción ya comenzada sin un proceso de devolución.
+            verificarPersonal(usuario);
+            if(pedido.getDetalles().stream().anyMatch(d ->
+                 !"PENDIENTE".equals(d.getEstadoPreparacion()))) {
+                throw error(HttpStatus.CONFLICT,"ORDEN_EN_PREPARACION",
+                    "Cocina ya preparó platos. Solicita al supervisor una devolución controlada.");
+            }
+        }
+        boolean confirmado="CONFIRMADO".equals(pedido.getEstado());
         pedido.getDetalles().stream()
             .sorted((a,b)->a.getProducto().getId().compareTo(b.getProducto().getId()))
-            .forEach(d->inventario.liberar(d.getProducto().getId(),d.getCantidad()));
+            .forEach(d->{
+                if(confirmado)inventario.revertirConfirmado(d.getProducto().getId(),d.getCantidad());
+                else inventario.liberar(d.getProducto().getId(),d.getCantidad());
+            });
         pedido.setEstado("CANCELADO");
         liberarMesa(pedido);
         return respuesta(pedido);

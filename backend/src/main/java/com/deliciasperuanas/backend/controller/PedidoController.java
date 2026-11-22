@@ -26,6 +26,17 @@ public class PedidoController {
             .body(result.respuesta());
     }
 
+    @PostMapping("/envio")
+    public ResponseEntity<PedidoRespuesta> enviarACocina(
+        @RequestHeader(name="Idempotency-Key") String referencia,
+        @Valid @RequestBody CrearPedidoSolicitud solicitud,
+        Authentication autenticacion
+    ) {
+        PedidoService.ResultadoRegistro r=service.enviarACocina(
+            solicitud,referencia,autenticacion.getName());
+        return ResponseEntity.status(r.creado()?HttpStatus.CREATED:HttpStatus.OK).body(r.respuesta());
+    }
+
     @GetMapping
     public java.util.List<PedidoRespuesta> listar(Authentication auth) {
         return service.listar(auth.getName());

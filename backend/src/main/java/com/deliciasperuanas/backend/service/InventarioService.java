@@ -167,6 +167,17 @@ public class InventarioService {
         stock.setReservadas(stock.getReservadas() - cantidad);
     }
 
+    // Anulación previa a preparación: regresa porciones confirmadas a disponibles.
+    @Transactional
+    public void revertirConfirmado(Long productoId,int cantidad) {
+        InventarioPlato stock=bloquearComprometido(productoId);
+        if(cantidad<=0 || stock.getVendidas()<cantidad) {
+            throw new OperacionNegocioException(HttpStatus.CONFLICT,"VENTA_STOCK_INCONSISTENTE",
+                "No es posible revertir las porciones confirmadas de este pedido");
+        }
+        stock.setVendidas(stock.getVendidas()-cantidad);
+    }
+
     private InventarioPlato bloquearComprometido(Long productoId) {
         return inventarios.bloquearProducto(productoId).orElseThrow(() ->
             new OperacionNegocioException(HttpStatus.CONFLICT, "RESERVA_STOCK_NO_ENCONTRADA",
