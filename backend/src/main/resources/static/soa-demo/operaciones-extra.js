@@ -486,6 +486,7 @@
       row.append(boton('Seleccionar',()=>{
         e('cashPedidoId').value=p.pedidoId;
         e('cashRecibido').value=n(p.total).toFixed(2);
+        refrescarCotizacionCaja();
       }));
       lista.append(row);
     }
@@ -589,13 +590,54 @@
     }
   }
 
+  let ultimaCotizacion=null;
+  async function refrescarCotizacionCaja(){
+    const id=Number(e('cashPedidoId').value);
+    const metodo=e('cashMethod').value;
+    const caja=e('cashQuote');
+    if(!Number.isInteger(id)||id<1){
+      caja.textContent='Selecciona una comanda para conocer el total a cobrar.';
+      return;
+    }
+    const r=await api('/api/v1/ventas/pedidos/'+id+'/cotizacion?medioPago='+metodo);
+    if(!r.ok||!r.data || e('cashMethod').value!==metodo ||
+       Number(e('cashPedidoId').value)!==id)return;
+    ultimaCotizacion=r.data;
+    const dat=r.data;
+    caja.replaceChildren();
+    const h=elemento('div',undefined,'ops-payment-row');
+    h.append(elemento('span','Subtotal de platos'),elemento('strong',moneda(dat.subtotalBase)));
+    caja.append(h);
+    if(metodo==='POS'){
+      const extra=elemento('div',undefined,'ops-payment-row');
+      extra.append(elemento('span','Recargo POS 4% + redondeo hacia arriba a S/ 0.50'),
+        elemento('strong',moneda(dat.recargoPos)));
+      caja.append(extra);
+    }
+    const total=elemento('div',undefined,'ops-payment-row ops-payment-total');
+    total.append(elemento('span','Total que debe pagar el cliente'),
+      elemento('strong',moneda(dat.totalCobro)));
+    caja.append(total);
+    if(metodo==='POS')caja.append(elemento('small',
+      'Informar este importe antes de cobrar. El recargo se registra separado del precio de los platos.'));
+    if(metodo==='EFECTIVO' && (!e('cashRecibido').value ||
+       n(e('cashRecibido').value)<n(dat.totalCobro))){
+      e('cashRecibido').value=n(dat.totalCobro).toFixed(2);
+    }
+  }
   function seleccionarMetodo(){
-    const efectivo=e('cashMethod').value==='EFECTIVO';
-    e('cashRecibidoWrap').hidden=!efectivo;
-    e('cashReferenceWrap').hidden=efectivo;
-    if(efectivo)e('cashReference').value='';
+    const medio=e('cashMethod').value;
+    e('cashRecibidoWrap').hidden=medio!=='EFECTIVO';
+    e('cashReferenceWrap').hidden=medio==='EFECTIVO';
+    e('cashPosDisclosure').hidden=medio!=='POS';
+    e('cashPosConsent').checked=false;
+    if(medio==='EFECTIVO')e('cashReference').value='';
+    refrescarCotizacionCaja();
   }
   e('cashMethod').addEventListener('change',seleccionarMetodo);
+  e('cashPedidoId').addEventListener('change',refrescarCotizacionCaja);
+  e('cashPedidoId').addEventListener('input',refrescarCotizacionCaja);
+  window.refrescarCotizacionCaja=refrescarCotizacionCaja;
   seleccionarMetodo();
 
   function pintarReporte(datos){
@@ -605,11 +647,13 @@
     e('reportCash').textContent=moneda(metodos.EFECTIVO);
     e('reportYape').textContent=moneda(metodos.YAPE);
     e('reportPos').textContent=moneda(metodos.POS);
+    e('reportTransfer').textContent=moneda(metodos.TRANSFERENCIA);
+    e('reportPosFee').textContent=moneda(datos.recargosPosDia);
     const actual=Number(e('cashCounted').value);
     const esperado=n(datos.efectivoEsperado);
     e('cashDifference').textContent=(!e('cashCounted').value?'Efectivo esperado: '+moneda(esperado):
       'Diferencia provisional = '+moneda(actual-esperado))+
-      ' · Yape/POS no se cuentan físicamente.';
+      ' · Yape/POS/Transferencia no se cuentan físicamente.';
     e('cashCloseStatus').textContent=datos.cuadreRegistrado
       ? 'Cuadre registrado el '+fechaCorta(datos.cuadreRegistrado.fechaRegistro)+
         ' · Contado '+moneda(datos.cuadreRegistrado.efectivoContado)+
@@ -679,6 +723,7 @@
       else if(mod==='kitchen')await actualizarCocina();
       else if(mod==='sales'){
         await Promise.all([actualizarCajaPedidosAsync(),actualizarReporte()]);
+        await refrescarCotizacionCaja();
       }
       else if(mod==='reservations')await actualizarReservas();
       else if(mod==='stock')await actualizarInventario();
