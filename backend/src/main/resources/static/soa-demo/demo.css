@@ -279,3 +279,41 @@ body{background:#f7f8f5}
   .ops-movement-filters{flex-direction:column;align-items:stretch}
   .ops-movement-filters label{width:100%;max-width:none}
 }
+
+/* APF3: edición compacta por plato y seguimiento de Cocina por rol */
+.ops-focused-line{grid-template-columns:minmax(175px,1fr) auto auto auto;gap:8px;padding:10px 0}
+.ops-focused-description{gap:3px}
+.ops-focused-description .ops-line-observation{margin:3px 0 0;padding:4px 7px;font-size:11px;line-height:1.35}
+.ops-focused-description .ops-line-cancelled{margin-top:3px;padding:4px 7px}
+.ops-focused-line .ops-plate-toggle{grid-column:4;grid-row:1;justify-self:end;white-space:nowrap;padding:7px 10px;min-width:auto}
+.ops-focused-line>.ops-observation-compact{grid-column:1/-1;display:grid;grid-template-columns:minmax(0,2fr) minmax(100px,.8fr);gap:10px;margin:2px 0 5px;padding:12px 14px}
+.ops-observation-compact label{margin:0!important;min-width:0}
+.ops-observation-compact .ops-observation-input{height:39px;font-size:12px;padding:8px 10px}
+.ops-observation-compact .ops-plate-actions{grid-column:1/-1;margin-top:0}
+.ops-observation-compact .ops-plate-actions button{grid-column:auto;justify-self:start;margin:0;font-size:11px}
+#kitchenOrders>.ops-kitchen-access-hint{grid-column:1/-1;margin:0;padding:9px 13px;background:#edf6ed;border-radius:8px;font-size:12px;color:#42624c}
+.ops-kitchen-card{padding:14px 15px}
+.ops-kitchen-headline{display:flex;flex-direction:column;gap:4px}
+.ops-kitchen-headline small{color:#6c8270;font-size:11px}
+.ops-kitchen-pending-list{margin-top:10px}
+.ops-kitchen-pending-list .ops-kitchen-compact-line{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:8px 0;min-height:48px}
+.ops-kitchen-main{display:flex;flex-direction:column;gap:4px;min-width:0;flex:1}
+.ops-kitchen-main strong{font-size:12px;color:#1e4732}
+.ops-kitchen-short-note{font-size:11px;color:#9a5615;line-height:1.4;font-weight:650}
+.ops-kitchen-end{display:flex;align-items:center;gap:10px;flex-shrink:0}
+.ops-kitchen-end button{padding:7px 10px;font-size:11px;white-space:nowrap;min-width:auto}
+.ops-kitchen-readonly{font-size:10px;color:#778778;white-space:nowrap}
+@media(max-width:780px){
+ .ops-focused-line{grid-template-columns:minmax(130px,1fr) auto auto;gap:7px}
+ .ops-focused-line .ops-plate-toggle{grid-column:3;grid-row:2}
+ .ops-focused-line>.ops-observation-compact{grid-column:1/-1}
+}
+@media(max-width:500px){
+ .ops-focused-line{grid-template-columns:minmax(120px,1fr) auto}
+ .ops-focused-line .ops-plate-toggle{grid-column:2;grid-row:2}
+ .ops-focused-line>.ops-observation-compact{grid-template-columns:1fr}
+ .ops-observation-compact .ops-plate-actions{grid-column:1;flex-direction:column;align-items:stretch}
+ .ops-observation-compact .ops-plate-actions button{width:100%;justify-self:stretch}
+ .ops-kitchen-pending-list .ops-kitchen-compact-line{align-items:flex-start}
+ .ops-kitchen-end{flex-direction:column;align-items:end}
+}
