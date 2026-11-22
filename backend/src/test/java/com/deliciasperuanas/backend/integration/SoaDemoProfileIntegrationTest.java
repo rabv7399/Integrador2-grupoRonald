@@ -1038,6 +1038,54 @@ class SoaDemoProfileIntegrationTest {
             .andExpect(status().isUnauthorized());
     }
 
+
+    @Test
+    void administradorSupervisaCocinaPeroSoloCocineroMarcaListo() throws Exception {
+        String admin=iniciar("admin.demo@delicias.local","AdminDemoTest123!");
+        String supervisor=iniciar("supervisor.demo@delicias.local","SupervisorDemoTest123!");
+        String mozo=iniciar("mozo.demo@delicias.local","MozoDemoTest123!");
+        String cocinero=iniciar("cocinero.demo@delicias.local","CocineroDemoTest123!");
+        String pedido=mvc.perform(post("/api/v1/pedidos/envio")
+                .header("Authorization","Bearer "+mozo)
+                .header("Idempotency-Key","cocina-lectura-admin-001")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"tipoAtencion\":\"LLEVAR\",\"items\":[{\"productoId\":4,\"cantidad\":1,\"observacion\":\"Bajo en sal\"}]}"))
+            .andExpect(status().isCreated())
+            .andReturn().getResponse().getContentAsString();
+        Number id=JsonPath.read(pedido,"$.pedidoId");
+        Number linea=JsonPath.read(pedido,"$.items[0].detalleId");
+        mvc.perform(get("/api/v1/pedidos")
+                .header("Authorization","Bearer "+admin))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$[0].items[0].observacion").value("Bajo en sal"))
+            .andExpect(jsonPath("$[0].items[0].estadoPreparacion").value("PENDIENTE"));
+        mvc.perform(post("/api/v1/pedidos/{id}/detalles/{linea}/listo",
+                id.longValue(),linea.longValue())
+                .header("Authorization","Bearer "+admin))
+            .andExpect(status().isForbidden());
+        mvc.perform(post("/api/v1/pedidos/{id}/detalles/{linea}/listo",
+                id.longValue(),linea.longValue())
+                .header("Authorization","Bearer "+supervisor))
+            .andExpect(status().isForbidden());
+        mvc.perform(post("/api/v1/pedidos/{id}/detalles/{linea}/listo",
+                id.longValue(),linea.longValue())
+                .header("Authorization","Bearer "+mozo))
+            .andExpect(status().isForbidden());
+        mvc.perform(get("/api/v1/pedidos/{id}",id.longValue())
+                .header("Authorization","Bearer "+admin))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.items[0].estadoPreparacion").value("PENDIENTE"));
+        mvc.perform(post("/api/v1/pedidos/{id}/detalles/{linea}/listo",
+                id.longValue(),linea.longValue())
+                .header("Authorization","Bearer "+cocinero))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.items[0].estadoPreparacion").value("LISTO"));
+        mvc.perform(get("/api/v1/pedidos/{id}",id.longValue())
+                .header("Authorization","Bearer "+admin))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.items[0].estadoPreparacion").value("LISTO"));
+    }
+
     private String iniciar(String correo, String pass) throws Exception {
         String json = "{\"correo\":\""+correo+"\",\"password\":\""+pass+"\"}";
         String response = mvc.perform(post("/api/auth/login")
