@@ -28,8 +28,8 @@ La autorización se verifica en **Spring Security**; los menús ocultos son solo
 2. Accede a `http://localhost:8081/soa-demo/index.html`.
 3. Inicia sesión como MOZO: `mozo.demo@delicias.local` con la contraseña temporal.
 4. Ve a **Pedidos**, selecciona `MESA`, Mesa #1. Elige Lomo Saltado (1 porción) y pulsa **+ Añadir plato a esta orden**; después añade Ají de Gallina (1 porción).
-5. Comprueba los dos platos en el carrito y pulsa **Registrar pedido** (HTTP 201). La Mesa #1 queda OCUPADA. El pedido contiene dos líneas con IDs independientes. El mismo flujo puede probarse vía Postman con `{"tipoAtencion":"MESA","mesaId":1,"items":[{"productoId":1,"cantidad":1},{"productoId":2,"cantidad":1}]}`.
-6. Consulta **Pedidos**: Mesa #1 queda OCUPADA. El mozo confirma la orden.
+5. Comprueba los dos platos en el carrito y pulsa **Enviar pedido a Cocina** (POST `/api/v1/pedidos/envio`, HTTP 201). Esta operación atómica **registra y confirma** la orden; no hace falta pulsar otro botón. La Mesa #1 queda OCUPADA. El mismo flujo puede probarse vía Postman con `{"tipoAtencion":"MESA","mesaId":1,"items":[{"productoId":1,"cantidad":1},{"productoId":2,"cantidad":1}]}` y cabecera `Idempotency-Key`.
+6. En **Pedidos**, haz clic en la tarjeta **Mesa #1 · OCUPADA · Ver comanda**. Comprueba el visor: platos, preparación, tiempos, subtotales, total y botones **Agregar platos / bebidas**, **Marcar ENTREGADO** (solo cuando Cocina los marque LISTO) y **Cancelar orden** (solo antes de que Cocina comience). No aparece **Cobrar** para el Mozo. El ID y las operaciones HTTP avanzadas se encuentran en **Opciones técnicas APF3**.
 7. Inicia sesión COCINERO: `cocinero.demo@delicias.local`. En **Cocina**, marca cada uno de los platos por separado como LISTO.
 8. Inicia sesión CAJA: `caja.demo@delicias.local`. En **Caja y cobros**, selecciona el pedido, escribe el monto recibido y cobra.
 9. Se abrirá un **ticket de venta interno**, con platos, total, monto recibido y cambio. En el ticket, elige `Imprimir o guardar como PDF`, y selecciona impresora `Microsoft Print to PDF`.
@@ -39,7 +39,27 @@ La autorización se verifica en **Spring Security**; los menús ocultos son solo
 
 ## Prueba guiada — Pedido libre para llevar
 
-Inicia sesión como MOZO o CAJA. En **Pedidos** selecciona `LLEVAR` y un producto con porciones. El pedido se registra sin `mesaId`, no ocupa ninguna mesa y sigue el mismo flujo Cocina → Caja.
+Inicia sesión como MOZO o CAJA. En **Pedidos** selecciona `LLEVAR` y agrega uno o varios productos con stock. Pulsa **Enviar pedido a Cocina**; el pedido se confirma sin `mesaId`, no ocupa ninguna mesa y aparece en **Órdenes en atención**. Selecciona **Ver comanda / total** para abrir su detalle, ver su estado y añadir platos. Sigue el mismo flujo Cocina → Mozo (entrega) → Caja.
+
+
+## Prueba guiada — Mesa separada con ID y horario
+
+1. Entra como MOZO en **Reservas de mesas**. En el formulario introduce el nombre del cliente, por ejemplo "Cliente de práctica", fecha futura, Mesa ID 2, horas 19:00–20:00 y dos personas; registra la solicitud.
+2. La sección **Mesas separadas · agenda de reservas** muestra una tarjeta **RESERVA #ID**, **Mesa #2**, cliente, fecha, horario, personas y estado real **PENDIENTE**. Debajo queda el historial en tabla con ID y acción autorizada de cancelar.
+3. Si la reserva corresponde al día actual, la cuadrícula de **Pedidos** indica debajo de la mesa **RESERVA #ID · 19:00–20:00**, sin marcarla ocupada automáticamente.
+4. Prueba un horario solapado sobre la misma mesa y fecha: debe responder **HTTP 409**, y no duplicar la reserva.
+5. PENDIENTE significa **solicitud registrada, no reserva confirmada**. El estado OCUPADA corresponde a un pedido de atención activo y es independiente del horario de la reserva. No afirmaremos que existe un proceso de confirmación de reservas si no se implementó.
+
+## Cambio en la interfaz del Mozo
+
+- Selecciona cualquier mesa: si está **DISPONIBLE** aparece el formulario **Tomar orden**, con buscador de platos, carrito y botón único **Enviar pedido a Cocina**.
+- Si está **OCUPADA** sigue siendo seleccionable, pero abre su comanda existente (evita crear un segundo pedido). Se ven platos, estado PENDIENTE/LISTO/ENTREGADO, tiempo y total.
+- Para **LLEVAR**, se crea una orden sin mesa y se abre con **Ver comanda / total**.
+- Se sincronizan pedidos, estados de mesa y agenda de reservas cada cinco segundos mediante consultas REST. No es WebSocket ni tiempo real instantáneo.
+- Para mostrar la idempotencia HTTP 200 o confirmar una orden antigua PENDIENTE, abre la sección plegable **Opciones técnicas APF3**.
+- La cancelación de CONFIRMADO se admite únicamente para personal autorizado si **todos** sus platos están todavía PENDIENTES de preparación. Si alguno está LISTO o ENTREGADO, el servidor responde 409 y se necesita una devolución supervisada que no está implementada en este prototipo.
+
+**Evidencias sugeridas:** `SOA_APF3_45_Mesa_Ocupada_Comanda.png`, `SOA_APF3_46_Tomar_Orden_Un_Paso.png`, `SOA_APF3_47_Orden_Para_Llevar.png`, `SOA_APF3_48_Reservas_Tarjetas_ID_Horario.png` (capturas reales desde el navegador y sin JWT visible).
 
 ## Disponibilidad y porciones
 
