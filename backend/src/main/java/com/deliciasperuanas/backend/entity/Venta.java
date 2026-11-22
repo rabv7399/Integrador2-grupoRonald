@@ -21,6 +21,15 @@ public class Venta {
     @Column(nullable=false, precision=12, scale=2)
     private BigDecimal total;
 
+    @Column(name="subtotal_base",nullable=false,precision=12,scale=2)
+    private BigDecimal subtotalBase=BigDecimal.ZERO;
+
+    @Column(name="recargo_pos",nullable=false,precision=12,scale=2)
+    private BigDecimal recargoPos=BigDecimal.ZERO;
+
+    @Column(name="recargo_informado_aceptado",nullable=false)
+    private boolean recargoInformadoAceptado=false;
+
     @Column(name="monto_recibido", nullable=false, precision=12, scale=2)
     private BigDecimal montoRecibido;
 
@@ -44,6 +53,12 @@ public class Venta {
     public void setPedido(Pedido p){pedido=p;}
     public String getNumeroComprobante(){return numeroComprobante;}
     public void setNumeroComprobante(String x){numeroComprobante=x;}
+    public BigDecimal getSubtotalBase(){return subtotalBase;}
+    public void setSubtotalBase(BigDecimal v){subtotalBase=v;}
+    public BigDecimal getRecargoPos(){return recargoPos;}
+    public void setRecargoPos(BigDecimal v){recargoPos=v;}
+    public boolean isRecargoInformadoAceptado(){return recargoInformadoAceptado;}
+    public void setRecargoInformadoAceptado(boolean v){recargoInformadoAceptado=v;}
     public BigDecimal getTotal(){return total;}
     public void setTotal(BigDecimal x){total=x;}
     public BigDecimal getMontoRecibido(){return montoRecibido;}

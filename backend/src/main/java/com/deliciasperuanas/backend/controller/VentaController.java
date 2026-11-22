@@ -26,6 +26,12 @@ public class VentaController {
         return servicio.consultarPorPedido(pedidoId);
     }
 
+    @GetMapping("/pedidos/{pedidoId}/cotizacion")
+    public Map<String,Object> cotizar(@PathVariable Long pedidoId,
+            @RequestParam(defaultValue="EFECTIVO") String medioPago){
+        return servicio.cotizar(pedidoId,medioPago);
+    }
+
     @GetMapping("/resumen")
     public Map<String,Object> resumen(@RequestParam(required=false)
         @DateTimeFormat(iso=DateTimeFormat.ISO.DATE) LocalDate fecha){

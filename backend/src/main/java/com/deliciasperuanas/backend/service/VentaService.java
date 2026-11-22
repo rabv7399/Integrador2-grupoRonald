@@ -8,6 +8,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.time.YearMonth;
 import java.util.*;
@@ -26,6 +27,32 @@ public class VentaService {
         this.configuracion=configuracion;this.cierres=cierres;
     }
 
+    // Regla comercial del prototipo: POS = subtotal * 1.04 y techo al siguiente S/ 0.50.
+    // No se altera el precio del plato; el recargo se registra por separado.
+    public static BigDecimal totalPos(BigDecimal subtotal){
+        if(subtotal==null||subtotal.signum()<0)throw new IllegalArgumentException("Subtotal inválido");
+        BigDecimal bruto=subtotal.multiply(new BigDecimal("1.04"));
+        return bruto.multiply(new BigDecimal("2")).setScale(0,RoundingMode.CEILING)
+            .divide(new BigDecimal("2"),2,RoundingMode.UNNECESSARY);
+    }
+
+    @Transactional(readOnly=true)
+    public Map<String,Object> cotizar(Long pedidoId,String medioPago){
+        Pedido p=pedidos.findById(pedidoId).orElseThrow(()->
+            error(HttpStatus.NOT_FOUND,"PEDIDO_NO_ENCONTRADO","El pedido no existe"));
+        String metodo=medioPago==null?"EFECTIVO":medioPago.trim().toUpperCase(Locale.ROOT);
+        if(!List.of("EFECTIVO","YAPE","POS","TRANSFERENCIA").contains(metodo))
+            throw error(HttpStatus.BAD_REQUEST,"MEDIO_PAGO_INVALIDO","Medio de pago no reconocido");
+        BigDecimal total="POS".equals(metodo)?totalPos(p.getTotal()):p.getTotal();
+        Map<String,Object> detalle=new LinkedHashMap<>();
+        detalle.put("pedidoId",p.getId());detalle.put("estado",p.getEstado());
+        detalle.put("medioPago",metodo);detalle.put("subtotalBase",p.getTotal());
+        detalle.put("recargoPos",total.subtract(p.getTotal()));detalle.put("totalCobro",total);
+        detalle.put("tasaPos","0.04");detalle.put("reglaRedondeoPos","TECHO_A_0_50");
+        detalle.put("aviso","POS incluye recargo 4% y redondeo hacia arriba a S/ 0.50; informar antes de cobrar.");
+        return detalle;
+    }
+
     @Transactional
     public VentaRespuesta cobrar(Long pedidoId,BigDecimal recibido){
         return cobrar(pedidoId,new CobroSolicitud(recibido),"sistema");
@@ -37,12 +64,12 @@ public class VentaService {
             throw error(HttpStatus.BAD_REQUEST,"PAGO_INVALIDO","Indica el medio de pago");
         String metodo=solicitud.medioPago()==null?"EFECTIVO":
             solicitud.medioPago().trim().toUpperCase(Locale.ROOT);
-        if(!List.of("EFECTIVO","YAPE","POS").contains(metodo))
-            throw error(HttpStatus.BAD_REQUEST,"MEDIO_PAGO_INVALIDO","Elige EFECTIVO, YAPE o POS");
+        if(!List.of("EFECTIVO","YAPE","POS","TRANSFERENCIA").contains(metodo))
+            throw error(HttpStatus.BAD_REQUEST,"MEDIO_PAGO_INVALIDO","Elige EFECTIVO, YAPE, POS o TRANSFERENCIA");
         String referencia=solicitud.referenciaPago()==null?"":solicitud.referenciaPago().trim();
         if(!"EFECTIVO".equals(metodo) && (referencia.length()<4||referencia.length()>80))
             throw error(HttpStatus.BAD_REQUEST,"REFERENCIA_PAGO_REQUERIDA",
-                "Para YAPE/POS indica el código de operación o voucher (4 a 80 caracteres)");
+                "Para YAPE, POS o TRANSFERENCIA indica el código de operación (4 a 80 caracteres)");
         if(!"EFECTIVO".equals(metodo) &&
              ventas.existsByMedioPagoAndReferenciaPago(metodo,referencia))
             throw error(HttpStatus.CONFLICT,"REFERENCIA_PAGO_REUTILIZADA",
@@ -64,7 +91,12 @@ public class VentaService {
             throw error(HttpStatus.CONFLICT,"PLATOS_PENDIENTES",
                 "Cocina todavía tiene platos sin marcar como LISTO");
 
-        BigDecimal total=pedido.getTotal();
+        if("POS".equals(metodo)&&!Boolean.TRUE.equals(solicitud.recargoInformadoAceptado()))
+            throw error(HttpStatus.BAD_REQUEST,"RECARGO_POS_NO_ACEPTADO",
+                "El recargo POS del 4% y su redondeo deben informarse y aceptarse antes del cobro");
+        BigDecimal subtotalBase=pedido.getTotal();
+        BigDecimal total="POS".equals(metodo)?totalPos(subtotalBase):subtotalBase;
+        BigDecimal recargoPos=total.subtract(subtotalBase);
         BigDecimal recibido;
         BigDecimal cambio;
         if("EFECTIVO".equals(metodo)){
@@ -84,6 +116,9 @@ public class VentaService {
         Venta venta=new Venta();
         venta.setPedido(pedido);
         venta.setTotal(total);
+        venta.setSubtotalBase(subtotalBase);
+        venta.setRecargoPos(recargoPos);
+        venta.setRecargoInformadoAceptado("POS".equals(metodo));
         venta.setMontoRecibido(recibido);
         venta.setCambio(cambio);
         venta.setMedioPago(metodo);
@@ -136,6 +171,12 @@ public class VentaService {
         datos.put("ventasHoy",sumar(dia)); // compatibilidad de dashboard anterior
         datos.put("ventasFecha",sumar(dia));
         datos.put("ventasMensuales",sumar(mesVentas));
+        datos.put("subtotalPlatosDia",sumarBase(dia));
+        datos.put("recargosPosDia",sumarRecargos(dia));
+        datos.put("subtotalPlatosMes",sumarBase(mesVentas));
+        datos.put("recargosPosMes",sumarRecargos(mesVentas));
+        datos.put("mediosCuadrados",sumar(dia).compareTo(
+            totalMetodoDia.values().stream().reduce(BigDecimal.ZERO,BigDecimal::add))==0);
         datos.put("porMedioDia",totalMetodoDia);
         datos.put("porMedioMes",totalMetodoMes);
         datos.put("efectivoEsperado",totalMetodoDia.get("EFECTIVO"));
@@ -179,9 +220,16 @@ public class VentaService {
 
     private Map<String,BigDecimal> totalesMetodo(List<Venta> data){
         Map<String,BigDecimal> res=new LinkedHashMap<>();
-        for(String medio:List.of("EFECTIVO","YAPE","POS"))res.put(medio,BigDecimal.ZERO);
+        for(String medio:List.of("EFECTIVO","YAPE","POS","TRANSFERENCIA"))res.put(medio,BigDecimal.ZERO);
         for(Venta v:data)res.merge(v.getMedioPago(),v.getTotal(),BigDecimal::add);
         return res;
+    }
+
+    private BigDecimal sumarBase(List<Venta> lista){
+        return lista.stream().map(Venta::getSubtotalBase).reduce(BigDecimal.ZERO,BigDecimal::add);
+    }
+    private BigDecimal sumarRecargos(List<Venta> lista){
+        return lista.stream().map(Venta::getRecargoPos).reduce(BigDecimal.ZERO,BigDecimal::add);
     }
 
     private BigDecimal sumar(List<Venta> lista){
@@ -201,6 +249,7 @@ public class VentaService {
         r.put("tipoAtencion",v.getPedido().getTipoAtencion());
         r.put("mesaId",v.getPedido().getMesaId());
         r.put("medioPago",v.getMedioPago());r.put("total",v.getTotal());
+        r.put("subtotalBase",v.getSubtotalBase());r.put("recargoPos",v.getRecargoPos());
         r.put("referenciaPago",v.getReferenciaPago());
         r.put("cajeroCorreo",v.getCajeroCorreo());
         return r;
@@ -219,7 +268,8 @@ public class VentaService {
             v.getTotal(),v.getMontoRecibido(),v.getCambio(),v.getFechaPago(),
             v.getMedioPago(),items,
             "COMPROBANTE INTERNO ACADÉMICO — NO ES BOLETA NI FACTURA TRIBUTARIA",
-            v.getReferenciaPago(),v.getCajeroCorreo());
+            v.getReferenciaPago(),v.getCajeroCorreo(),v.getSubtotalBase(),
+            v.getRecargoPos(),v.isRecargoInformadoAceptado());
     }
 
     private OperacionNegocioException error(HttpStatus s,String c,String m){

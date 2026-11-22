@@ -9,5 +9,6 @@ public record VentaRespuesta(
   String restaurante,String telefono,BigDecimal total,
   BigDecimal montoRecibido,BigDecimal cambio,LocalDateTime fechaPago,
   String medioPago,List<PedidoRespuesta.Item> items,String aviso,
-  String referenciaPago,String cajeroCorreo
+  String referenciaPago,String cajeroCorreo,
+  BigDecimal subtotalBase,BigDecimal recargoPos,boolean recargoInformadoAceptado
 ) {}

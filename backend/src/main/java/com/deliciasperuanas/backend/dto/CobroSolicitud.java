@@ -7,10 +7,13 @@ import java.math.BigDecimal;
 public record CobroSolicitud(
     @DecimalMin("0.01") BigDecimal montoRecibido,
     String medioPago,
-    @Size(max=80) String referenciaPago
+    @Size(max=80) String referenciaPago,
+    Boolean recargoInformadoAceptado
 ) {
-    // Los clientes antiguos que solo mandan montoRecibido siguen pagando en EFECTIVO.
     public CobroSolicitud(BigDecimal montoRecibido) {
-        this(montoRecibido,"EFECTIVO",null);
+        this(montoRecibido,"EFECTIVO",null,false);
+    }
+    public CobroSolicitud(BigDecimal montoRecibido,String medioPago,String referenciaPago) {
+        this(montoRecibido,medioPago,referenciaPago,false);
     }
 }
