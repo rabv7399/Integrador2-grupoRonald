@@ -164,6 +164,184 @@
     }
   });
 
+  // Foco operativo: un Mozo abre una mesa ocupada igual que una comanda de Botanero,
+  // sin necesitar escribir un ID de pedido. El mismo visor sirve para llevar.
+  let mesasEnPantalla=[];
+  let pedidosEnPantalla=[];
+  let mesaElegida=null;
+  let pedidoElegido=null;
+  let editorEstado='nuevo'; // nuevo, consulta, agregar
+
+  function activa(p){return p.estado==='PENDIENTE'||p.estado==='CONFIRMADO';}
+  function pedidoDeMesa(mesaId){
+    return pedidosEnPantalla.find(p=>activa(p)&&p.tipoAtencion==='MESA'&&Number(p.mesaId)===Number(mesaId));
+  }
+  function pedidoFoco(){
+    if(e('orderType').value==='MESA')return pedidoDeMesa(mesaElegida);
+    return pedidosEnPantalla.find(p=>activa(p)&&p.tipoAtencion==='LLEVAR'&&
+       Number(p.pedidoId)===Number(pedidoElegido));
+  }
+  function etiquetaMesa(mesaId){
+    const mesa=mesasEnPantalla.find(m=>Number(m.id)===Number(mesaId));
+    return mesa?'Mesa #'+mesa.numero:'Mesa #'+mesaId;
+  }
+  function seleccionarPedidoOperativo(p,desplazar=true){
+    pedidoElegido=Number(p.pedidoId);
+    editorEstado='consulta';
+    if(p.tipoAtencion==='MESA'){
+      e('orderType').value='MESA';
+      mesaElegida=Number(p.mesaId);
+    }else{
+      e('orderType').value='LLEVAR';
+    }
+    modoMesa();
+    if(p.tipoAtencion==='MESA')e('orderTable').value=String(p.mesaId);
+    e('orderId').value=p.pedidoId;
+    visualizarOrdenSeleccionada();
+    if(desplazar)e('orderWorkspaceTitle').scrollIntoView({behavior:'smooth',block:'start'});
+  }
+  function seleccionarMesaOperativa(mesa,desplazar=true){
+    e('orderType').value='MESA';
+    modoMesa();
+    mesaElegida=Number(mesa.id);
+    pedidoElegido=null;
+    editorEstado='nuevo';
+    e('orderTable').value=String(mesa.id);
+    visualizarOrdenSeleccionada();
+    document.querySelectorAll('.mesa-button').forEach(b=>b.classList.toggle('seleccionada',
+      b.dataset.mesaId===String(mesaElegida)));
+    if(desplazar)e('orderWorkspaceTitle').scrollIntoView({behavior:'smooth',block:'start'});
+  }
+  function detallePlato(item,p){
+    const linea=elemento('div',undefined,'ops-focused-line');
+    const nombre=elemento('div',undefined,'ops-focused-description');
+    nombre.append(elemento('strong',item.cantidad+' × '+item.nombre),
+      elemento('small','Precio: '+moneda(item.precioUnitario)+' · Subtotal: '+moneda(item.subtotal)));
+    const estadoPlato=badgeEstado(item.estadoPreparacion);
+    const tiempo=elemento('small','Tiempo: —','ops-age');
+    tiempo.dataset.inicioPlato=item.fechaInicio||p.fechaCreacion;
+    if(item.fechaListo)tiempo.dataset.finPlato=item.fechaListo;
+    linea.append(nombre,estadoPlato,tiempo);
+    if(['MOZO','SUPERVISOR','ADMIN','OPERADOR'].includes(rol) &&
+        p.estado==='CONFIRMADO'&&item.estadoPreparacion==='LISTO'){
+      linea.append(boton('✓ Marcar ENTREGADO',async()=>{
+        const url='/api/v1/pedidos/'+p.pedidoId+'/detalles/'+item.detalleId+'/entregado';
+        const resultado=await api(url,'POST');
+        mostrar('POST '+url,resultado);
+        if(resultado.ok){pedidosEnPantalla=pedidosEnPantalla.map(x=>
+          x.pedidoId===p.pedidoId?resultado.data:x);visualizarOrdenSeleccionada();
+          await refrescarOperaciones();}
+      },'primary'));
+    }
+    return linea;
+  }
+  function visualizarOrdenSeleccionada(){
+    if(!token||!e('selectedOrderDetails'))return;
+    const modo=e('orderType').value;
+    const p=pedidoFoco();
+    const mesa=mesasEnPantalla.find(m=>Number(m.id)===Number(mesaElegida));
+    const mesaOcupada=modo==='MESA'&&mesa?.estado==='OCUPADA';
+    const visor=e('selectedOrderDetails');
+    visor.replaceChildren();
+    e('orderWorkspaceTitle').textContent=modo==='MESA'
+      ? etiquetaMesa(mesaElegida||Number(e('orderTable').value))+(mesaOcupada?' · comanda abierta':' · tomar orden')
+      : (p?'Pedido para llevar #'+p.pedidoId:'Nuevo pedido para llevar');
+    e('orderWorkspaceHint').textContent=p
+      ? 'Consulta el estado y total de la orden sin cobrar desde Mozo'
+      : modo==='MESA'?'Selecciona platos y envíalos directamente a Cocina':'No se asignará ninguna mesa';
+    const puedeCrear=!p && !mesaOcupada;
+    const agregar=!!p && editorEstado==='agregar';
+    e('orderEntry').hidden=!(puedeCrear||agregar);
+    e('newOrderActions').hidden=!puedeCrear;
+    e('addToExistingActions').hidden=!agregar;
+    e('orderFlowHelp').textContent=agregar
+      ? 'Estos productos se sumarán al pedido #'+p.pedidoId+'. El total se recalcula y Cocina los verá pendientes.'
+      : 'Selecciona los productos y pulsa «Enviar pedido a Cocina». Registrar y confirmar son una sola acción.';
+
+    if(!p){
+      if(mesaOcupada){
+        visor.hidden=false;
+        visor.append(elemento('p','Mesa ocupada; cargando su comanda. Si permanece vacía, comprueba el último pedido en el servidor.','ops-empty'));
+      }else visor.hidden=true;
+      return;
+    }
+    visor.hidden=false;
+    e('orderId').value=p.pedidoId;
+    const cabeza=elemento('div',undefined,'ops-focus-head');
+    cabeza.append(elemento('div',undefined,'ops-focus-title'),badgeEstado(p.estado));
+    const titulo=cabeza.firstChild;
+    titulo.append(elemento('h3',modo==='MESA'?etiquetaMesa(p.mesaId):'Pedido #'+p.pedidoId+' · PARA LLEVAR'),
+      elemento('small','Comanda #'+p.pedidoId+' · '+fechaCorta(p.fechaCreacion)+' · '+(p.clienteCorreo||'Personal')));
+    visor.append(cabeza);
+    const filas=elemento('div',undefined,'ops-focused-lines');
+    for(const item of p.items||[])filas.append(detallePlato(item,p));
+    visor.append(filas);
+    const pie=elemento('div',undefined,'ops-focus-total');
+    pie.append(elemento('span','TOTAL DE LA ORDEN'),
+      elemento('strong',moneda(p.total)));
+    visor.append(pie);
+    const acciones=elemento('div',undefined,'buttons ops-focus-actions');
+    if(['MOZO','CAJA','SUPERVISOR','ADMIN','OPERADOR'].includes(rol)){
+      acciones.append(boton(editorEstado==='agregar'?'Editando platos':' + Agregar platos / bebidas',()=>{
+        editorEstado='agregar';visualizarOrdenSeleccionada();
+        e('orderProduct').scrollIntoView({behavior:'smooth',block:'center'});
+      },'primary'));
+      if(p.estado==='PENDIENTE')acciones.append(boton('Enviar pendiente a Cocina',async()=>{
+        const url='/api/v1/pedidos/'+p.pedidoId+'/confirmacion';
+        const res=await api(url,'POST');mostrar('POST '+url,res);
+        if(res.ok){pedidosEnPantalla=pedidosEnPantalla.map(x=>x.pedidoId===p.pedidoId?res.data:x);
+          visualizarOrdenSeleccionada();await refrescarOperaciones();}
+      }));
+      if((p.items||[]).every(x=>x.estadoPreparacion==='PENDIENTE')){
+        acciones.append(boton('Cancelar orden',async()=>{
+          if(!confirm('¿Cancelar la orden #'+p.pedidoId+'? Se liberará la mesa y el stock comprometido.'))return;
+          const url='/api/v1/pedidos/'+p.pedidoId+'/cancelacion';
+          const res=await api(url,'POST');mostrar('POST '+url,res);
+          if(res.ok){
+            pedidosEnPantalla=pedidosEnPantalla.map(x=>x.pedidoId===p.pedidoId?res.data:x);
+            pedidoElegido=null;editorEstado='nuevo';
+            visualizarOrdenSeleccionada();await refrescarOperaciones();
+          }
+        },'danger'));
+      }
+    }
+    visor.append(acciones);
+    const note=elemento('p','Cocina marca LISTO; el Mozo registra ENTREGADO. El cobro corresponde a Caja.','ops-focus-note');
+    visor.append(note);
+    relojActivos();
+  }
+  e('stopAddingItems').addEventListener('click',()=>{
+    editorEstado='consulta';visualizarOrdenSeleccionada();
+  });
+  window.seleccionarMesaOperativa=seleccionarMesaOperativa;
+  window.mesaOperativaSeleccionada=()=>mesaElegida;
+  window.mesasSincronizadas=mesas=>{
+    mesasEnPantalla=mesas;
+    if(mesaElegida===null && e('orderType').value==='MESA')
+      mesaElegida=Number(e('orderTable').value)||Number(mesas[0]?.id)||null;
+    if(moduloActual()==='orders')visualizarOrdenSeleccionada();
+  };
+  window.modalidadPedidoCambiada=tipo=>{
+    editorEstado='nuevo';pedidoElegido=null;
+    if(tipo==='MESA'){
+      mesaElegida=Number(e('orderTable').value)||mesaElegida||null;
+    }
+    visualizarOrdenSeleccionada();
+  };
+  window.pedidoEnviadoOperativo=p=>{
+    pedidosEnPantalla=pedidosEnPantalla.filter(x=>x.pedidoId!==p.pedidoId);
+    pedidosEnPantalla.unshift(p);
+    pedidoElegido=Number(p.pedidoId);
+    if(p.tipoAtencion==='MESA')mesaElegida=Number(p.mesaId);
+    editorEstado='consulta';
+    visualizarOrdenSeleccionada();
+  };
+  window.limpiarVistaPedidos=()=>{
+    mesaElegida=null;pedidoElegido=null;editorEstado='nuevo';
+    pedidosEnPantalla=[];mesasEnPantalla=[];
+    if(e('selectedOrderDetails'))e('selectedOrderDetails').replaceChildren();
+  };
+
   function tarjetaPedido(p){
     const card=elemento('article',undefined,'ops-order-card');
     const cabeza=elemento('div',undefined,'ops-order-head');
@@ -193,12 +371,7 @@
     }
     card.append(lista);
     const acciones=elemento('div',undefined,'buttons ops-order-actions');
-    acciones.append(boton('Seleccionar',()=>{
-      e('orderId').value=p.pedidoId;
-      ultimaOrdenElegida=p.pedidoId;
-      e('ordersSyncStatus').textContent='Seleccionado: pedido #'+p.pedidoId;
-      e('orderLines').scrollIntoView({behavior:'smooth',block:'nearest'});
-    }));
+    acciones.append(boton('Ver comanda / total',()=>seleccionarPedidoOperativo(p), 'outline'));
     if(p.estado==='PENDIENTE'){
       acciones.append(boton('Confirmar',async()=>{
         const url='/api/v1/pedidos/'+p.pedidoId+'/confirmacion';
@@ -226,11 +399,13 @@
       return;
     }
     for(const p of activos)lista.append(tarjetaPedido(p));
+    visualizarOrdenSeleccionada();
     relojActivos();
   }
   async function actualizarPedidos(){
     const r=await api('/api/v1/pedidos');
     if(!r.ok||!Array.isArray(r.data)||moduloActual()!=='orders'||!token)return;
+    pedidosEnPantalla=r.data;
     pintarPedidos(r.data);
     if(['ADMIN','CAJA','MOZO','SUPERVISOR','OPERADOR'].includes(rol))
       await Promise.all([cargarMesas(),consultarDisponibilidad()]);
@@ -249,6 +424,9 @@
       mostrar('POST '+url,r);
       if(r.ok){
         carritoPlatos=[];pintarCarrito();
+        pedidosEnPantalla=pedidosEnPantalla.map(x=>x.pedidoId===id?r.data:x);
+        editorEstado='consulta';pedidoElegido=id;
+        visualizarOrdenSeleccionada();
         e('ordersSyncStatus').textContent='Se agregaron platos al pedido #'+id;
         await refrescarOperaciones();
       }
