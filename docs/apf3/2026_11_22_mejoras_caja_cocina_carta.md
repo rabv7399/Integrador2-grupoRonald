@@ -79,6 +79,18 @@ La fecha comercial se interpreta usando la zona horaria **America/Lima** incluso
 
 **Ecuación de verificación:** suma subtotales por producto + recargos POS = total de ingresos del día; Efectivo + Yape + POS + Transferencia = mismo total. Mermas y salidas NO se contabilizan como ingreso.
 
+## Ajuste final de usabilidad: platos compactos y Cocina en lectura para Administrador
+
+Tras revisión visual de la interfaz, se sustituyó el formulario expandido de CADA plato por una **fila resumida**: nombre y cantidad, precio/subtotal, estado, cronómetro y botón **Editar plato**. La observación existente queda visible en una etiqueta breve. Al pulsar Editar plato se despliegan los controles de observación, cantidad y anulación solo para ese plato. **Únicamente puede estar expandido un plato cada vez**; al guardar se contrae. El sondeo REST cada cinco segundos conserva la selección abierta y no interrumpe la escritura en los campos con foco. Se aplicó diseño adaptable a móvil.
+
+**Cocina** también se compactó: una tarjeta por comanda con total de pendientes/terminados y una fila para cada plato pendiente, con la observación resaltada. ADMIN y SUPERVISOR consultan el seguimiento en **solo lectura**, sin opción de marcar LISTO. **Únicamente COCINERO** puede pulsar Marcar LISTO: validación doble en Spring Security y Servicio Pedido (POST `/api/v1/pedidos/{id}/detalles/{detalleId}/listo`). Admin, Supervisor, Mozo y otros roles obtienen **HTTP 403**. El Mozo conserva el permiso exclusivo de marcar ENTREGADO; Caja no manipula estados de cocina.
+
+Evidencias de interfaz a tomar en el programa real:
+- `SOA_APF3_64_Mozo_Comanda_Compacta.png`: una comanda con dos o más platos y los controles contraídos.
+- `SOA_APF3_65_Mozo_Editar_Plato_Desplegable.png`: expansión de un solo plato con observación/cantidad/anulación.
+- `SOA_APF3_66_Admin_Cocina_Solo_Lectura.png`: Administración visualiza pendientes SIN botón Marcar LISTO.
+- `SOA_APF3_67_Cocinero_Cocina_Marcar_Listo.png`: idéntica comanda, el Cocinero SÍ puede marcar LISTO.
+
 ## CRUD por plato: observaciones, cantidades y anulación individual (Mozo)
 
 Cada línea de una orden tiene ID propio, cantidad, precio fijado cuando se creó, observación opcional de Cocina y estado `PENDIENTE`, `LISTO`, `ENTREGADO` o `ANULADO`. Ejemplo real de demostración: **Mesa #1 · 2 × Lomo Saltado**, con dos líneas independientes: «Bajo en sal» y «Sin cebolla». El backend separa líneas que tengan el mismo producto pero **distinta observación**. La observación viaja junto con `POST /api/v1/pedidos/envio`, por lo que Cocina la recibe desde el momento del envío.
