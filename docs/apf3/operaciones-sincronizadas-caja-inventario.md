@@ -8,7 +8,7 @@ Sistema monolítico modular Spring Boot con servicios REST/JSON S01 Identidad, S
 
 ## Flujos por rol
 
-**MOZO** registra un pedido \`MESA\` (ocupa la mesa) o \`LLEVAR\` (sin mesa), confirma y consulta su estado. El panel de **Órdenes en atención** muestra el pedido, subtotal por línea, monto total, estado, tiempo de espera y botones permitidos. Puede añadir platos a un pedido PENDIENTE o CONFIRMADO mediante un POST con \`Idempotency-Key\`. Puede cancelar solo PENDIENTE. Un plato marcado LISTO por Cocina se puede marcar ENTREGADO. **Mozo no cobra**.
+**MOZO** elige una mesa libre o \`LLEVAR\`, añade platos y pulsa **Enviar pedido a Cocina**; el backend lo crea y confirma atómicamente. Puede abrir una mesa ocupada para consultar sus platos, importe y estado, sin escribir el ID. El panel de **Órdenes en atención** muestra el pedido, subtotal por línea, monto total, estado, tiempo de espera y botones permitidos. Puede añadir platos a un pedido PENDIENTE o CONFIRMADO mediante un POST con \`Idempotency-Key\`. Puede cancelar PENDIENTE o CONFIRMADO si todos los platos aún están PENDIENTES de preparación; los pedidos cobrados o con platos LISTOS/ENTREGADOS no se anulan por este flujo. Un plato marcado LISTO por Cocina se puede marcar ENTREGADO. **Mozo no cobra**.
 
 **COCINERO** consulta las comandas PENDIENTES y CONFIRMADAS. Cuando la cocina prepara un plato, lo marca LISTO y se guarda \`fechaListo\`. No puede entregar, modificar stock ni cobrar.
 
@@ -17,6 +17,14 @@ Sistema monolítico modular Spring Boot con servicios REST/JSON S01 Identidad, S
 **ADMIN** ve todas las cantidades por producto en una tabla: preparado, reservado, vendido y disponible. Puede reponer, modificar el total y registrar salida justificada (motivo de al menos cinco caracteres), sin retirar existencias comprometidas. Las entradas, salidas y ajustes quedan en \`movimientos_inventario\` con usuario/fecha/motivo. CAJA y SUPERVISOR reponen y consultan auditoría; MOZO solo consulta stock, no lo modifica.
 
 **CLIENTE** ve carta pública y solicita reservas PENDIENTES. Las reservas son solicitudes, no asignaciones automáticas confirmadas. Solo el personal autorizado consulta el listado global. Superposición de horarios devuelve 409. No se expone ese listado al cliente.
+
+## Atención por mesa y reservas con ID
+
+**Una operación para el Mozo:** `POST /api/v1/pedidos/envio` + `Idempotency-Key` ejecuta registro y confirmación dentro de una única transacción. La API previa `POST /api/v1/pedidos` + `POST /api/v1/pedidos/{id}/confirmacion` se conserva para escenarios REST y demostración académica, pero está oculta en **Opciones técnicas APF3**.
+
+En Pedidos, las tarjetas de mesas **DISPONIBLE** abren **Tomar orden**, con búsqueda de platos y carrito. Las **OCUPADA** abren la comanda existente mostrando cada línea, tiempo, estado, subtotal y total. No permiten duplicar pedido ni presentan opción de cobrar. En modalidad **PARA LLEVAR** se utilizan las mismas tarjetas de comanda sin `mesaId`.
+
+En Reservas, el personal ve tarjetas **Reserva #ID · Mesa · Cliente · Fecha · Inicio-Fin · Personas · PENDIENTE** y una tabla de historial. El ID procede de la API. Las reservas del día se indican también bajo la tarjeta correspondiente de mesa, **sin confundir agenda de reserva con ocupación actual**. Actualmente PENDIENTE es una solicitud, no una confirmación de reserva. Los clientes no pueden consultar el listado global.
 
 ## Sincronización
 
