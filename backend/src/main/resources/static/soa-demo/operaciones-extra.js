@@ -252,6 +252,8 @@
       b.dataset.mesaId===String(mesaElegida)));
     if(desplazar)e('orderWorkspaceTitle').scrollIntoView({behavior:'smooth',block:'start'});
   }
+  // Solo un plato expandido a la vez; el refresco REST conserva la elección.
+  let editorPlatoVisible=null;
   function detallePlato(item,p){
     const linea=elemento('div',undefined,'ops-focused-line');
     const nombre=elemento('div',undefined,'ops-focused-description');
@@ -281,14 +283,24 @@
     }
     if(rol==='MOZO'&&['PENDIENTE','CONFIRMADO'].includes(p.estado)&&
        item.estadoPreparacion==='PENDIENTE'){
-      const editor=elemento('div',undefined,'ops-observation-editor');
-      const etiquetar=elemento('label','Observación individual para Cocina (máximo 240 caracteres)');
+      const clave=p.pedidoId+':'+item.detalleId;
+      const abierto=editorPlatoVisible===clave;
+      const alternar=boton(abierto?'Cerrar edición':'Editar plato',()=>{
+        editorPlatoVisible=abierto?null:clave;
+        visualizarOrdenSeleccionada();
+      },'outline ops-plate-toggle');
+      alternar.setAttribute('aria-expanded',String(abierto));
+      alternar.setAttribute('aria-label',(abierto?'Cerrar':'Editar')+' '+item.nombre);
+      linea.append(alternar);
+      if(!abierto)return linea;
+      const editor=elemento('div',undefined,'ops-observation-editor ops-observation-compact');
+      const etiquetar=elemento('label','Indicación para Cocina (opcional)');
       const campo=elemento('input',undefined,'ops-observation-input');
       campo.type='text';campo.maxLength=240;campo.placeholder='Ej.: Bajo en sal, sin cebolla';
       campo.value=item.observacion||'';
       etiquetar.append(campo);
       editor.append(etiquetar);
-      const etiquetaCant=elemento('label','Modificar cantidad de este plato (1 a 20)');
+      const etiquetaCant=elemento('label','Cantidad (1 a 20)');
       const campoCant=elemento('input',undefined,'ops-observation-input ops-qty-input');
       campoCant.type='number';campoCant.min='1';campoCant.max='20';campoCant.step='1';
       campoCant.value=String(item.cantidad);
@@ -301,6 +313,7 @@
         const res=await api(url,'PATCH',{observacion:nueva});
         mostrar('PATCH '+url,res);
         if(res.ok){
+          editorPlatoVisible=null;
           pedidosEnPantalla=pedidosEnPantalla.map(x=>x.pedidoId===p.pedidoId?res.data:x);
           visualizarOrdenSeleccionada();
           if(window.refrescarOperaciones)await refrescarOperaciones();
@@ -315,6 +328,7 @@
         const res=await api(url,'PATCH',{cantidad:nueva});
         mostrar('PATCH '+url,res);
         if(res.ok){
+          editorPlatoVisible=null;
           pedidosEnPantalla=pedidosEnPantalla.map(x=>x.pedidoId===p.pedidoId?res.data:x);
           visualizarOrdenSeleccionada();
           if(window.refrescarOperaciones)await refrescarOperaciones();
@@ -331,6 +345,7 @@
         const res=await api(url,'DELETE',{motivo:motivo.trim()});
         mostrar('DELETE '+url,res);
         if(res.ok){
+          editorPlatoVisible=null;
           pedidosEnPantalla=pedidosEnPantalla.map(x=>x.pedidoId===p.pedidoId?res.data:x);
           if(res.data.estado==='CANCELADO'){
             pedidoElegido=null;editorEstado='nuevo';
@@ -450,6 +465,7 @@
   };
   window.limpiarVistaPedidos=()=>{
     mesaElegida=null;pedidoElegido=null;editorEstado='nuevo';
+    editorPlatoVisible=null;
     pedidosEnPantalla=[];mesasEnPantalla=[];
     if(e('selectedOrderDetails'))e('selectedOrderDetails').replaceChildren();
   };
@@ -556,36 +572,53 @@
 
   function dibujarCocina(pedidos){
     const vista=e('kitchenOrders');vista.replaceChildren();
+    // ADMIN y SUPERVISOR consultan la cola; solo COCINERO puede actualizar LISTO.
+    const soloLectura=rol!=='COCINERO';
+    const aviso=elemento('p',soloLectura
+       ? 'Supervisión de cocina · solo lectura. Solo el Cocinero puede marcar LISTO.'
+       : 'Vista del Cocinero · marca LISTO únicamente cuando termine la preparación.',
+       'ops-kitchen-access-hint');
+    vista.append(aviso);
     const activos=pedidos.filter(p=>p.estado==='CONFIRMADO' &&
       (p.items||[]).some(i=>i.estadoPreparacion==='PENDIENTE'));
-    if(!activos.length){vista.append(elemento('p','No hay platos pendientes de preparación. Las comandas LISTAS o ENTREGADAS salen de esta cola; el cobro sigue en Caja.'));return;}
+    if(!activos.length){
+      vista.append(elemento('p','No hay platos pendientes de preparación. Las órdenes terminadas siguen disponibles en Caja hasta cobrar.','ops-empty'));
+      return;
+    }
     for(const p of activos){
-      const card=elemento('article',undefined,'command-card');
+      const pendientes=(p.items||[]).filter(i=>i.estadoPreparacion==='PENDIENTE');
+      const completados=(p.items||[]).filter(i=>['LISTO','ENTREGADO'].includes(i.estadoPreparacion));
+      const card=elemento('article',undefined,'command-card ops-kitchen-card');
       const cab=elemento('div',undefined,'command-heading');
-      cab.append(elemento('strong','Pedido #'+p.pedidoId+' · '+(p.tipoAtencion==='MESA'?'Mesa '+p.mesaId:'Llevar')),
-                 badgeEstado(p.estado));
+      const encabezado=elemento('div',undefined,'ops-kitchen-headline');
+      encabezado.append(
+        elemento('strong','Pedido #'+p.pedidoId+' · '+(p.tipoAtencion==='MESA'?'Mesa '+p.mesaId:'Para llevar')),
+        elemento('small',pendientes.length+' plato(s) pendientes · '+completados.length+' terminados'));
+      cab.append(encabezado,badgeEstado('PENDIENTE'));
       card.append(cab);
-      const ul=elemento('ul',undefined,'command-items');
-      for(const item of p.items||[]){
-        if(item.estadoPreparacion==='ANULADO')continue;
-        const li=elemento('li',undefined,'ops-cocina-line');
-        const descripcion=elemento('span',item.cantidad+' × '+item.nombre+' · '+item.estadoPreparacion);
-        if(item.observacion){
-          const aviso=elemento('strong','OBSERVACIÓN: '+item.observacion,'ops-kitchen-observation');
-          descripcion.append(document.createTextNode(' '),aviso);
-        }
+      const ul=elemento('ul',undefined,'command-items ops-kitchen-pending-list');
+      for(const item of pendientes){
+        const li=elemento('li',undefined,'ops-kitchen-compact-line');
+        const izquierda=elemento('div',undefined,'ops-kitchen-main');
+        izquierda.append(elemento('strong',item.cantidad+' × '+item.nombre));
+        if(item.observacion)
+          izquierda.append(elemento('small','OBS.: '+item.observacion,'ops-kitchen-short-note'));
         const edad=elemento('small','Tiempo: —','ops-age');
         edad.dataset.inicioPlato=item.fechaInicio||p.fechaCreacion;
         if(item.fechaListo)edad.dataset.finPlato=item.fechaListo;
-        li.append(descripcion,edad);
-        if(p.estado==='CONFIRMADO'&&item.estadoPreparacion==='PENDIENTE'){
-          li.append(boton('Marcar LISTO',async()=>{
+        const controles=elemento('div',undefined,'ops-kitchen-end');
+        controles.append(edad);
+        if(!soloLectura){
+          controles.append(boton('Marcar LISTO',async()=>{
             const url='/api/v1/pedidos/'+p.pedidoId+'/detalles/'+item.detalleId+'/listo';
             const res=await api(url,'POST');
             mostrar('POST '+url,res);
             if(res.ok)await refrescarOperaciones();
           },'primary'));
+        }else{
+          controles.append(elemento('small','Solo lectura','ops-kitchen-readonly'));
         }
+        li.append(izquierda,controles);
         ul.append(li);
       }
       card.append(ul);vista.append(card);
