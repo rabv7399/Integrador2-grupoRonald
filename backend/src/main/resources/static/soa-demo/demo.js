@@ -53,6 +53,7 @@ const MODULOS = {
   stock:{titulo:'Inventario',servicio:'S05',descripcion:'Verifica las porciones preparadas, reservadas y vendidas.'},
   kitchen:{titulo:'Cocina',servicio:'S03',descripcion:'Comandas por plato: pendiente o listo.'},
   sales:{titulo:'Caja y cobros',servicio:'S06',descripcion:'Registra pagos y emite tickets internos.'},
+  salesDaily:{titulo:'Ventas del día',servicio:'S06',descripcion:'Detalle por producto, unidades y total cobrado por fecha.'},
   productsAdmin:{titulo:'Productos · CRUD',servicio:'S02',descripcion:'Agregar, modificar o desactivar platos y bebidas.'},
   categoriesAdmin:{titulo:'Categorías · CRUD',servicio:'S02',descripcion:'Mantener almuerzos, cenas y bebidas.'},
   usersAdmin:{titulo:'Usuarios · CRUD',servicio:'S01',descripcion:'Alta, permisos y baja lógica de usuarios.'},
@@ -145,6 +146,8 @@ function iniciarPanel(){
 function cerrarSesion(){
   if(window.detenerOperaciones)window.detenerOperaciones();
   if(window.limpiarVistaPedidos)window.limpiarVistaPedidos();
+  if(window.limpiarSeleccionCaja)window.limpiarSeleccionCaja('Selecciona un pedido listo para cobrar.');
+  if($('cashReceiptId'))$('cashReceiptId').value='';
   token='';rol='';correoSesion='';
   $('appView').hidden=true;
   $('loginView').hidden=false;
@@ -496,18 +499,8 @@ async function cargarPedidosCaja(){
   if(!pedirSesion())return;
   const resultado=await api('/api/v1/pedidos');
   mostrar('GET /api/v1/pedidos',resultado);
-  if(!resultado.ok || !Array.isArray(resultado.data))return;
-  $('cashOrders').replaceChildren();
-  const activos=resultado.data.filter(p=>['CONFIRMADO','PENDIENTE'].includes(p.estado));
-  if(!activos.length)$('cashOrders').textContent='No hay pedidos activos para cobrar.';
-  for(const p of activos){
-    const row=document.createElement('div');row.className='cash-row';
-    const txt=document.createElement('span');txt.textContent='#'+p.pedidoId+' · '+(p.tipoAtencion==='MESA'?'Mesa '+p.mesaId:'Llevar')+' · '+formatPrice(p.total)+' · '+p.estado;
-    const b=crearBoton('Seleccionar',()=>{
-      $('cashPedidoId').value=p.pedidoId;
-      $('cashRecibido').value=Number(p.total).toFixed(2);
-    });
-    row.append(txt,b);$('cashOrders').append(row);
+  if(resultado.ok && Array.isArray(resultado.data)){
+    if(window.pintarPedidosCaja)window.pintarPedidosCaja(resultado.data);
   }
 }
 $('refreshSalesOrders').addEventListener('click',cargarPedidosCaja);
@@ -547,8 +540,10 @@ function pintarTicket(ventana,venta){
 }
 async function cobrarPedido(reimpresion=false){
   if(!pedirSesion())return;
-  const pedidoId=Number($('cashPedidoId').value);
-  if(!Number.isInteger(pedidoId)||pedidoId<1)return mostrarLocal('Indica un ID de pedido.');
+  const pedidoId=Number(reimpresion?$('cashReceiptId').value:$('cashPedidoId').value);
+  if(!Number.isInteger(pedidoId)||pedidoId<1)
+    return mostrarLocal(reimpresion?'Indica el ID de un pedido ya pagado para consultar su ticket.':
+      'Primero selecciona un pedido LISTO para cobrar.');
   const medioPago=$('cashMethod').value;
   const referenciaPago=$('cashReference').value.trim();
   const recibido=medioPago==='EFECTIVO'?Number($('cashRecibido').value):null;
@@ -558,6 +553,8 @@ async function cobrarPedido(reimpresion=false){
     return mostrarLocal('Indica un código de operación para Yape, POS o Transferencia de al menos 4 caracteres.');
   if(!reimpresion && medioPago==='POS' && !$('cashPosConsent').checked)
     return mostrarLocal('Debes informar al cliente y registrar su aceptación del total POS antes de cobrar.');
+  if(!reimpresion && $('cashCharge').disabled)
+    return mostrarLocal('El pedido no está habilitado para cobro. Actualiza la lista de pedidos listos.');
   // Apertura sincrónica para evitar bloqueo de ventanas emergentes tras await.
   const ventana=window.open('','_blank','width=410,height=680');
   const url='/api/v1/ventas/pedidos/'+pedidoId+(reimpresion?'':'/cobrar');
@@ -568,9 +565,11 @@ async function cobrarPedido(reimpresion=false){
   mostrar((reimpresion?'GET ':'POST ')+url,resultado);
   if(resultado.ok){
     pintarTicket(ventana,resultado.data);
-    if(window.refrescarCotizacionCaja)window.refrescarCotizacionCaja();
-    cargarMesas();refrescarResumen();cargarPedidosCaja();
-    if(window.refrescarOperaciones)window.refrescarOperaciones();
+    if(!reimpresion){
+      if(window.registrarCobroEnCaja)window.registrarCobroEnCaja(pedidoId);
+      cargarMesas();refrescarResumen();cargarPedidosCaja();
+      if(window.refrescarOperaciones)window.refrescarOperaciones();
+    }
   }else if(ventana){ventana.close();}
 }
 $('cashCharge').addEventListener('click',()=>cobrarPedido(false));
