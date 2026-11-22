@@ -235,7 +235,23 @@
           <div class="ops-table-wrap"><table class="ops-table"><thead><tr><th>Producto</th><th>Preparadas</th><th>Reservadas</th><th>En pedidos confirmados</th><th>Salidas manuales</th><th>Disponibles</th><th>Estado</th></tr></thead><tbody id="inventoryTable"><tr><td colspan="7">Consultando stock…</td></tr></tbody></table></div>
           <p class="hint">«En pedidos confirmados» son porciones comprometidas con órdenes, incluso sin pago. «Salidas manuales» son mermas o retiros registrados con motivo; solo se suman una vez y no equivalen a ventas cobradas. Las ventas realmente cobradas se consultan en «Ventas del día».</p>
           <div id="stockHistoryPanel" data-roles="ADMIN,CAJA,SUPERVISOR">
-            <div class="ops-section-label"><strong>Historial de movimientos</strong><span>Entradas, salidas y ajustes</span></div>
+            <div class="ops-section-label"><strong>Historial de movimientos</strong><span>Entradas, salidas y ajustes auditados</span></div>
+            <div class="ops-movement-filters" role="group" aria-label="Filtrar movimientos de inventario">
+              <label>Fecha del movimiento
+                <input type="date" id="stockMovementsDate" aria-label="Filtrar historial por fecha">
+              </label>
+              <label>Tipo de movimiento
+                <select id="stockMovementsType" aria-label="Filtrar por tipo de movimiento">
+                  <option value="TODOS">Todos los movimientos</option>
+                  <option value="SALIDA">Solo salidas</option>
+                  <option value="ENTRADA">Solo entradas</option>
+                  <option value="AJUSTE">Solo ajustes</option>
+                </select>
+              </label>
+              <button type="button" id="stockMovementsApply" class="primary">Consultar movimientos</button>
+              <button type="button" id="stockMovementsClear" class="outline">Limpiar filtros</button>
+            </div>
+            <p class="hint" id="stockMovementsStatus" role="status" aria-live="polite">Mostrando los movimientos más recientes. Elige una fecha para consultar el historial de ese día.</p>
             <div class="ops-table-wrap"><table class="ops-table"><thead><tr><th>Fecha</th><th>Producto</th><th>Movimiento</th><th>Cantidad</th><th>Comentario</th><th>Usuario</th></tr></thead><tbody id="inventoryMovementsTable"><tr><td colspan="6">Sin movimientos registrados.</td></tr></tbody></table></div>
           </div>
         </div>

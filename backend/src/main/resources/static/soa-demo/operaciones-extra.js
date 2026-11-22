@@ -127,26 +127,65 @@
     const actual=stock.find(x=>String(x.productoId)===e('stockProduct').value);
     if(actual && typeof pintarInventario==='function')pintarInventario(actual);
   }
-  function tablaMovimientos(items){
+  function tablaMovimientos(items,fecha,tipo){
     const cuerpo=e('inventoryMovementsTable');
     if(!cuerpo)return;
     cuerpo.replaceChildren();
-    if(!items.length){vacio(cuerpo,6,'Todavía no se registraron entradas ni salidas manuales.');return;}
-    for(const m of items.slice(0,25)){
-      cuerpo.append(fila([
-        fechaCorta(m.fecha),m.producto,m.tipo,String(m.cantidad),
-        m.comentario,m.usuarioCorreo
-      ]));
+    const descripcion=fecha?'del '+fecha.split('-').reverse().join('/'):'recientes';
+    const etiqueta=tipo==='TODOS'?'movimientos':tipo.toLowerCase()+'s';
+    if(!items.length){
+      vacio(cuerpo,6,'No se encontraron '+etiqueta+' '+descripcion+'.');
+    }else{
+      for(const m of items){
+        cuerpo.append(fila([
+          fechaCorta(m.fecha),m.producto,m.tipo,String(m.cantidad),
+          m.comentario,m.usuarioCorreo
+        ]));
+      }
+    }
+    const salidas=items.filter(m=>m.tipo==='SALIDA');
+    const totalSalidas=salidas.reduce((s,m)=>s+Number(m.cantidad||0),0);
+    e('stockMovementsStatus').textContent='Consulta '+descripcion+
+      ' · '+items.length+' movimiento(s) · '+salidas.length+' salida(s) · '+
+      totalSalidas+' porción(es) retiradas por salida manual.'+
+      (!fecha&&tipo==='TODOS'?' Se muestran los 200 registros más recientes.':'');
+  }
+  async function consultarHistorialFiltrado(){
+    if(!token||moduloActual()!=='stock'||
+       !['ADMIN','CAJA','SUPERVISOR'].includes(rol))return;
+    const fecha=e('stockMovementsDate').value;
+    const tipo=e('stockMovementsType').value;
+    const query=new URLSearchParams();
+    if(fecha)query.set('fecha',fecha);
+    if(tipo!=='TODOS')query.set('tipo',tipo);
+    const url='/api/v1/inventario/movimientos'+(query.toString()?'?'+query.toString():'');
+    const r=await api(url);
+    // Si el usuario cambió la fecha o los filtros mientras se consultaba,
+    // se ignora la respuesta antigua para no mezclar días.
+    if(!token||moduloActual()!=='stock'||
+       e('stockMovementsDate').value!==fecha||
+       e('stockMovementsType').value!==tipo)return;
+    if(r.ok&&Array.isArray(r.data)){
+      tablaMovimientos(r.data,fecha,tipo);
+    }else{
+      e('stockMovementsStatus').textContent='No se pudo consultar el historial (HTTP '+
+        r.status+'). Revisa la sesión o los filtros.';
     }
   }
+  e('stockMovementsApply').addEventListener('click',consultarHistorialFiltrado);
+  e('stockMovementsDate').addEventListener('change',consultarHistorialFiltrado);
+  e('stockMovementsType').addEventListener('change',consultarHistorialFiltrado);
+  e('stockMovementsClear').addEventListener('click',()=>{
+    e('stockMovementsDate').value='';
+    e('stockMovementsType').value='TODOS';
+    consultarHistorialFiltrado();
+  });
   async function actualizarInventario(){
     const stock=await obtenerStock();
     if(!stock||!token||moduloActual()!=='stock')return;
     tablaInventario(stock);
-    if(['ADMIN','CAJA','SUPERVISOR'].includes(rol)){
-      const r=await api('/api/v1/inventario/movimientos');
-      if(r.ok&&Array.isArray(r.data))tablaMovimientos(r.data);
-    }
+    if(['ADMIN','CAJA','SUPERVISOR'].includes(rol))
+      await consultarHistorialFiltrado();
   }
   e('stockOutSubmit').addEventListener('click',async()=>{
     if(!['ADMIN','SUPERVISOR','CAJA'].includes(rol))return;
