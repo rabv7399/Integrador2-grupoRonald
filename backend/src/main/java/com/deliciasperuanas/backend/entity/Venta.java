@@ -37,7 +37,7 @@ public class Venta {
     private BigDecimal cambio;
 
     @Column(name="fecha_pago", nullable=false)
-    private LocalDateTime fechaPago=LocalDateTime.now();
+    private LocalDateTime fechaPago=LocalDateTime.now(java.time.ZoneId.of("America/Lima"));
 
     @Column(name="medio_pago", nullable=false, length=20)
     private String medioPago="EFECTIVO";

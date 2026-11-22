@@ -35,13 +35,13 @@ public class VentaController {
     @GetMapping("/detalle-diario")
     public Map<String,Object> detalleDiario(@RequestParam(required=false)
         @DateTimeFormat(iso=DateTimeFormat.ISO.DATE) LocalDate fecha){
-        return servicio.detalleDiario(fecha==null?LocalDate.now():fecha);
+        return servicio.detalleDiario(fecha==null?LocalDate.now(java.time.ZoneId.of("America/Lima")):fecha);
     }
 
     @GetMapping("/resumen")
     public Map<String,Object> resumen(@RequestParam(required=false)
         @DateTimeFormat(iso=DateTimeFormat.ISO.DATE) LocalDate fecha){
-        return servicio.resumen(fecha==null?LocalDate.now():fecha);
+        return servicio.resumen(fecha==null?LocalDate.now(java.time.ZoneId.of("America/Lima")):fecha);
     }
 
     @PostMapping("/cuadres")

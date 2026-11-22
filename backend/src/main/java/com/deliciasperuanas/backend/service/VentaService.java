@@ -130,7 +130,7 @@ public class VentaService {
         venta.setMedioPago(metodo);
         venta.setReferenciaPago("EFECTIVO".equals(metodo)?null:referencia);
         venta.setCajeroCorreo(cajero);
-        venta.setNumeroComprobante("INT-"+LocalDate.now().toString().replace("-","")+"-"
+        venta.setNumeroComprobante("INT-"+LocalDate.now(java.time.ZoneId.of("America/Lima")).toString().replace("-","")+"-"
             +UUID.randomUUID().toString().substring(0,10).toUpperCase(Locale.ROOT));
         ventas.saveAndFlush(venta);
         pedido.setEstado("PAGADO");
@@ -147,11 +147,11 @@ public class VentaService {
     }
 
     @Transactional(readOnly=true)
-    public Map<String,Object> resumen(){return resumen(LocalDate.now());}
+    public Map<String,Object> resumen(){return resumen(LocalDate.now(java.time.ZoneId.of("America/Lima")));}
 
     @Transactional(readOnly=true)
     public Map<String,Object> resumen(LocalDate fecha) {
-        final LocalDate diaConsultado=fecha==null?LocalDate.now():fecha;
+        final LocalDate diaConsultado=fecha==null?LocalDate.now(java.time.ZoneId.of("America/Lima")):fecha;
         YearMonth mes=YearMonth.from(diaConsultado);
         List<Venta> registros=ventas.findAll();
         List<Venta> dia=registros.stream()
@@ -201,7 +201,7 @@ public class VentaService {
      */
     @Transactional(readOnly=true)
     public Map<String,Object> detalleDiario(LocalDate fecha){
-        LocalDate dia=fecha==null?LocalDate.now():fecha;
+        LocalDate dia=fecha==null?LocalDate.now(java.time.ZoneId.of("America/Lima")):fecha;
         List<Venta> pagadas=ventas.findAll().stream()
             .filter(v->v.getFechaPago().toLocalDate().equals(dia)).toList();
         Map<String,Map<String,Object>> agrupado=new LinkedHashMap<>();
@@ -252,7 +252,7 @@ public class VentaService {
     public CierreCajaRespuesta registrarCuadre(CierreCajaSolicitud req,String correo) {
         if(req==null||req.fecha()==null||req.efectivoContado()==null)
             throw error(HttpStatus.BAD_REQUEST,"CUADRE_INVALIDO","Indica fecha y efectivo contado");
-        if(req.fecha().isAfter(LocalDate.now()))
+        if(req.fecha().isAfter(LocalDate.now(java.time.ZoneId.of("America/Lima"))))
             throw error(HttpStatus.BAD_REQUEST,"FECHA_FUTURA","No puedes cuadrar una fecha futura");
         if(req.efectivoContado().signum()<0||req.efectivoContado().scale()>2)
             throw error(HttpStatus.BAD_REQUEST,"EFECTIVO_INVALIDO",
