@@ -15,7 +15,7 @@ let products = [];
 let categories = [];
 let activeGroup = 'todos';
 let activeCategory = '';
-let activeMode = 'completa';
+let activeMode = 'sistema';
 const legacyCatalog = (window.DELICIAS_MENU_ORIGINAL || []).map(p => ({...p, __legacy:true, __grupo:p.grupo, __image:p.imagen, categoria:{nombre:p.grupo === 'almuerzos'?'Almuerzos':p.grupo==='cenas'?'Cenas':'Bebidas'}}));
 const menuSearch = document.querySelector('#menuSearch');
 const modeButtons = [...document.querySelectorAll('[data-mode]')];
@@ -39,6 +39,10 @@ function menuGroup(product){
 function imageFor(product){
   const name = normalize(product.nombre);
   const match = legacyCatalog.find(p => normalize(p.nombre)===name);
+  // La imagen que sube Administración prevalece sobre las fotografías históricas.
+  if(typeof product.imagenUrl==='string' &&
+     /^\/api\/productos\/\d+\/imagen(?:\?v=\d+)?$/.test(product.imagenUrl))
+      return {src:product.imagenUrl,icon:menuGroup(product)==='bebidas'?'🥤':'🍽️'};
   let filename = product.__image || (match && match.__image);
   if(!filename){
     const hints = [
@@ -93,7 +97,9 @@ function cardFor(p){
 function showMenu(){
   catalogGrid.replaceChildren();
   const names=new Set(products.map(p=>normalize(p.nombre)).filter(Boolean));
-  const combined=activeMode==='sistema'?products:[...products,...legacyCatalog.filter(p=>!names.has(normalize(p.nombre)))];
+  const publicados=products.filter(p=>p.disponible===true);
+  const combined=activeMode==='sistema'?publicados:[...publicados,
+    ...legacyCatalog.filter(p=>!names.has(normalize(p.nombre)))];
   const query=normalize(menuSearch.value);
   const shown=combined.filter(p=>
     (activeGroup==='todos'||menuGroup(p)===activeGroup)
@@ -136,17 +142,50 @@ async function getJSON(url){
     return await response.json();
   }finally{clearTimeout(timeout);}
 }
-async function loadCatalog(){
-  setStatus('Consultando catálogo REST…');
-  catalogGrid.replaceChildren(textNode('div','loading-state','Cargando productos desde Spring Boot…'));
+function destacarDesdeCatalogo(){
+  const contenedor=document.querySelector('.signature-grid');
+  if(!contenedor)return;
+  const vigentes=products.filter(p=>p.disponible===true);
+  if(!vigentes.length)return;
+  const elegidos=[];
+  for(const termino of ['rocoto','ceviche','anticucho']){
+    const p=vigentes.find(x=>normalize(x.nombre).includes(termino));
+    if(p && !elegidos.includes(p))elegidos.push(p);
+  }
+  for(const p of vigentes){
+    if(elegidos.length>=3)break;
+    if(!elegidos.includes(p))elegidos.push(p);
+  }
+  contenedor.replaceChildren();
+  for(const plato of elegidos){
+    const card=document.createElement('a');
+    card.className='signature-tile';card.href='#carta';
+    const foto=imageFor(plato);
+    if(foto.src){
+      // Ruta relativa normalizada o ruta de imagen segura del producto.
+      card.style.backgroundImage="url('"+foto.src+"'),linear-gradient(130deg,#345846,#b37c55)";
+    }
+    const cuerpo=document.createElement('div');
+    cuerpo.append(textNode('small','',categoryName(plato)),
+      textNode('strong','',plato.nombre),
+      textNode('span','','Ver en la carta ↗'));
+    card.append(cuerpo);contenedor.append(card);
+  }
+}
+async function loadCatalog(silencioso=false){
+  if(!silencioso){
+    setStatus('Consultando catálogo REST…');
+    catalogGrid.replaceChildren(textNode('div','loading-state','Cargando productos desde Spring Boot…'));
+  }
   try{
     const [ps,cs]=await Promise.all([getJSON(API.productos),getJSON(API.categorias)]);
     if(!Array.isArray(ps)||!Array.isArray(cs))throw new Error('Formato JSON inesperado');
     products=ps.filter(p=>p && typeof p==='object');
     categories=cs.filter(c=>c && typeof c==='object');
-    categoryChips();showMenu();
-    setStatus('API conectada · '+products.length+' productos registrados');
+    categoryChips();showMenu();destacarDesdeCatalogo();
+    setStatus('API conectada · '+products.filter(p=>p.disponible===true).length+' productos publicados');
   }catch(err){
+    if(silencioso)return;
     products=[];categories=[];categoryChips();showMenu();
     setStatus('API desconectada · Solo referencias históricas',true);
     console.error('No se pudo consultar el catálogo REST:',err);
@@ -165,7 +204,9 @@ filters.forEach(button=>button.addEventListener('click',()=>{
   filters.forEach(b=>{const active=b===button;b.classList.toggle('active',active);b.setAttribute('aria-pressed',String(active));});
   categoryChips();showMenu();
 }));
-document.querySelector('#reloadCatalog').addEventListener('click',loadCatalog);
+document.querySelector('#reloadCatalog').addEventListener('click',()=>loadCatalog());
+document.addEventListener('visibilitychange',()=>{if(!document.hidden)loadCatalog(true);});
+setInterval(()=>{if(!document.hidden)loadCatalog(true);},15000);
 menuToggle.addEventListener('click',()=>{
   const open=mainMenu.classList.toggle('open');
   menuToggle.setAttribute('aria-expanded',String(open));
