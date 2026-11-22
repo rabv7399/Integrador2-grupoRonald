@@ -288,6 +288,7 @@ $('setStock').addEventListener('click',async()=>{
 });
 $('newKey').addEventListener('click',nuevaClave);
 let ultimaSolicitud = null;
+let ultimaClavePedido = null;
 let carritoPlatos = [];
 $('createOrder').addEventListener('click',async()=>{
   if(!pedirSesion())return;
@@ -298,21 +299,25 @@ $('createOrder').addEventListener('click',async()=>{
   if(tipoAtencion==='MESA' && (!Number.isInteger(mesaId)||mesaId<1))return mostrarLocal('Elige una mesa disponible.');
   const items=carritoPlatos.length?carritoPlatos.map(i=>({...i})):[{productoId:id,cantidad}];
   ultimaSolicitud={items,tipoAtencion,mesaId};
-  const result=await api('/api/v1/pedidos','POST',ultimaSolicitud,{'Idempotency-Key':$('orderKey').value});
-  mostrar('POST /api/v1/pedidos',result);
+  const clave=$('orderKey').value;
+  const result=await api('/api/v1/pedidos/envio','POST',ultimaSolicitud,{'Idempotency-Key':clave});
+  mostrar('POST /api/v1/pedidos/envio',result);
   if(result.ok&&result.data.pedidoId){
     $('orderId').value=result.data.pedidoId;
     $('cashPedidoId').value=result.data.pedidoId;
-    cargarMesas();
+    ultimaClavePedido=clave;
     carritoPlatos=[];pintarCarrito();
-    consultarDisponibilidad();
+    nuevaClave();
+    if(window.pedidoEnviadoOperativo)window.pedidoEnviadoOperativo(result.data);
+    cargarMesas();consultarDisponibilidad();
+    if(window.refrescarOperaciones)window.refrescarOperaciones();
   }
 });
 $('repeatOrder').addEventListener('click',async()=>{
   if(!pedirSesion())return;
   if(!ultimaSolicitud)return mostrarLocal('Primero registra un pedido.');
-  const result=await api('/api/v1/pedidos','POST',ultimaSolicitud,{'Idempotency-Key':$('orderKey').value});
-  mostrar('POST /api/v1/pedidos (reintento)',result);
+  const result=await api('/api/v1/pedidos/envio','POST',ultimaSolicitud,{'Idempotency-Key':ultimaClavePedido||$('orderKey').value});
+  mostrar('POST /api/v1/pedidos/envio (reintento)',result);
 });
 for(const [button,path] of [['confirmOrder','confirmacion'],['cancelOrder','cancelacion']]){
   $(button).addEventListener('click',async()=>{
@@ -352,31 +357,50 @@ function modoMesa(){
   $('orderTableWrap').hidden=!esMesa;
   $('mesaCards').hidden=!esMesa;
 }
-$('orderType').addEventListener('change',modoMesa);
+$('orderType').addEventListener('change',()=>{
+  modoMesa();
+  if(window.modalidadPedidoCambiada)window.modalidadPedidoCambiada($('orderType').value);
+});
+$('orderTable').addEventListener('change',()=>{
+  if(window.seleccionarMesaOperativa){
+    const id=Number($('orderTable').value);
+    window.seleccionarMesaOperativa({id,numero:id,estado:'CONSULTANDO'},false);
+  }
+});
 modoMesa();
 
 async function cargarMesas(){
   if(!token || !['MOZO','CAJA','SUPERVISOR','ADMIN','OPERADOR'].includes(rol))return;
   const resultado=await api('/api/mesas');
-  if(!resultado.ok || !Array.isArray(resultado.data))return mostrar('GET /api/mesas',resultado);
-  const seleccionado=$('orderTable').value;
+  if(!resultado.ok || !Array.isArray(resultado.data))return;
+  const seleccionado=window.mesaOperativaSeleccionada
+    ? window.mesaOperativaSeleccionada() : $('orderTable').value;
   $('orderTable').replaceChildren();
   $('mesaCards').replaceChildren();
   const mesas=[...resultado.data].sort((a,b)=>a.numero-b.numero);
   for(const m of mesas){
     const option=new Option('Mesa #'+m.numero+' · '+m.estado,String(m.id));
-    option.disabled=m.estado!=='DISPONIBLE';
+    // Las mesas OCUPADAS siguen siendo seleccionables PARA VER SU COMANDA;
+    // el servidor sigue impidiendo crear otra orden en esa misma mesa.
     $('orderTable').add(option);
     const boton=document.createElement('button');
     boton.type='button';boton.className='mesa-button '+(m.estado==='OCUPADA'?'ocupada':'libre');
-    boton.disabled=m.estado!=='DISPONIBLE';
+    const elegido=String(m.id)===String(seleccionado)&&$('orderType').value==='MESA';
+    if(elegido)boton.classList.add('seleccionada');
     const nombre=document.createElement('strong');nombre.textContent='Mesa #'+m.numero;
-    const estado=document.createElement('small');estado.textContent=m.estado;
+    const estado=document.createElement('small');
+    estado.textContent=m.estado==='OCUPADA'?'OCUPADA · Ver comanda':'DISPONIBLE · Tomar orden';
     boton.append(nombre,estado);
-    boton.addEventListener('click',()=>{$('orderType').value='MESA';modoMesa();$('orderTable').value=String(m.id);});
+    boton.addEventListener('click',()=>{
+      $('orderType').value='MESA';
+      modoMesa();
+      $('orderTable').value=String(m.id);
+      if(window.seleccionarMesaOperativa)window.seleccionarMesaOperativa(m);
+    });
     $('mesaCards').append(boton);
   }
-  if(mesas.some(m=>String(m.id)===seleccionado && m.estado==='DISPONIBLE'))$('orderTable').value=seleccionado;
+  if(mesas.some(m=>String(m.id)===String(seleccionado)))$('orderTable').value=String(seleccionado);
+  if(window.mesasSincronizadas)window.mesasSincronizadas(mesas);
 }
 
 async function consultarDisponibilidad(){
