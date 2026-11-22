@@ -100,6 +100,9 @@ public class SecurityConfig {
                                 "/api/productos/**"
                         ).permitAll()
 
+                        .requestMatchers(HttpMethod.POST,"/api/productos/*/imagen")
+                        .hasRole("ADMIN")
+
                         .requestMatchers(
                                 HttpMethod.POST,
                                 "/api/productos/**"

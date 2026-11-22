@@ -26,11 +26,16 @@ public class Producto {
     @Column(nullable = false)
     private Boolean disponible = true;
 
+    @Column(name="imagen_url",length=255)
+    private String imagenUrl;
+
     @ManyToOne
     @JoinColumn(name = "categoria_id", nullable = false)
     private Categoria categoria;
 
     public Producto() {}
+    public String getImagenUrl(){return imagenUrl;}
+    public void setImagenUrl(String v){imagenUrl=v;}
 
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
