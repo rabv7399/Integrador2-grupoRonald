@@ -148,7 +148,7 @@
     }
   }
   e('stockOutSubmit').addEventListener('click',async()=>{
-    if(rol!=='ADMIN')return;
+    if(!['ADMIN','SUPERVISOR','CAJA'].includes(rol))return;
     const id=Number(e('stockProduct').value);
     const cantidad=Number(e('stockOutQuantity').value);
     const comentario=e('stockOutReason').value.trim();

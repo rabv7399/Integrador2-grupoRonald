@@ -229,3 +229,19 @@ body{background:#f7f8f5}
 .ops-reservation-note{font-size:11px;color:#7c654b;margin:16px 0}
 .ops-reservation-card button{font-size:11px;padding:8px 11px;min-width:0}
 @media(max-width:650px){.ops-order-entry,.ops-selected-order{padding:14px}.ops-focused-line{grid-template-columns:1fr auto;gap:6px}.ops-focused-line .ops-age{grid-column:1/-1}.ops-focused-line button{grid-column:1/-1}.ops-reservation-grid{grid-template-columns:1fr}}
+
+/* Vista previa del cobro y fotografías cargadas por Administración */
+.ops-payment-quote{background:#f1f8f2;border:1px solid #cfe5d3;border-radius:11px;padding:15px 17px;margin:15px 0;font-size:12px;color:#234832}
+.ops-payment-row{display:flex;justify-content:space-between;align-items:center;gap:15px;padding:7px 0;border-bottom:1px solid #deeadf}
+.ops-payment-row strong{font-size:14px;color:#174532}
+.ops-payment-total{border-bottom:0;border-top:2px solid #cde0cd;padding-top:13px;margin-top:7px}
+.ops-payment-total strong{font-size:22px}
+.ops-payment-quote small{display:block;color:#8c532a;font-weight:600;line-height:1.5;margin-top:8px}
+.ops-pos-consent{display:flex!important;gap:9px;align-items:start;background:#fff5df;border:1px solid #e7c68c;padding:13px;border-radius:8px;color:#6b481f;font-size:12px;line-height:1.6}
+.ops-pos-consent[hidden]{display:none!important}
+.ops-pos-consent input[type=checkbox]{width:17px;height:17px;flex-shrink:0;margin-top:1px}
+.ops-photo-editor{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(160px,.7fr);gap:16px;padding:15px 0;margin:10px 0;border-top:1px solid #dae8d9;border-bottom:1px solid #dae8d9}
+.ops-photo-editor input[type=file]{font-size:12px;background:#fff;width:100%;padding:10px;border:1px solid #d5e0d4;border-radius:7px}
+.ops-photo-preview{width:100%;min-height:170px;max-height:260px;border:1px dashed #b8ceb9;border-radius:9px;display:flex;align-items:center;justify-content:center;text-align:center;color:#6c7b70;font-size:12px;background:#f1f6ee;overflow:hidden;padding:9px}
+.ops-photo-preview img{width:100%;height:230px;object-fit:cover;border-radius:7px}
+@media(max-width:660px){.ops-photo-editor{grid-template-columns:1fr}}
