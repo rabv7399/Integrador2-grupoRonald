@@ -319,7 +319,10 @@
     mesasEnPantalla=mesas;
     if(mesaElegida===null && e('orderType').value==='MESA')
       mesaElegida=Number(e('orderTable').value)||Number(mesas[0]?.id)||null;
-    if(moduloActual()==='orders')visualizarOrdenSeleccionada();
+    if(moduloActual()==='orders'){
+      visualizarOrdenSeleccionada();
+      dibujarAgendaEnMesas();
+    }
   };
   window.modalidadPedidoCambiada=tipo=>{
     editorEstado='nuevo';pedidoElegido=null;
@@ -407,8 +410,10 @@
     if(!r.ok||!Array.isArray(r.data)||moduloActual()!=='orders'||!token)return;
     pedidosEnPantalla=r.data;
     pintarPedidos(r.data);
-    if(['ADMIN','CAJA','MOZO','SUPERVISOR','OPERADOR'].includes(rol))
+    if(['ADMIN','CAJA','MOZO','SUPERVISOR','OPERADOR'].includes(rol)){
       await Promise.all([cargarMesas(),consultarDisponibilidad()]);
+      await actualizarAgendaMesas();
+    }
   }
   e('appendOrderItems').addEventListener('click',async()=>{
     const id=Number(e('orderId').value);
@@ -489,32 +494,98 @@
     if(r.ok&&Array.isArray(r.data)&&moduloActual()==='sales')actualizarCajaPedidos(r.data);
   }
 
+  let reservasEnPantalla=[];
+  async function cancelarReservaOperativa(r) {
+    if(!confirm('¿Cancelar la reserva #'+r.id+' de '+r.cliente+'?'))return;
+    const url='/api/reservas/'+r.id+'/cancelar';
+    const res=await api(url,'PATCH');mostrar('PATCH '+url,res);
+    if(res.ok){
+      reservasEnPantalla=reservasEnPantalla.map(x=>
+        x.id===r.id?{...x,estado:'CANCELADA'}:x);
+      mostrarReservas(reservasEnPantalla);
+      await refrescarOperaciones();
+    }
+  }
+  function tarjetaReserva(r){
+    const card=elemento('article',undefined,'ops-reservation-card');
+    const cabeza=elemento('div',undefined,'ops-reservation-header');
+    const datos=elemento('div');
+    datos.append(elemento('small','RESERVA #'+r.id,'ops-reservation-id'),
+      elemento('h3','Mesa #'+(r.mesa?.numero||r.mesa?.id||'?')));
+    cabeza.append(datos,badgeEstado(r.estado||'PENDIENTE'));card.append(cabeza);
+    const resumen=elemento('div',undefined,'ops-reservation-data');
+    resumen.append(
+      elemento('span','👤 Cliente: '+r.cliente),
+      elemento('span','📅 Fecha: '+r.fecha),
+      elemento('span','🕒 Horario: '+String(r.horaInicio).slice(0,5)+' a '+String(r.horaFin).slice(0,5)),
+      elemento('span','👥 Personas: '+r.cantidadPersonas)
+    );
+    card.append(resumen);
+    card.append(elemento('p',r.estado==='PENDIENTE'
+      ? 'Solicitud pendiente; aún no es una reserva confirmada.'
+      : 'Reserva registrada para este horario.','ops-reservation-note'));
+    if(['MOZO','SUPERVISOR','ADMIN','OPERADOR'].includes(rol) && r.estado!=='CANCELADA')
+      card.append(boton('Cancelar solicitud',()=>cancelarReservaOperativa(r),'outline'));
+    return card;
+  }
   function mostrarReservas(reservas){
-    const cuerpo=e('reservationsTable');cuerpo.replaceChildren();
+    const cuerpo=e('reservationsTable');
+    const tarjetas=e('reservedCards');
+    cuerpo.replaceChildren();tarjetas.replaceChildren();
     const orden=[...reservas].sort((a,b)=>(a.fecha||'').localeCompare(b.fecha||'')||
        (a.horaInicio||'').localeCompare(b.horaInicio||''));
-    if(!orden.length){vacio(cuerpo,7,'No hay reservas registradas.');return;}
+    const vigentes=orden.filter(r=>r.estado!=='CANCELADA'&&String(r.fecha)>=fechaLocal());
+    e('reservationSyncStatus').textContent='Actualizado '+new Date().toLocaleTimeString('es-PE')+
+      ' · '+vigentes.length+' solicitud(es) futura(s)';
+    if(!vigentes.length){
+      tarjetas.append(elemento('p','No hay solicitudes de reserva futuras. Puedes registrar una con el formulario superior.','ops-empty'));
+    }else{
+      for(const r of vigentes)tarjetas.append(tarjetaReserva(r));
+    }
+    if(!orden.length){vacio(cuerpo,8,'No hay reservas registradas.');return;}
     for(const r of orden){
       const tr=fila([
+        '#'+r.id,
         'Mesa #'+(r.mesa?.numero||r.mesa?.id||'?'),
-        r.cliente,r.fecha,r.horaInicio+' – '+r.horaFin,
+        r.cliente,r.fecha,String(r.horaInicio).slice(0,5)+' – '+String(r.horaFin).slice(0,5),
         r.cantidadPersonas,r.estado,''
       ]);
-      if(r.estado!=='CANCELADA'&&['MOZO','SUPERVISOR','ADMIN','OPERADOR'].includes(rol)){
-        tr.lastChild.append(boton('Cancelar reserva',async()=>{
-          if(!confirm('¿Cancelar solicitud de reserva de '+r.cliente+'?'))return;
-          const url='/api/reservas/'+r.id+'/cancelar';
-          const res=await api(url,'PATCH');mostrar('PATCH '+url,res);
-          if(res.ok)await refrescarOperaciones();
-        },'outline'));
-      }
+      if(r.estado!=='CANCELADA'&&['MOZO','SUPERVISOR','ADMIN','OPERADOR'].includes(rol))
+        tr.lastChild.append(boton('Cancelar',()=>cancelarReservaOperativa(r),'outline'));
       cuerpo.append(tr);
+    }
+  }
+  function dibujarAgendaEnMesas(){
+    if(!mesasEnPantalla.length)return;
+    document.querySelectorAll('.mesa-button[data-mesa-id]').forEach(b=>{
+      b.querySelectorAll('.mesa-reserva-detalle').forEach(n=>n.remove());
+      const id=Number(b.dataset.mesaId);
+      const reservasHoy=reservasEnPantalla.filter(r=>
+        Number(r.mesa?.id)===id && r.estado!=='CANCELADA' && r.fecha===fechaLocal());
+      if(reservasHoy.length){
+        const primera=[...reservasHoy].sort((a,b)=>a.horaInicio.localeCompare(b.horaInicio))[0];
+        const aviso=elemento('small','RESERVA #'+primera.id+' · '+
+          String(primera.horaInicio).slice(0,5)+'–'+String(primera.horaFin).slice(0,5),
+          'mesa-reserva-detalle');
+        b.append(aviso);
+      }
+    });
+  }
+  async function actualizarAgendaMesas(){
+    if(['CLIENTE','COCINERO'].includes(rol))return;
+    const r=await api('/api/reservas');
+    if(r.ok&&Array.isArray(r.data)){
+      reservasEnPantalla=r.data;
+      dibujarAgendaEnMesas();
     }
   }
   async function actualizarReservas(){
     if(rol==='CLIENTE'||rol==='COCINERO')return;
     const res=await api('/api/reservas');
-    if(res.ok&&Array.isArray(res.data)&&moduloActual()==='reservations')mostrarReservas(res.data);
+    if(res.ok&&Array.isArray(res.data)&&moduloActual()==='reservations'){
+      reservasEnPantalla=res.data;
+      mostrarReservas(res.data);
+    }
   }
 
   function seleccionarMetodo(){
