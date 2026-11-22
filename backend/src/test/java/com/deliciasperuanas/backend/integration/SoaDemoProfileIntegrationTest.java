@@ -964,6 +964,80 @@ class SoaDemoProfileIntegrationTest {
             .andExpect(jsonPath("$.vendidas").value(0));
     }
 
+
+    @Test
+    void historialInventarioPermiteConsultarSalidasDeUnDiaYOtrosTiposConSeguridad() throws Exception {
+        String caja=iniciar("caja.demo@delicias.local","CajaDemoTest123!");
+        String mozo=iniciar("mozo.demo@delicias.local","MozoDemoTest123!");
+
+        mvc.perform(get("/soa-demo/index.html")).andExpect(status().isOk())
+            .andExpect(content().string(org.hamcrest.Matchers.containsString(
+                "id=\"stockMovementsDate\"")))
+            .andExpect(content().string(org.hamcrest.Matchers.containsString(
+                "id=\"stockMovementsType\"")));
+
+        mvc.perform(patch("/api/v1/inventario/1/salida")
+                .header("Authorization","Bearer "+caja)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"cantidad\":2,\"comentario\":\"Porciones deterioradas\"}"))
+            .andExpect(status().isOk());
+        mvc.perform(patch("/api/v1/inventario/1/reponer")
+                .header("Authorization","Bearer "+caja)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"cantidad\":4}"))
+            .andExpect(status().isOk());
+        mvc.perform(patch("/api/v1/inventario/4/salida")
+                .header("Authorization","Bearer "+caja)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"cantidad\":1,\"comentario\":\"Error de emplatado\"}"))
+            .andExpect(status().isOk());
+
+        String lista=mvc.perform(get("/api/v1/inventario/movimientos")
+                .header("Authorization","Bearer "+caja))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.length()").value(3))
+            .andReturn().getResponse().getContentAsString();
+        String fecha=JsonPath.read(lista,"$[0].fecha").toString().substring(0,10);
+
+        mvc.perform(get("/api/v1/inventario/movimientos")
+                .header("Authorization","Bearer "+caja)
+                .param("fecha",fecha).param("tipo","SALIDA"))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.length()").value(2))
+            .andExpect(jsonPath("$[0].tipo").value("SALIDA"))
+            .andExpect(jsonPath("$[1].tipo").value("SALIDA"))
+            .andExpect(jsonPath("$[0].comentario").value("Error de emplatado"))
+            .andExpect(jsonPath("$[1].comentario").value("Porciones deterioradas"));
+        mvc.perform(get("/api/v1/inventario/movimientos")
+                .header("Authorization","Bearer "+caja)
+                .param("fecha",fecha).param("tipo","ENTRADA"))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.length()").value(1))
+            .andExpect(jsonPath("$[0].tipo").value("ENTRADA"));
+        mvc.perform(get("/api/v1/inventario/movimientos")
+                .header("Authorization","Bearer "+caja)
+                .param("fecha",fecha))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.length()").value(3));
+        mvc.perform(get("/api/v1/inventario/movimientos")
+                .header("Authorization","Bearer "+caja)
+                .param("fecha","2030-12-31").param("tipo","SALIDA"))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.length()").value(0));
+        mvc.perform(get("/api/v1/inventario/movimientos")
+                .header("Authorization","Bearer "+caja)
+                .param("tipo","VENTA"))
+            .andExpect(status().isBadRequest())
+            .andExpect(jsonPath("$.codigo").value("TIPO_MOVIMIENTO_INVALIDO"));
+        mvc.perform(get("/api/v1/inventario/movimientos")
+                .header("Authorization","Bearer "+mozo)
+                .param("fecha",fecha).param("tipo","SALIDA"))
+            .andExpect(status().isForbidden());
+        mvc.perform(get("/api/v1/inventario/movimientos")
+                .param("fecha",fecha).param("tipo","SALIDA"))
+            .andExpect(status().isUnauthorized());
+    }
+
     private String iniciar(String correo, String pass) throws Exception {
         String json = "{\"correo\":\""+correo+"\",\"password\":\""+pass+"\"}";
         String response = mvc.perform(post("/api/auth/login")
