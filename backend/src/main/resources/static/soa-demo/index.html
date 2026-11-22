@@ -65,6 +65,7 @@
       
       <button type="button" data-module="kitchen" data-roles="COCINERO,SUPERVISOR,ADMIN"><span>♨</span> Cocina · preparación</button>
       <button type="button" data-module="sales" data-roles="CAJA,SUPERVISOR,ADMIN"><span>▤</span> Caja y cobros</button>
+      <button type="button" data-module="salesDaily" data-roles="CAJA,SUPERVISOR,ADMIN"><span>▦</span> Ventas del día</button>
       <button type="button" data-module="productsAdmin" data-roles="ADMIN"><span>✎</span> Productos · CRUD</button>
       <button type="button" data-module="categoriesAdmin" data-roles="ADMIN"><span>▧</span> Categorías · CRUD</button>
       <button type="button" data-module="usersAdmin" data-roles="ADMIN"><span>♙</span> Usuarios · CRUD</button>
@@ -227,7 +228,8 @@
             <button type="button" id="stockOutSubmit" class="danger">Registrar salida justificada</button>
           </div>
           <div class="ops-section-label"><strong>Tabla de stock actual</strong><span>Sincronización automática</span></div>
-          <div class="ops-table-wrap"><table class="ops-table"><thead><tr><th>Producto</th><th>Preparadas</th><th>Reservadas</th><th>Vendidas</th><th>Disponibles</th><th>Estado</th></tr></thead><tbody id="inventoryTable"><tr><td colspan="6">Consultando stock…</td></tr></tbody></table></div>
+          <div class="ops-table-wrap"><table class="ops-table"><thead><tr><th>Producto</th><th>Preparadas</th><th>Reservadas</th><th>En pedidos confirmados</th><th>Salidas manuales</th><th>Disponibles</th><th>Estado</th></tr></thead><tbody id="inventoryTable"><tr><td colspan="7">Consultando stock…</td></tr></tbody></table></div>
+          <p class="hint">«En pedidos confirmados» son porciones comprometidas con órdenes, incluso sin pago. «Salidas manuales» son mermas o retiros registrados con motivo; solo se suman una vez y no equivalen a ventas cobradas. Las ventas realmente cobradas se consultan en «Ventas del día».</p>
           <div id="stockHistoryPanel" data-roles="ADMIN,CAJA,SUPERVISOR">
             <div class="ops-section-label"><strong>Historial de movimientos</strong><span>Entradas, salidas y ajustes</span></div>
             <div class="ops-table-wrap"><table class="ops-table"><thead><tr><th>Fecha</th><th>Producto</th><th>Movimiento</th><th>Cantidad</th><th>Comentario</th><th>Usuario</th></tr></thead><tbody id="inventoryMovementsTable"><tr><td colspan="6">Sin movimientos registrados.</td></tr></tbody></table></div>
@@ -249,13 +251,14 @@
         <div class="panel">
           <button type="button" id="refreshSalesOrders" class="outline">Ver pedidos pendientes de cobro</button>
           <div id="cashOrders" class="command-list"></div>
-          <label>ID del pedido<input type="number" id="cashPedidoId" min="1" placeholder="Indica el pedido a cobrar"></label>
+          <label>Pedido seleccionado para cobrar<input type="number" id="cashPedidoId" min="1" placeholder="Selecciona un pedido listo en la lista" readonly></label>
           <label>Medio de pago<select id="cashMethod"><option value="EFECTIVO">Efectivo</option><option value="YAPE">Yape</option><option value="POS">Tarjeta POS (+4% y redondeo)</option><option value="TRANSFERENCIA">Transferencia bancaria</option></select></label>
           <div id="cashQuote" class="ops-payment-quote" aria-live="polite">Selecciona un pedido para calcular el importe por medio de pago.</div>
           <label id="cashPosDisclosure" hidden class="ops-pos-consent"><input id="cashPosConsent" type="checkbox"> Informé al cliente del recargo POS del 4% y redondeo hacia arriba a S/ 0.50; el cliente aceptó el total mostrado.</label>
           <label id="cashRecibidoWrap">Monto recibido en efectivo (S/)<input type="number" id="cashRecibido" min="0.01" step="0.01" placeholder="Ejemplo: 50.00"></label>
           <label id="cashReferenceWrap" hidden>Referencia de Yape / voucher POS<input id="cashReference" maxlength="80" placeholder="Código de operación / voucher"></label>
-          <div class="buttons"><button type="button" id="cashCharge" class="primary">Cobrar y generar ticket</button><button type="button" id="cashReprint" class="outline">Consultar último comprobante por pedido</button></div>
+          <div class="buttons"><button type="button" id="cashCharge" class="primary" disabled>Cobrar y generar ticket</button></div>
+          <div class="ops-receipt-lookup"><label>Consultar un ticket ya cobrado (ID de pedido)<input type="number" id="cashReceiptId" min="1" placeholder="Ej.: 1"></label><button type="button" id="cashReprint" class="outline">Ver o reimprimir ticket pagado</button></div>
           <p class="hint">El ticket se abre en otra pestaña. Utiliza «Imprimir» y «Guardar como PDF». Es un comprobante interno académico, no una boleta tributaria.</p>
           <p class="hint">Yape, POS y Transferencia se registran manualmente; esta demo no procesa pagos bancarios. En POS, el recargo y el redondeo se muestran y aceptan ANTES de cobrar; el precio del plato no se modifica.</p>
           <div class="ops-section-label"><strong>Cuadre de caja y ventas por fecha</strong><span>Efectivo, Yape, POS y Transferencia por separado</span></div>
@@ -278,6 +281,39 @@
           <p id="cashCloseStatus" class="ops-status"></p>
           <div class="ops-section-label"><strong>Registro de operaciones cobradas</strong><span>Historial de tickets de la fecha</span></div>
           <div class="ops-table-wrap"><table class="ops-table"><thead><tr><th>Hora</th><th>Ticket</th><th>Pedido</th><th>Medio</th><th>Total</th></tr></thead><tbody id="salesHistoryTable"><tr><td colspan="5">Selecciona una fecha.</td></tr></tbody></table></div>
+        </div>
+      </section>
+
+
+      <section id="module-salesDaily" class="view-module" hidden>
+        <div class="module-heading"><div><span class="eyebrow">CAJA · S06 VENTAS REGISTRADAS</span><h2>Ventas del día · detalle por producto</h2><p>Registro real de productos en pedidos PAGADOS. Consulta la fecha para ver cantidad, precio guardado y subtotal; sin incluir órdenes todavía pendientes.</p></div><span class="module-label">REST · GET</span></div>
+        <div class="panel">
+          <div class="ops-daily-filter"><label>Seleccionar fecha<input id="dailySalesDate" type="date"></label>
+            <button type="button" id="dailySalesRefresh" class="primary">Consultar ventas de la fecha</button>
+            <span id="dailySalesUpdated" class="hint" role="status">Sin consulta aún.</span></div>
+          <div class="ops-summary-grid">
+            <div><small>Pedidos cobrados</small><strong id="dailySalesTickets">0</strong></div>
+            <div><small>Unidades vendidas</small><strong id="dailySalesUnits">0</strong></div>
+            <div><small>Subtotal de platos</small><strong id="dailySalesBase">S/ 0.00</strong></div>
+            <div><small>Recargos POS</small><strong id="dailySalesPosFee">S/ 0.00</strong></div>
+            <div><small>Ingreso total del día</small><strong id="dailySalesTotal">S/ 0.00</strong></div>
+          </div>
+          <div class="ops-section-label"><strong>Productos vendidos en la fecha</strong><span>Precios de la orden, no precios actuales de la carta</span></div>
+          <div class="ops-table-wrap"><table class="ops-table"><thead>
+            <tr><th>Producto</th><th>Cantidad vendida</th><th>Precio unitario (S/)</th><th>Subtotal (S/)</th></tr>
+          </thead><tbody id="dailySalesTable"><tr><td colspan="4">Selecciona una fecha para consultar.</td></tr></tbody>
+          <tfoot><tr><th colspan="3">Subtotal de platos</th><th id="dailySalesFooterBase">S/ 0.00</th></tr>
+          <tr><th colspan="3">Recargos POS (se suman aparte)</th><th id="dailySalesFooterFee">S/ 0.00</th></tr>
+          <tr class="ops-daily-final"><th colspan="3">TOTAL FINAL COBRADO</th><th id="dailySalesFooterTotal">S/ 0.00</th></tr></tfoot>
+          </table></div>
+          <p id="dailySalesCheck" class="hint" role="status">Se incluirán solo ventas cobradas. Los movimientos de salida de stock sin venta no se consideran ingresos.</p>
+          <div class="ops-section-label"><strong>Distribución del total por medio de pago</strong><span>Los recargos POS ya están incluidos en POS y en total</span></div>
+          <div class="ops-summary-grid">
+            <div><small>Efectivo</small><strong id="dailySalesCash">S/ 0.00</strong></div>
+            <div><small>Yape</small><strong id="dailySalesYape">S/ 0.00</strong></div>
+            <div><small>POS</small><strong id="dailySalesPos">S/ 0.00</strong></div>
+            <div><small>Transferencia</small><strong id="dailySalesTransfer">S/ 0.00</strong></div>
+          </div>
         </div>
       </section>
 
