@@ -189,3 +189,43 @@ body{background:#f7f8f5}
 .ops-status{font-size:12px;color:#3c6a4f}
 @media(max-width:900px){.ops-summary-grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
 @media(max-width:560px){.ops-summary-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.ops-order-grid{grid-template-columns:1fr}.ops-order-card{padding:12px}.ops-section-label{align-items:start;flex-direction:column}}
+
+/* Sala, comandas seleccionadas y agenda de reservas — Delicias Peruanas APF3 */
+.mesa-button{cursor:pointer;transition:box-shadow .15s ease,transform .15s ease}
+.mesa-button:hover{transform:translateY(-1px);box-shadow:0 6px 16px rgba(34,72,42,.12)}
+.mesa-button.seleccionada{outline:3px solid #2b7450;outline-offset:1px}
+.mesa-button.ocupada{border-color:#eac4ba;background:#fdf0e9;color:#9b5939}
+.mesa-button .mesa-reserva-detalle{font-size:10px;line-height:1.4;letter-spacing:0;text-transform:none;color:#895c32;font-weight:800;border-top:1px solid #ebddcf;padding-top:5px;margin-top:4px}
+.ops-operation-section{margin:25px 0 13px!important}
+.ops-order-entry{padding:20px;border:1px solid #dce8dd;border-radius:12px;background:#fbfdfb;margin:12px 0}
+.ops-order-entry[hidden],.ops-selected-order[hidden],#newOrderActions[hidden],#addToExistingActions[hidden]{display:none!important}
+.ops-selected-order{border:1px solid #c9dfcf;background:#fff;border-radius:14px;padding:21px;margin:15px 0;box-shadow:0 12px 35px rgba(34,76,45,.06)}
+.ops-focus-head{display:flex;justify-content:space-between;align-items:start;gap:15px;padding-bottom:13px;border-bottom:1px solid #e1eae2}
+.ops-focus-title h3{font:700 27px Georgia,serif;color:#183c29;margin:0 0 5px}
+.ops-focus-title small{font-size:11px;color:#677e6d;line-height:1.6}
+.ops-focused-lines{display:flex;flex-direction:column}
+.ops-focused-line{display:grid;grid-template-columns:minmax(140px,1fr) auto auto;align-items:center;gap:14px;padding:15px 0;border-bottom:1px solid #edf0ed}
+.ops-focused-description{display:flex;flex-direction:column;gap:7px;font-size:13px}
+.ops-focused-description strong{color:#1a3d2e}
+.ops-focused-description small{color:#697b70;font-size:11px}
+.ops-focused-line button{font-size:11px;padding:8px 11px;grid-column:1/-1;justify-self:end;min-width:0}
+.ops-focus-total{display:flex;justify-content:space-between;align-items:center;gap:10px;margin:20px 0 15px;padding:18px 16px;border-radius:10px;background:#eff7ee}
+.ops-focus-total span{font-size:11px;letter-spacing:.08em;color:#42684d;font-weight:800}
+.ops-focus-total strong{font:700 27px Georgia,serif;color:#185137}
+.ops-focus-actions{display:flex;flex-wrap:wrap;gap:9px}
+.ops-focus-actions button{min-width:0;padding:10px 14px;font-size:12px}
+.ops-focus-note{font-size:11px;color:#66806c;margin:14px 0 0}
+.ops-technical-tools{margin:17px 0;border:1px dashed #cbdacb;border-radius:10px;padding:12px 16px;background:#f8faf6}
+.ops-technical-tools summary{font-size:12px;font-weight:800;color:#57695b;cursor:pointer}
+.ops-technical-tools[open]>label{display:block;margin:12px 0}
+.ops-technical-tools[open]>.buttons{display:flex;flex-wrap:wrap;gap:7px;margin:15px 0}
+.ops-reservation-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:15px;margin:16px 0}
+.ops-reservation-card{border:1px solid #d6e4d6;border-radius:12px;padding:19px;background:linear-gradient(135deg,#fff,#f5fbf5);box-shadow:0 6px 18px rgba(37,70,40,.05)}
+.ops-reservation-header{display:flex;align-items:start;justify-content:space-between;gap:10px;margin-bottom:18px}
+.ops-reservation-id{font-size:10px;color:#be7140;letter-spacing:.12em;font-weight:900}
+.ops-reservation-header h3{font:700 26px Georgia,serif;color:#204a34;margin:5px 0 0}
+.ops-reservation-data{display:flex;flex-direction:column;gap:11px;font-size:12px;color:#385341}
+.ops-reservation-data span{line-height:1.4}
+.ops-reservation-note{font-size:11px;color:#7c654b;margin:16px 0}
+.ops-reservation-card button{font-size:11px;padding:8px 11px;min-width:0}
+@media(max-width:650px){.ops-order-entry,.ops-selected-order{padding:14px}.ops-focused-line{grid-template-columns:1fr auto;gap:6px}.ops-focused-line .ops-age{grid-column:1/-1}.ops-focused-line button{grid-column:1/-1}.ops-reservation-grid{grid-template-columns:1fr}}
