@@ -187,9 +187,9 @@ public class PedidoService {
     @Transactional
     public PedidoRespuesta marcarListo(Long pedidoId,Long detalleId,String correo) {
         Usuario usuario=buscarUsuario(correo);
-        if (!List.of("COCINERO","SUPERVISOR","ADMIN").contains(usuario.getRol())) {
+        if (!"COCINERO".equals(usuario.getRol())) {
             throw error(HttpStatus.FORBIDDEN,"SOLO_COCINA",
-                "La preparación solo la actualiza Cocina o un responsable");
+                "Solo el Cocinero puede marcar platos LISTOS");
         }
         Pedido pedido=bloquear(pedidoId);
         if (!"CONFIRMADO".equals(pedido.getEstado())) {

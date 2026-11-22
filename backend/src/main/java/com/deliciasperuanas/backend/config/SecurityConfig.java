@@ -154,7 +154,7 @@ public class SecurityConfig {
                         // El personal confirma pedidos; clientes registran, consultan y cancelan los suyos
                         // Un cocinero marca platos como LISTO, pero no cobra ni confirma.
                         .requestMatchers(HttpMethod.POST, "/api/v1/pedidos/*/detalles/*/listo")
-                        .hasAnyRole("ADMIN", "SUPERVISOR", "COCINERO")
+                        .hasRole("COCINERO")
 
                         .requestMatchers(HttpMethod.POST,"/api/v1/pedidos/*/detalles/*/entregado")
                         .hasRole("MOZO")
