@@ -5,6 +5,8 @@ import com.deliciasperuanas.backend.service.InventarioService;
 import jakarta.validation.Valid;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.format.annotation.DateTimeFormat;
+import java.time.LocalDate;
 import java.util.List;
 
 @RestController
@@ -16,8 +18,18 @@ public class InventarioController {
     @GetMapping
     public List<InventarioRespuesta> listar(){return service.listar();}
 
+    /**
+     * Filtro opcional por fecha (AAAA-MM-DD) y tipo (SALIDA, ENTRADA, AJUSTE).
+     * Sin filtros conserva el comportamiento anterior (últimos 200 movimientos).
+     */
     @GetMapping("/movimientos")
-    public List<MovimientoInventarioRespuesta> movimientos(){return service.historial();}
+    public List<MovimientoInventarioRespuesta> movimientos(
+        @RequestParam(required=false)
+        @DateTimeFormat(iso=DateTimeFormat.ISO.DATE) LocalDate fecha,
+        @RequestParam(required=false) String tipo
+    ){
+        return service.historial(fecha,tipo);
+    }
 
     @GetMapping("/{productoId}")
     public InventarioRespuesta consultar(@PathVariable Long productoId){

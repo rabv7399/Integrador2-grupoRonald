@@ -7,6 +7,9 @@ import com.deliciasperuanas.backend.repository.MovimientoInventarioRepository;
 import java.util.List;
 import java.util.Map;
 import java.util.HashMap;
+import java.time.LocalDate;
+import java.util.Locale;
+import java.util.Set;
 import com.deliciasperuanas.backend.entity.InventarioPlato;
 import com.deliciasperuanas.backend.entity.Producto;
 import com.deliciasperuanas.backend.repository.InventarioPlatoRepository;
@@ -36,7 +39,26 @@ public class InventarioService {
 
     @Transactional(readOnly=true)
     public List<MovimientoInventarioRespuesta> historial(){
-        return movimientos.findAllByOrderByIdDesc().stream().limit(200)
+        return historial(null,null);
+    }
+
+    /**
+     * Permite consultar días antiguos aunque haya más de 200 movimientos recientes.
+     * El caso sin filtro mantiene el límite anterior; una búsqueda explícita por
+     * fecha o tipo recorre el historial completo de esta demostración académica.
+     */
+    @Transactional(readOnly=true)
+    public List<MovimientoInventarioRespuesta> historial(LocalDate fecha,String tipo){
+        String filtro=tipo==null||tipo.isBlank()?"TODOS":tipo.trim().toUpperCase(Locale.ROOT);
+        if(!Set.of("TODOS","SALIDA","ENTRADA","AJUSTE").contains(filtro))
+            throw new OperacionNegocioException(HttpStatus.BAD_REQUEST,
+                "TIPO_MOVIMIENTO_INVALIDO","Elige TODOS, SALIDA, ENTRADA o AJUSTE");
+        var registro=movimientos.findAllByOrderByIdDesc().stream()
+            .filter(m->fecha==null||m.getFecha().toLocalDate().equals(fecha))
+            .filter(m->"TODOS".equals(filtro)||filtro.equals(m.getTipo()));
+        if(fecha==null&&"TODOS".equals(filtro))
+            registro=registro.limit(200);
+        return registro
             .map(m->new MovimientoInventarioRespuesta(m.getId(),m.getProducto().getId(),
                 m.getProducto().getNombre(),m.getTipo(),m.getCantidad(),
                 m.getComentario(),m.getUsuarioCorreo(),m.getFecha())).toList();
