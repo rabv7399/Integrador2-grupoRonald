@@ -294,6 +294,11 @@ public class PedidoService {
                 "No se puede cancelar una orden ya pagada o previamente cancelada.");
         }
         if("CONFIRMADO".equals(pedido.getEstado())) {
+            // Las cancelaciones de clientes siguen siendo solo PENDIENTE (compatibilidad APF2/APF3).
+            if(!personal(usuario) || "COCINERO".equals(usuario.getRol())){
+                throw error(HttpStatus.CONFLICT,"ESTADO_PEDIDO_INVALIDO",
+                    "Un cliente no puede anular un pedido confirmado; consulta al Mozo.");
+            }
             // No anular entregas o producción ya comenzada sin un proceso de devolución.
             verificarPersonal(usuario);
             if(pedido.getDetalles().stream().anyMatch(d ->
