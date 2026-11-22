@@ -710,6 +710,92 @@ class SoaDemoProfileIntegrationTest {
             .andExpect(status().isOk());
     }
 
+
+    @Test
+    void salidasDeStockYVentasCobradasPorFechaSinDuplicarMontos() throws Exception {
+        String mozo=iniciar("mozo.demo@delicias.local","MozoDemoTest123!");
+        String caja=iniciar("caja.demo@delicias.local","CajaDemoTest123!");
+        String cocina=iniciar("cocinero.demo@delicias.local","CocineroDemoTest123!");
+        mvc.perform(get("/soa-demo/index.html"))
+            .andExpect(status().isOk())
+            .andExpect(content().string(org.hamcrest.Matchers.containsString(
+                "id=\"module-salesDaily\"")))
+            .andExpect(content().string(org.hamcrest.Matchers.containsString(
+                "id=\"dailySalesTable\"")))
+            .andExpect(content().string(org.hamcrest.Matchers.containsString(
+                "id=\"cashReceiptId\"")));
+
+        mvc.perform(patch("/api/v1/inventario/1/salida")
+                .header("Authorization","Bearer "+caja)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"cantidad\":2,\"comentario\":\"Merma auditada del turno\"}"))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.salidasManuales").value(2));
+        mvc.perform(get("/api/v1/inventario")
+                .header("Authorization","Bearer "+mozo))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$[?(@.productoId == 1)].salidasManuales")
+                .value(org.hamcrest.Matchers.hasItem(2)));
+        mvc.perform(get("/api/v1/inventario/movimientos")
+                .header("Authorization","Bearer "+mozo))
+            .andExpect(status().isForbidden());
+
+        String creado=mvc.perform(post("/api/v1/pedidos/envio")
+                .header("Authorization","Bearer "+mozo)
+                .header("Idempotency-Key","fecha-cobro-inventario-001")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"tipoAtencion\":\"LLEVAR\",\"items\":[{\"productoId\":1,\"cantidad\":2}]}"))
+            .andExpect(status().isCreated())
+            .andReturn().getResponse().getContentAsString();
+        Number pedido=JsonPath.read(creado,"$.pedidoId");
+        Number detalle=JsonPath.read(creado,"$.items[0].detalleId");
+        mvc.perform(get("/api/v1/inventario/1")
+                .header("Authorization","Bearer "+mozo))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.salidasManuales").value(2))
+            .andExpect(jsonPath("$.vendidas").value(2))
+            .andExpect(jsonPath("$.disponibles").value(26));
+
+        mvc.perform(post("/api/v1/pedidos/{pedido}/detalles/{detalle}/listo",
+                pedido.longValue(),detalle.longValue())
+                .header("Authorization","Bearer "+cocina))
+            .andExpect(status().isOk());
+
+        mvc.perform(post("/api/v1/ventas/pedidos/{pedido}/cobrar",pedido.longValue())
+                .header("Authorization","Bearer "+caja)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"medioPago\":\"EFECTIVO\",\"montoRecibido\":60.00}"))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.subtotalBase").value(50))
+            .andExpect(jsonPath("$.total").value(50))
+            .andExpect(jsonPath("$.cambio").value(10));
+
+        String fecha=java.time.LocalDate.now(
+            java.time.ZoneId.of("America/Lima")).toString();
+        mvc.perform(get("/api/v1/ventas/detalle-diario")
+                .param("fecha",fecha)
+                .header("Authorization","Bearer "+mozo))
+            .andExpect(status().isForbidden());
+        mvc.perform(get("/api/v1/ventas/detalle-diario")
+                .param("fecha",fecha)
+                .header("Authorization","Bearer "+caja))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.ventasCobradas").value(1))
+            .andExpect(jsonPath("$.unidadesVendidas").value(2))
+            .andExpect(jsonPath("$.lineas[0].producto").value("Lomo Saltado"))
+            .andExpect(jsonPath("$.lineas[0].cantidad").value(2))
+            .andExpect(jsonPath("$.lineas[0].precioUnitario").value(25))
+            .andExpect(jsonPath("$.lineas[0].subtotal").value(50))
+            .andExpect(jsonPath("$.subtotalPlatos").value(50))
+            .andExpect(jsonPath("$.recargosPos").value(0))
+            .andExpect(jsonPath("$.totalCobrado").value(50))
+            .andExpect(jsonPath("$.cuadreDetalle").value(true));
+        mvc.perform(get("/api/v1/ventas/pedidos/{pedido}/cotizacion",
+                pedido.longValue()).header("Authorization","Bearer "+caja))
+            .andExpect(status().isConflict())
+            .andExpect(jsonPath("$.codigo").value("PEDIDO_YA_PAGADO"));
+    }
+
     private String iniciar(String correo, String pass) throws Exception {
         String json = "{\"correo\":\""+correo+"\",\"password\":\""+pass+"\"}";
         String response = mvc.perform(post("/api/auth/login")
