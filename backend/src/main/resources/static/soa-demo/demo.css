@@ -99,3 +99,228 @@ body{background:#f7f8f5}
 @media(max-width:1050px){.dashboard-view{grid-template-columns:220px minmax(0,1fr)}.side-brand strong{font-size:10px}.side-menu button{font-size:12px}.access-layout{gap:32px}}
 @media(max-width:800px){.access-layout{grid-template-columns:1fr;padding-top:35px}.access-message h1{font-size:46px}.login-card{max-width:510px}.dashboard-view{display:block}.side{position:relative;min-height:0;height:auto;padding:15px}.side-brand{padding:0 4px 13px}.side-heading,.side-bottom{display:none}.side-menu{flex-direction:row;overflow-x:auto;padding-top:14px}.side-menu button{width:auto;flex:none;padding:9px 11px}.workspace-header{padding:15px 20px}.workspace-content{padding:20px}.user-info{display:none}}
 @media(max-width:520px){.access-roles,.quick-grid,.kpi-grid{grid-template-columns:1fr}.access-message h1{font-size:39px}.login-card{padding:24px}.workspace-user{gap:8px}.workspace-header h2{font-size:21px}.workspace-eyebrow{font-size:8px}.module-heading{align-items:flex-start}.module-heading h2{font-size:27px}.module-label{display:none}.response-banner{align-items:start;flex-direction:column}.panel{padding:18px}}
+
+
+/* Operaciones de sala, cocina y caja */
+.mesa-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:9px;margin:17px 0}
+.mesa-button{display:flex;flex-direction:column;gap:6px;align-items:start;min-height:74px;padding:13px;border:1px solid #bedac3;border-radius:9px;background:#f3faf3;color:#245634;text-align:left}
+.mesa-button.ocupada{border-color:#f0ddd7;background:#fff4ef;color:#a86648}
+.mesa-button:disabled{opacity:.77;cursor:not-allowed}
+.mesa-button strong{font-size:14px}.mesa-button small{font-size:11px;text-transform:uppercase;letter-spacing:.08em}
+.command-list{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:14px;margin-top:20px;color:#536456}
+.command-card{border:1px solid #e0e8df;border-radius:10px;background:#fdfefd;padding:18px}
+.command-heading{display:flex;justify-content:space-between;gap:13px;align-items:center;color:var(--dark)}
+.order-status{font-size:10px;font-weight:900;padding:5px 8px;background:#e9f2eb;color:#306441;border-radius:5px}
+.command-items{list-style:none;padding:0;margin:15px 0 0}
+.command-items li{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 0;border-top:1px solid var(--line);font-size:12px}
+.command-items button{padding:6px 8px;min-width:90px;flex:none}
+.cash-row{display:flex;align-items:center;justify-content:space-between;gap:15px;border-bottom:1px solid #e5eae5;padding:10px 0}
+.cash-row span{font-size:12px;color:#455e49}.cash-row button{min-width:95px}
+.admin-list{max-height:320px;overflow-y:auto;margin-top:20px}
+.bar-chart{display:flex;justify-content:space-around;align-items:end;min-height:195px;gap:12px;border-top:1px solid var(--line);padding:20px 6px 8px}
+.bar-group{height:180px;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;gap:5px;flex:1;min-width:35px}
+.bar-group b{font-size:10px;color:#396e49;white-space:nowrap}
+.bar-group small{font-size:10px;color:var(--muted)}
+.bar{width:min(65%,70px);min-height:4px;background:linear-gradient(180deg,#73ad83,#214b35);border-radius:6px 6px 2px 2px}
+.config-preview{font-size:16px;color:var(--green);margin-top:18px;padding:17px;background:#f4f9f3;border:1px solid #dce9d9;border-radius:7px}
+#module-stock .control-divider{margin-top:26px}
+#module-sales .panel label{max-width:450px}
+#module-usersAdmin .panel,#module-productsAdmin .panel{max-width:1000px}
+#module-usersAdmin input:disabled{background:#eff1ef;color:#66756a}
+@media(max-width:650px){.mesa-grid{grid-template-columns:repeat(2,1fr)}.cash-row{flex-direction:column;align-items:start}.command-list{grid-template-columns:1fr}.bar-chart{overflow-x:auto;justify-content:flex-start}.bar-group{min-width:70px}}
+
+/* Inventario S05: cantidades visibles para el personal autorizado */
+.inventory-summary{margin:18px 0 6px;padding:22px;border:1px solid #d9e7db;background:#f8fcf8;border-radius:13px}
+.inventory-summary-head{display:flex;align-items:center;justify-content:space-between;gap:15px;margin-bottom:18px}
+.inventory-summary-head h3{font:700 22px/1.2 Georgia,serif;color:#163d2b;margin:7px 0 0}
+.inventory-badge{padding:7px 13px;border-radius:30px;font-size:12px;white-space:nowrap}
+.inventory-badge.is-available{background:#dceede;color:#1e6c41}
+.inventory-badge.is-unavailable{background:#fff0e7;color:#974a30}
+.inventory-metrics{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
+.inventory-metric{display:flex;flex-direction:column;gap:6px;background:white;padding:16px 13px;border:1px solid #e3ebe4;border-radius:10px}
+.inventory-metric span{font-size:12px;font-weight:700;color:#526456}
+.inventory-metric strong{font-size:30px;line-height:1.1;color:#264434;font-variant-numeric:tabular-nums}
+.inventory-metric small{font-size:10px;color:#64736a;line-height:1.4}
+.inventory-metric-available{border-color:#b9dfc2;background:#e9f6ec}
+.inventory-metric-available strong{color:#1b6a3a}
+.inventory-meter{height:9px;overflow:hidden;background:#dfeae0;border-radius:20px;margin-top:18px}
+.inventory-meter-fill{display:block;height:100%;background:#2e8851;transition:width .2s ease}
+.inventory-inline-error{padding:12px 16px;border-radius:8px;border:1px solid #f1cac2;background:#fff4f0;color:#9a321c;margin-top:14px}
+@media(max-width:700px){.inventory-metrics{grid-template-columns:repeat(2,minmax(0,1fr))}.inventory-summary-head{align-items:start;flex-direction:column}}
+
+/* Operación de sala con consulta REST sincronizada (APF3) */
+.ops-section-label{display:flex;align-items:center;justify-content:space-between;gap:15px;flex-wrap:wrap;margin:30px 0 13px;padding-top:18px;border-top:1px solid #e4ece5}
+.ops-section-label strong{font-size:15px;color:#1d5035}
+.ops-section-label span{font-size:11px;color:#607767}
+.ops-table-wrap{width:100%;overflow-x:auto;border:1px solid #dfe9e0;border-radius:10px;margin:7px 0 15px;background:#fff}
+.ops-table{border-collapse:collapse;width:100%;min-width:640px;font-size:12px;color:#33483a}
+.ops-table th{background:#eaf3eb;text-align:left;font-size:11px;letter-spacing:.04em;color:#28513b;font-weight:800;padding:13px}
+.ops-table td{padding:12px 13px;border-top:1px solid #e8ede8;vertical-align:middle}
+.ops-table tr:nth-child(even) td{background:#fbfdfb}
+.ops-table .ops-empty{text-align:center;color:#718074;padding:23px}
+.ops-table button{font-size:11px;padding:6px 9px;min-width:0}
+.ops-badge{font-size:10px;letter-spacing:.025em;font-weight:800;border-radius:7px;padding:5px 8px;display:inline-flex;align-items:center}
+.ops-badge.good{background:#e0f2e3;color:#28633b}
+.ops-badge.waiting{background:#fff4db;color:#906625}
+.ops-badge.bad{background:#fde9e4;color:#9b453b}
+.ops-order-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(290px,1fr));gap:14px}
+.ops-order-card{padding:17px;border-radius:12px;background:white;border:1px solid #dce8de;box-shadow:0 6px 18px rgba(30,70,44,.04)}
+.ops-order-head{display:flex;gap:10px;justify-content:space-between;align-items:center;margin-bottom:4px}
+.ops-order-head strong{font-size:14px;color:#184a33}
+.ops-order-sub{color:#718074;font-size:12px;margin:4px 0 10px}
+.ops-order-lines{border-top:1px solid #e8ece7;padding-top:7px}
+.ops-order-line{display:grid;grid-template-columns:minmax(90px,1fr) auto;align-items:center;gap:8px;border-bottom:1px solid #eff0ed;padding:8px 0}
+.ops-order-line>span:first-child{font-size:12px;color:#3c5744}
+.ops-order-line .ops-age{color:#819080;grid-column:1}
+.ops-order-line button{grid-column:2;grid-row:2;padding:6px 9px;font-size:11px}
+.ops-order-actions{margin-top:14px;gap:7px;flex-wrap:wrap}
+.ops-order-actions button{padding:9px 12px;min-width:0;font-size:11px}
+.ops-age{white-space:nowrap;font-size:11px;color:#607866}
+.ops-cocina-line{display:grid!important;grid-template-columns:minmax(150px,1fr) auto;gap:8px!important}
+.ops-cocina-line .ops-age{font-size:11px}
+.ops-cocina-line button{grid-column:1/-1;justify-self:start}
+.ops-summary-grid{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:10px;margin:17px 0}
+.ops-summary-grid>div{display:flex;flex-direction:column;gap:8px;background:#f3f9f4;border:1px solid #dae9dc;border-radius:9px;padding:14px}
+.ops-summary-grid small{color:#65796b;font-size:10px;letter-spacing:.04em}
+.ops-summary-grid strong{font-size:18px;color:#1c5037;line-height:1.4}
+.ops-close-form{align-items:end;margin:20px 0 0}
+.ops-close-form>div{display:flex;flex-direction:column;gap:12px;justify-content:end}
+.ops-close-form small{font-size:11px;line-height:1.5;color:#627364}
+.ops-status{font-size:12px;color:#3c6a4f}
+@media(max-width:900px){.ops-summary-grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media(max-width:560px){.ops-summary-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.ops-order-grid{grid-template-columns:1fr}.ops-order-card{padding:12px}.ops-section-label{align-items:start;flex-direction:column}}
+
+/* Sala, comandas seleccionadas y agenda de reservas — Delicias Peruanas APF3 */
+.mesa-button{cursor:pointer;transition:box-shadow .15s ease,transform .15s ease}
+.mesa-button:hover{transform:translateY(-1px);box-shadow:0 6px 16px rgba(34,72,42,.12)}
+.mesa-button.seleccionada{outline:3px solid #2b7450;outline-offset:1px}
+.mesa-button.ocupada{border-color:#eac4ba;background:#fdf0e9;color:#9b5939}
+.mesa-button .mesa-reserva-detalle{font-size:10px;line-height:1.4;letter-spacing:0;text-transform:none;color:#895c32;font-weight:800;border-top:1px solid #ebddcf;padding-top:5px;margin-top:4px}
+.ops-operation-section{margin:25px 0 13px!important}
+.ops-order-entry{padding:20px;border:1px solid #dce8dd;border-radius:12px;background:#fbfdfb;margin:12px 0}
+.ops-order-entry[hidden],.ops-selected-order[hidden],#newOrderActions[hidden],#addToExistingActions[hidden]{display:none!important}
+.ops-selected-order{border:1px solid #c9dfcf;background:#fff;border-radius:14px;padding:21px;margin:15px 0;box-shadow:0 12px 35px rgba(34,76,45,.06)}
+.ops-focus-head{display:flex;justify-content:space-between;align-items:start;gap:15px;padding-bottom:13px;border-bottom:1px solid #e1eae2}
+.ops-focus-title h3{font:700 27px Georgia,serif;color:#183c29;margin:0 0 5px}
+.ops-focus-title small{font-size:11px;color:#677e6d;line-height:1.6}
+.ops-focused-lines{display:flex;flex-direction:column}
+.ops-focused-line{display:grid;grid-template-columns:minmax(140px,1fr) auto auto;align-items:center;gap:14px;padding:15px 0;border-bottom:1px solid #edf0ed}
+.ops-focused-description{display:flex;flex-direction:column;gap:7px;font-size:13px}
+.ops-focused-description strong{color:#1a3d2e}
+.ops-focused-description small{color:#697b70;font-size:11px}
+.ops-focused-line button{font-size:11px;padding:8px 11px;grid-column:1/-1;justify-self:end;min-width:0}
+.ops-focus-total{display:flex;justify-content:space-between;align-items:center;gap:10px;margin:20px 0 15px;padding:18px 16px;border-radius:10px;background:#eff7ee}
+.ops-focus-total span{font-size:11px;letter-spacing:.08em;color:#42684d;font-weight:800}
+.ops-focus-total strong{font:700 27px Georgia,serif;color:#185137}
+.ops-focus-actions{display:flex;flex-wrap:wrap;gap:9px}
+.ops-focus-actions button{min-width:0;padding:10px 14px;font-size:12px}
+.ops-focus-note{font-size:11px;color:#66806c;margin:14px 0 0}
+.ops-technical-tools{margin:17px 0;border:1px dashed #cbdacb;border-radius:10px;padding:12px 16px;background:#f8faf6}
+.ops-technical-tools summary{font-size:12px;font-weight:800;color:#57695b;cursor:pointer}
+.ops-technical-tools[open]>label{display:block;margin:12px 0}
+.ops-technical-tools[open]>.buttons{display:flex;flex-wrap:wrap;gap:7px;margin:15px 0}
+.ops-reservation-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:15px;margin:16px 0}
+.ops-reservation-card{border:1px solid #d6e4d6;border-radius:12px;padding:19px;background:linear-gradient(135deg,#fff,#f5fbf5);box-shadow:0 6px 18px rgba(37,70,40,.05)}
+.ops-reservation-header{display:flex;align-items:start;justify-content:space-between;gap:10px;margin-bottom:18px}
+.ops-reservation-id{font-size:10px;color:#be7140;letter-spacing:.12em;font-weight:900}
+.ops-reservation-header h3{font:700 26px Georgia,serif;color:#204a34;margin:5px 0 0}
+.ops-reservation-data{display:flex;flex-direction:column;gap:11px;font-size:12px;color:#385341}
+.ops-reservation-data span{line-height:1.4}
+.ops-reservation-note{font-size:11px;color:#7c654b;margin:16px 0}
+.ops-reservation-card button{font-size:11px;padding:8px 11px;min-width:0}
+@media(max-width:650px){.ops-order-entry,.ops-selected-order{padding:14px}.ops-focused-line{grid-template-columns:1fr auto;gap:6px}.ops-focused-line .ops-age{grid-column:1/-1}.ops-focused-line button{grid-column:1/-1}.ops-reservation-grid{grid-template-columns:1fr}}
+
+/* Vista previa del cobro y fotografías cargadas por Administración */
+.ops-payment-quote{background:#f1f8f2;border:1px solid #cfe5d3;border-radius:11px;padding:15px 17px;margin:15px 0;font-size:12px;color:#234832}
+.ops-payment-row{display:flex;justify-content:space-between;align-items:center;gap:15px;padding:7px 0;border-bottom:1px solid #deeadf}
+.ops-payment-row strong{font-size:14px;color:#174532}
+.ops-payment-total{border-bottom:0;border-top:2px solid #cde0cd;padding-top:13px;margin-top:7px}
+.ops-payment-total strong{font-size:22px}
+.ops-payment-quote small{display:block;color:#8c532a;font-weight:600;line-height:1.5;margin-top:8px}
+.ops-pos-consent{display:flex!important;gap:9px;align-items:start;background:#fff5df;border:1px solid #e7c68c;padding:13px;border-radius:8px;color:#6b481f;font-size:12px;line-height:1.6}
+.ops-pos-consent[hidden]{display:none!important}
+.ops-pos-consent input[type=checkbox]{width:17px;height:17px;flex-shrink:0;margin-top:1px}
+.ops-photo-editor{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(160px,.7fr);gap:16px;padding:15px 0;margin:10px 0;border-top:1px solid #dae8d9;border-bottom:1px solid #dae8d9}
+.ops-photo-editor input[type=file]{font-size:12px;background:#fff;width:100%;padding:10px;border:1px solid #d5e0d4;border-radius:7px}
+.ops-photo-preview{width:100%;min-height:170px;max-height:260px;border:1px dashed #b8ceb9;border-radius:9px;display:flex;align-items:center;justify-content:center;text-align:center;color:#6c7b70;font-size:12px;background:#f1f6ee;overflow:hidden;padding:9px}
+.ops-photo-preview img{width:100%;height:230px;object-fit:cover;border-radius:7px}
+@media(max-width:660px){.ops-photo-editor{grid-template-columns:1fr}}
+
+/* APF3 — ventas por producto y cobro sin saldo obsoleto */
+.ops-daily-filter{display:flex;gap:14px;flex-wrap:wrap;align-items:end;padding:8px 0 19px}
+.ops-daily-filter label{min-width:230px;max-width:340px;flex:1}
+.ops-daily-filter button{min-height:44px}
+.ops-daily-filter .hint{margin-left:auto;padding-bottom:8px}
+.ops-daily-final{background:#e3f0e5;color:#18432c;font-weight:900}
+.ops-daily-final th{border-top:2px solid #a9c9b1!important;font-size:14px}
+.ops-receipt-lookup{margin:22px 0 10px;padding:14px 17px;border:1px dashed #c8d9c8;border-radius:10px;background:#fafcf9;display:flex;gap:10px;flex-wrap:wrap;align-items:end}
+.ops-receipt-lookup label{min-width:220px;max-width:420px;flex:1}
+.ops-receipt-lookup button{min-height:44px}
+#cashCharge:disabled{opacity:.52;cursor:not-allowed}
+@media(max-width:660px){.ops-daily-filter,.ops-receipt-lookup{flex-direction:column;align-items:stretch}.ops-daily-filter label,.ops-receipt-lookup label{max-width:none;width:100%}}
+
+/* Operación por plato: observaciones de preparación y cancelación auditada */
+.ops-observation-editor{grid-column:1/-1;width:100%;margin-top:7px;padding:12px 14px;border-radius:10px;background:#f7faf5;border:1px solid #d9e6d6}
+.ops-observation-editor label{display:block;font-size:12px;font-weight:600;color:#315440;margin-bottom:10px}
+.ops-observation-input{width:100%;display:block;margin:6px 0 0;padding:10px 12px;border-radius:8px;border:1px solid #c6d7c4;color:#193d2c;background:#fff}
+.ops-plate-actions{display:flex;gap:9px;flex-wrap:wrap;align-items:center}
+.ops-plate-actions button{font-size:12px;padding:8px 11px}
+.ops-line-observation{font-size:12px;line-height:1.6;font-weight:700;color:#8b5421;background:#fff2db;border:1px solid #f1d4a5;border-radius:7px;padding:7px 10px;margin-top:8px}
+.ops-line-cancelled{font-size:11px;line-height:1.5;color:#a73c31;background:#fff0ee;border:1px solid #f0c7bf;border-radius:7px;padding:6px 9px;margin-top:6px}
+.ops-kitchen-observation{display:block;color:#9a4f11;background:#fff1dc;padding:7px 8px;border-radius:6px;margin-top:7px;font-size:13px}
+
+/* Historial de inventario: filtros auditables por fecha y tipo */
+.ops-movement-filters{display:flex;gap:12px;align-items:end;flex-wrap:wrap;margin:12px 0 10px}
+.ops-movement-filters label{display:flex;flex-direction:column;gap:6px;flex:1;min-width:190px;max-width:310px;font-weight:600;font-size:12px}
+.ops-movement-filters input,.ops-movement-filters select{min-height:43px}
+.ops-movement-filters button{min-height:43px}
+#stockMovementsStatus{margin-bottom:15px}
+@media(max-width:620px){
+  .ops-movement-filters{flex-direction:column;align-items:stretch}
+  .ops-movement-filters label{width:100%;max-width:none}
+}
+
+/* APF3: edición compacta por plato y seguimiento de Cocina por rol */
+.ops-focused-line{grid-template-columns:minmax(175px,1fr) auto auto auto;gap:8px;padding:10px 0}
+.ops-focused-description{gap:3px}
+.ops-focused-description .ops-line-observation{margin:3px 0 0;padding:4px 7px;font-size:11px;line-height:1.35}
+.ops-focused-description .ops-line-cancelled{margin-top:3px;padding:4px 7px}
+.ops-focused-line .ops-plate-toggle{grid-column:4;grid-row:1;justify-self:end;white-space:nowrap;padding:7px 10px;min-width:auto}
+.ops-focused-line>.ops-observation-compact{grid-column:1/-1;display:grid;grid-template-columns:minmax(0,2fr) minmax(100px,.8fr);gap:10px;margin:2px 0 5px;padding:12px 14px}
+.ops-observation-compact label{margin:0!important;min-width:0}
+.ops-observation-compact .ops-observation-input{height:39px;font-size:12px;padding:8px 10px}
+.ops-observation-compact .ops-plate-actions{grid-column:1/-1;margin-top:0}
+.ops-observation-compact .ops-plate-actions button{grid-column:auto;justify-self:start;margin:0;font-size:11px}
+#kitchenOrders>.ops-kitchen-access-hint{grid-column:1/-1;margin:0;padding:9px 13px;background:#edf6ed;border-radius:8px;font-size:12px;color:#42624c}
+.ops-kitchen-card{padding:14px 15px}
+.ops-kitchen-headline{display:flex;flex-direction:column;gap:4px}
+.ops-kitchen-headline small{color:#6c8270;font-size:11px}
+.ops-kitchen-pending-list{margin-top:10px}
+.ops-kitchen-pending-list .ops-kitchen-compact-line{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:8px 0;min-height:48px}
+.ops-kitchen-main{display:flex;flex-direction:column;gap:4px;min-width:0;flex:1}
+.ops-kitchen-main strong{font-size:12px;color:#1e4732}
+.ops-kitchen-short-note{font-size:11px;color:#9a5615;line-height:1.4;font-weight:650}
+.ops-kitchen-end{display:flex;align-items:center;gap:10px;flex-shrink:0}
+.ops-kitchen-end button{padding:7px 10px;font-size:11px;white-space:nowrap;min-width:auto}
+.ops-kitchen-readonly{font-size:10px;color:#778778;white-space:nowrap}
+@media(max-width:780px){
+ .ops-focused-line{grid-template-columns:minmax(130px,1fr) auto auto;gap:7px}
+ .ops-focused-line .ops-plate-toggle{grid-column:3;grid-row:2}
+ .ops-focused-line>.ops-observation-compact{grid-column:1/-1}
+}
+@media(max-width:500px){
+ .ops-focused-line{grid-template-columns:minmax(120px,1fr) auto}
+ .ops-focused-line .ops-plate-toggle{grid-column:2;grid-row:2}
+ .ops-focused-line>.ops-observation-compact{grid-template-columns:1fr}
+ .ops-observation-compact .ops-plate-actions{grid-column:1;flex-direction:column;align-items:stretch}
+ .ops-observation-compact .ops-plate-actions button{width:100%;justify-self:stretch}
+ .ops-kitchen-pending-list .ops-kitchen-compact-line{align-items:flex-start}
+ .ops-kitchen-end{flex-direction:column;align-items:end}
+}
+
+/* Bandeja de múltiples comandas: tarjetas breves y scroll interno */
+#activeOrders{max-height:430px;overflow-y:auto;overscroll-behavior:contain;align-content:start;padding-right:5px;scrollbar-width:thin}
+#activeOrders .ops-order-card{padding:12px 14px}
+#activeOrders .ops-order-short-summary{font-size:11px;color:#48634f;background:#f3f8f2;border-radius:7px;padding:8px 10px;margin:9px 0}
+#activeOrders .ops-order-actions{margin-top:9px}
+#activeOrders .ops-order-sub{font-size:11px}

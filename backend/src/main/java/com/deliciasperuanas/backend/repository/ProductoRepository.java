@@ -8,6 +8,7 @@ import java.util.List;
 import java.util.Optional;
 
 public interface ProductoRepository extends JpaRepository<Producto, Long> {
+    boolean existsByCategoriaId(Long categoriaId);
 
     @Override
     @EntityGraph(attributePaths = "categoria")

@@ -83,3 +83,6 @@
   .source-dot.original{margin-left:0}
   .food-bottom small{max-width:135px}
 }
+
+/* Logo local opcional cargado desde Configuración. No alterar el gradiente si faltan fotos. */
+.brand-mark{overflow:hidden}

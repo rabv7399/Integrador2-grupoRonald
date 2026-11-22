@@ -58,12 +58,13 @@
   </section>
   <section id="carta" class="section menu-section">
     <div class="container">
-      <div class="section-head"><div><span class="section-kicker">La carta · Delicias Peruanas</span><h2>¿Qué te apetece hoy?</h2><p>Compara nuestro catálogo original con los productos publicados mediante la API REST. Los precios registrados en MySQL tienen prioridad.</p></div><span class="live-indicator" id="catalogStatus" aria-live="polite">Conectando con el catálogo…</span></div>
+      <div class="section-head"><div><span class="section-kicker">La carta · Delicias Peruanas</span><h2>¿Qué te apetece hoy?</h2><p>Precios, nombres e imágenes actualizados desde el panel de Administración. Los platos desactivados ya no se ofrecen en nuestra carta actual.</p></div><span class="live-indicator" id="catalogStatus" aria-live="polite">Conectando con el catálogo…</span></div>
+      <p class="catalog-caption">Aviso de métodos de pago: en esta demostración, POS aplica un recargo del 4% y redondeo hacia arriba a S/ 0.50 sobre el total de la orden. El importe definitivo se informa antes del cobro y requiere aceptación. No se aplica ese recargo a efectivo, Yape o Transferencia.</p>
       <div class="catalog-source-note"><span class="source-dot live"></span><span><strong>Registrado en el sistema:</strong> precio y disponibilidad reales de MySQL.</span><span class="source-dot original"></span><span><strong>Carta original:</strong> precio histórico referencial, pendiente de validación; no se puede pedir todavía.</span></div>
       <div class="menu-tools">
         <div class="catalog-modes" role="group" aria-label="Origen de la carta">
-          <button type="button" data-mode="completa" class="mode-button active" aria-pressed="true">Carta completa</button>
-          <button type="button" data-mode="sistema" class="mode-button" aria-pressed="false">Solo productos del sistema</button>
+          <button type="button" data-mode="completa" class="mode-button" aria-pressed="false">Carta histórica y sistema</button>
+          <button type="button" data-mode="sistema" class="mode-button active" aria-pressed="true">Carta actual del restaurante</button>
         </div>
         <label class="menu-search-label" for="menuSearch"><span aria-hidden="true">⌕</span><input type="search" id="menuSearch" autocomplete="off" placeholder="Buscar platos o bebidas" aria-label="Buscar platos o bebidas"></label>
       </div>
@@ -77,7 +78,7 @@
       <div class="menu-grid" id="catalogGrid" aria-live="polite">
         <div class="loading-state">Cargando platos desde la API…</div>
       </div>
-      <p class="catalog-caption">Los precios antiguos provienen de los HTML de Botanero Venta; son referencias académicas, no tarifas confirmadas. El control de porciones S05 puede probarse en el panel de demostración SOA.</p>
+      <p class="catalog-caption">La carta actual utiliza los productos publicados por la API. El catálogo histórico de Botanero solo se muestra si eliges voluntariamente la opción histórica; sus precios no están vigentes.</p>
       <div class="menu-footer"><button class="btn btn-outline" id="reloadCatalog" type="button">↻ Actualizar carta</button><span>¿Deseas reservar? <a href="/soa-demo/index.html">Inicia sesión</a> para entrar al panel de reservas.</span></div>
     </div>
   </section>
@@ -103,7 +104,7 @@
     </div>
   </section>
   <section id="contacto" class="section contact-section">
-    <div class="container contact-grid"><div><span class="section-kicker">Conversemos</span><h2>Estamos en Arequipa, Perú.</h2><p>Este portal forma parte de la evolución digital de Delicias Peruanas. La información de contacto específica se publicará cuando esté confirmada.</p></div><div class="contact-card"><span class="contact-icon">📍</span><strong>Arequipa, Perú</strong><p>Consulta la carta en línea o inicia sesión para utilizar los servicios disponibles del prototipo.</p><a class="btn btn-primary" href="#carta">Ver nuestra carta</a></div></div>
+    <div class="container contact-grid"><div><span class="section-kicker">Conversemos</span><h2>Estamos en Arequipa, Perú.</h2><p>Este portal forma parte de la evolución digital de Delicias Peruanas. La información de contacto específica se publicará cuando esté confirmada.</p></div><div class="contact-card"><span class="contact-icon">📍</span><strong>Arequipa, Perú</strong><p>Consulta la carta en línea o inicia sesión para utilizar los servicios disponibles del prototipo.</p><p id="contactPhone">Datos de contacto sujetos a confirmación.</p><a class="btn btn-primary" href="#carta">Ver nuestra carta</a></div></div>
   </section>
 </main>
 <footer class="site-footer"><div class="container footer-flex"><a class="brand footer-brand" href="#inicio"><span class="brand-mark">DP</span><span><strong>DELICIAS</strong><small>PERUANAS</small></span></a><p>Proyecto académico de Ingeniería de Sistemas e Informática. Portal público del APF3.</p><a href="#inicio">Volver arriba ↑</a></div></footer>

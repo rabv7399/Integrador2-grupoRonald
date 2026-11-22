@@ -1,6 +1,9 @@
 package com.deliciasperuanas.backend.controller;
 
 import com.deliciasperuanas.backend.dto.CrearPedidoSolicitud;
+import com.deliciasperuanas.backend.dto.ObservacionPlatoSolicitud;
+import com.deliciasperuanas.backend.dto.AnulacionPlatoSolicitud;
+import com.deliciasperuanas.backend.dto.CantidadPlatoSolicitud;
 import com.deliciasperuanas.backend.dto.PedidoRespuesta;
 import com.deliciasperuanas.backend.service.PedidoService;
 import jakarta.validation.Valid;
@@ -24,6 +27,65 @@ public class PedidoController {
         PedidoService.ResultadoRegistro result = service.registrar(solicitud, referencia, autenticacion.getName());
         return ResponseEntity.status(result.creado() ? HttpStatus.CREATED : HttpStatus.OK)
             .body(result.respuesta());
+    }
+
+    @PostMapping("/envio")
+    public ResponseEntity<PedidoRespuesta> enviarACocina(
+        @RequestHeader(name="Idempotency-Key") String referencia,
+        @Valid @RequestBody CrearPedidoSolicitud solicitud,
+        Authentication autenticacion
+    ) {
+        PedidoService.ResultadoRegistro r=service.enviarACocina(
+            solicitud,referencia,autenticacion.getName());
+        return ResponseEntity.status(r.creado()?HttpStatus.CREATED:HttpStatus.OK).body(r.respuesta());
+    }
+
+    @GetMapping
+    public java.util.List<PedidoRespuesta> listar(Authentication auth) {
+        return service.listar(auth.getName());
+    }
+
+    @PostMapping("/{id}/detalles/{detalleId}/listo")
+    public PedidoRespuesta marcarListo(@PathVariable Long id,@PathVariable Long detalleId,
+                                       Authentication auth) {
+        return service.marcarListo(id,detalleId,auth.getName());
+    }
+
+    @PatchMapping("/{id}/detalles/{detalleId}/observacion")
+    public PedidoRespuesta cambiarObservacion(@PathVariable Long id,
+        @PathVariable Long detalleId,@Valid @RequestBody ObservacionPlatoSolicitud s,
+        Authentication auth) {
+        return service.cambiarObservacion(id,detalleId,s,auth.getName());
+    }
+
+    @PatchMapping("/{id}/detalles/{detalleId}/cantidad")
+    public PedidoRespuesta cambiarCantidad(@PathVariable Long id,
+        @PathVariable Long detalleId,@Valid @RequestBody CantidadPlatoSolicitud s,
+        Authentication auth) {
+        return service.cambiarCantidad(id,detalleId,s,auth.getName());
+    }
+
+    @DeleteMapping("/{id}/detalles/{detalleId}")
+    public PedidoRespuesta anularPlato(@PathVariable Long id,
+        @PathVariable Long detalleId,@Valid @RequestBody AnulacionPlatoSolicitud s,
+        Authentication auth) {
+        return service.anularPlato(id,detalleId,s,auth.getName());
+    }
+
+    @PostMapping("/{id}/detalles/{detalleId}/entregado")
+    public PedidoRespuesta entregar(@PathVariable Long id,@PathVariable Long detalleId,
+                                     Authentication auth) {
+        return service.marcarEntregado(id,detalleId,auth.getName());
+    }
+
+    @PostMapping("/{id}/items")
+    public ResponseEntity<PedidoRespuesta> adicionar(@PathVariable Long id,
+            @RequestHeader(name="Idempotency-Key") String clave,
+            @Valid @RequestBody com.deliciasperuanas.backend.dto.AdicionPedidoSolicitud datos,
+            Authentication auth) {
+        PedidoService.ResultadoRegistro resultado=service.adicionar(id,datos,clave,auth.getName());
+        return ResponseEntity.status(resultado.creado()?HttpStatus.CREATED:HttpStatus.OK)
+            .body(resultado.respuesta());
     }
 
     @GetMapping("/{id}")

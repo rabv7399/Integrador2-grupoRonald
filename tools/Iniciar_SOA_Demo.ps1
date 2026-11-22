@@ -16,19 +16,17 @@ $rng = New-Object System.Security.Cryptography.RNGCryptoServiceProvider
 try { $rng.GetBytes($bytes) } finally { $rng.Dispose() }
 $env:SOA_DEMO_JWT_SECRET = [Convert]::ToBase64String($bytes)
 
-$claveAdmin = Read-Host "Crea una contraseña de demostración para ADMIN (8+ caracteres)" -AsSecureString
-$claveCliente = Read-Host "Crea una contraseña de demostración para CLIENTE (8+ caracteres)" -AsSecureString
-$claveMozo = Read-Host "Crea una contraseña de demostración para MOZO (8+ caracteres)" -AsSecureString
-$claveSupervisor = Read-Host "Crea una contraseña de demostración para SUPERVISOR (8+ caracteres)" -AsSecureString
-$env:SOA_DEMO_ADMIN_PASSWORD = [System.Net.NetworkCredential]::new("", $claveAdmin).Password
-$env:SOA_DEMO_CLIENT_PASSWORD = [System.Net.NetworkCredential]::new("", $claveCliente).Password
-$env:SOA_DEMO_MOZO_PASSWORD = [System.Net.NetworkCredential]::new("", $claveMozo).Password
-$env:SOA_DEMO_SUPERVISOR_PASSWORD = [System.Net.NetworkCredential]::new("", $claveSupervisor).Password
-
-if ($env:SOA_DEMO_ADMIN_PASSWORD.Length -lt 8 -or $env:SOA_DEMO_CLIENT_PASSWORD.Length -lt 8 -or
-    $env:SOA_DEMO_MOZO_PASSWORD.Length -lt 8 -or $env:SOA_DEMO_SUPERVISOR_PASSWORD.Length -lt 8) {
-    throw "Ambas contraseñas deben tener por lo menos 8 caracteres."
-}
+# Un solo secreto temporal para seis perfiles en H2 local; no se muestra ni persiste.
+$claveDemo = Read-Host "Define una CONTRASEÑA TEMPORAL para los seis usuarios demo (8+ caracteres)" -AsSecureString
+$claveTexto = [System.Net.NetworkCredential]::new("", $claveDemo).Password
+if ($claveTexto.Length -lt 8) { throw "La contraseña debe tener mínimo ocho caracteres." }
+$env:SOA_DEMO_ADMIN_PASSWORD = $claveTexto
+$env:SOA_DEMO_CLIENT_PASSWORD = $claveTexto
+$env:SOA_DEMO_MOZO_PASSWORD = $claveTexto
+$env:SOA_DEMO_SUPERVISOR_PASSWORD = $claveTexto
+$env:SOA_DEMO_CAJA_PASSWORD = $claveTexto
+$env:SOA_DEMO_COCINERO_PASSWORD = $claveTexto
+$claveTexto = $null
 
 Write-Host ""
 Write-Host "MODO SOA-DEMO: base H2 en memoria, sin cambios en Aiven." -ForegroundColor Green
@@ -36,6 +34,8 @@ Write-Host "ADMIN:   admin.demo@delicias.local"
 Write-Host "CLIENTE:    cliente.demo@delicias.local"
 Write-Host "MOZO:       mozo.demo@delicias.local"
 Write-Host "SUPERVISOR: supervisor.demo@delicias.local"
+Write-Host "CAJA: caja.demo@delicias.local"
+Write-Host "COCINERO: cocinero.demo@delicias.local"
 Write-Host "PAGINA:  http://localhost:8081/soa-demo/index.html"
 Write-Host "Para detener el servidor: Ctrl + C"
 Write-Host ""
@@ -48,5 +48,7 @@ try {
     Remove-Item Env:SOA_DEMO_CLIENT_PASSWORD -ErrorAction SilentlyContinue
     Remove-Item Env:SOA_DEMO_MOZO_PASSWORD -ErrorAction SilentlyContinue
     Remove-Item Env:SOA_DEMO_SUPERVISOR_PASSWORD -ErrorAction SilentlyContinue
+    Remove-Item Env:SOA_DEMO_CAJA_PASSWORD -ErrorAction SilentlyContinue
+    Remove-Item Env:SOA_DEMO_COCINERO_PASSWORD -ErrorAction SilentlyContinue
     Remove-Item Env:SOA_DEMO_JWT_SECRET -ErrorAction SilentlyContinue
 }

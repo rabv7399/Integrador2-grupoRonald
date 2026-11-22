@@ -1,6 +1,7 @@
 package com.deliciasperuanas.backend.service;
 
 import com.deliciasperuanas.backend.entity.Categoria;
+import com.deliciasperuanas.backend.repository.ProductoRepository;
 import com.deliciasperuanas.backend.repository.CategoriaRepository;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -12,9 +13,12 @@ import java.util.List;
 public class CategoriaService {
 
     private final CategoriaRepository categoriaRepository;
+    private final ProductoRepository productoRepository;
 
-    public CategoriaService(CategoriaRepository categoriaRepository) {
+    public CategoriaService(CategoriaRepository categoriaRepository,
+                            ProductoRepository productoRepository) {
         this.categoriaRepository = categoriaRepository;
+        this.productoRepository = productoRepository;
     }
 
     public List<Categoria> listar() {
@@ -48,6 +52,10 @@ public class CategoriaService {
 
     public void eliminar(Long id) {
         Categoria categoria = buscarPorId(id);
+        if (productoRepository.existsByCategoriaId(id)) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT,
+                "No se puede eliminar una categoría que contiene productos; reorganízalos primero");
+        }
         categoriaRepository.delete(categoria);
     }
 }

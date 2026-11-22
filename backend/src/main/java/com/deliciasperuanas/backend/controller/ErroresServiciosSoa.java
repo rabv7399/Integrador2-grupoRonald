@@ -8,7 +8,7 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.*;
 import java.util.Map;
 
-@RestControllerAdvice(assignableTypes = {PedidoController.class, InventarioController.class})
+@RestControllerAdvice(assignableTypes = {PedidoController.class, InventarioController.class, VentaController.class, UsuariosAdminController.class, ConfiguracionLocalController.class})
 public class ErroresServiciosSoa {
     @ExceptionHandler(OperacionNegocioException.class)
     ResponseEntity<Map<String, String>> negocio(OperacionNegocioException e) {
