@@ -96,7 +96,7 @@
           <div class="welcome-label">🔒 Permisos administrados por JWT + Spring Security</div>
         </div>
         <div class="kpi-grid">
-          <div class="kpi"><span>SERVICIOS INTEGRADOS</span><strong>05</strong><small>S01–S05 · REST</small></div>
+          <div class="kpi"><span>SERVICIOS INTEGRADOS</span><strong>06</strong><small>S01–S06 · REST</small></div>
           <div class="kpi"><span>PRODUCTOS DISPONIBLES</span><strong id="dashboardProductsCount">—</strong><small>Datos de Spring Boot</small></div>
           <div class="kpi"><span>MI PERFIL</span><strong id="dashboardRole">—</strong><small>Acceso según permisos</small></div>
         </div>
@@ -107,6 +107,11 @@
         </div>
         <div class="section-heading"><h3>Accesos disponibles</h3><p>Selecciona una opción para continuar.</p></div>
         <div id="quickActions" class="quick-grid"></div>
+        <div data-roles="CLIENTE" class="ops-client-menu-link">
+          <strong>¿Quieres ver los platos y bebidas?</strong>
+          <p>La carta virtual es pública y muestra nombres, precios, fotos y productos actualmente disponibles.</p>
+          <a href="/portal/index.html#carta" class="primary">Abrir carta virtual del restaurante ↗</a>
+        </div>
         <div class="permissions-box"><strong>Control de seguridad</strong><p id="permissionsText">El menú de la izquierda muestra solo las operaciones de tu perfil.</p><p class="hint">La autorización real se comprueba en el backend. Ocultar un menú no sustituye a los permisos del servidor.</p></div>
       </section>
 
@@ -142,6 +147,7 @@
           <label>Porciones<input id="orderQty" type="number" min="1" max="20" value="1"></label>
           <div class="buttons"><button type="button" id="addOrderLine" class="outline">+ Añadir plato a esta orden</button><button type="button" id="clearOrderLines" class="outline">Vaciar platos</button></div>
           <div id="orderLines" class="admin-list">Selecciona uno o varios platos. Si no agregas una línea, se usa el producto seleccionado.</div>
+          <p class="ops-order-payment-note">Información de pago: POS puede aplicar recargo del 4% con redondeo hacia arriba a S/ 0.50 sobre el total de platos; el importe exacto debe informarse y aceptarse antes del cobro. Efectivo, Yape y Transferencia no llevan ese recargo en la demo.</p>
           <div class="buttons" id="newOrderActions"><button type="button" id="createOrder" class="primary">Enviar pedido a Cocina</button></div>
           <div class="buttons" id="addToExistingActions" hidden><button type="button" id="appendOrderItems" class="primary">+ Agregar platos a la orden abierta</button><button type="button" id="stopAddingItems" class="outline">Volver a la comanda</button></div>
           <p class="hint" id="orderFlowHelp">Añade uno o varios platos y pulsa «Enviar pedido a Cocina». El sistema registra y confirma la orden en una sola operación.</p>
