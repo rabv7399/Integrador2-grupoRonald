@@ -249,12 +249,31 @@
       campo.value=item.observacion||'';
       etiquetar.append(campo);
       editor.append(etiquetar);
+      const etiquetaCant=elemento('label','Modificar cantidad de este plato (1 a 20)');
+      const campoCant=elemento('input',undefined,'ops-observation-input ops-qty-input');
+      campoCant.type='number';campoCant.min='1';campoCant.max='20';campoCant.step='1';
+      campoCant.value=String(item.cantidad);
+      etiquetaCant.append(campoCant);editor.append(etiquetaCant);
       const acciones=elemento('div',undefined,'ops-plate-actions');
       acciones.append(boton('Guardar observación',async()=>{
         const nueva=campo.value.trim();
         if(nueva.length>240)return mostrarLocal('Observación máxima: 240 caracteres.');
         const url='/api/v1/pedidos/'+p.pedidoId+'/detalles/'+item.detalleId+'/observacion';
         const res=await api(url,'PATCH',{observacion:nueva});
+        mostrar('PATCH '+url,res);
+        if(res.ok){
+          pedidosEnPantalla=pedidosEnPantalla.map(x=>x.pedidoId===p.pedidoId?res.data:x);
+          visualizarOrdenSeleccionada();
+          if(window.refrescarOperaciones)await refrescarOperaciones();
+        }
+      },'outline'));
+      acciones.append(boton('Guardar cantidad',async()=>{
+        const nueva=Number(campoCant.value);
+        if(!Number.isInteger(nueva)||nueva<1||nueva>20)
+          return mostrarLocal('La cantidad de un plato debe estar entre 1 y 20.');
+        if(nueva===item.cantidad)return mostrarLocal('La cantidad ya es '+nueva+'.');
+        const url='/api/v1/pedidos/'+p.pedidoId+'/detalles/'+item.detalleId+'/cantidad';
+        const res=await api(url,'PATCH',{cantidad:nueva});
         mostrar('PATCH '+url,res);
         if(res.ok){
           pedidosEnPantalla=pedidosEnPantalla.map(x=>x.pedidoId===p.pedidoId?res.data:x);
