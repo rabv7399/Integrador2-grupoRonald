@@ -1,6 +1,8 @@
 package com.deliciasperuanas.backend.controller;
 
 import com.deliciasperuanas.backend.dto.CrearPedidoSolicitud;
+import com.deliciasperuanas.backend.dto.ObservacionPlatoSolicitud;
+import com.deliciasperuanas.backend.dto.AnulacionPlatoSolicitud;
 import com.deliciasperuanas.backend.dto.PedidoRespuesta;
 import com.deliciasperuanas.backend.service.PedidoService;
 import jakarta.validation.Valid;
@@ -46,6 +48,20 @@ public class PedidoController {
     public PedidoRespuesta marcarListo(@PathVariable Long id,@PathVariable Long detalleId,
                                        Authentication auth) {
         return service.marcarListo(id,detalleId,auth.getName());
+    }
+
+    @PatchMapping("/{id}/detalles/{detalleId}/observacion")
+    public PedidoRespuesta cambiarObservacion(@PathVariable Long id,
+        @PathVariable Long detalleId,@Valid @RequestBody ObservacionPlatoSolicitud s,
+        Authentication auth) {
+        return service.cambiarObservacion(id,detalleId,s,auth.getName());
+    }
+
+    @DeleteMapping("/{id}/detalles/{detalleId}")
+    public PedidoRespuesta anularPlato(@PathVariable Long id,
+        @PathVariable Long detalleId,@Valid @RequestBody AnulacionPlatoSolicitud s,
+        Authentication auth) {
+        return service.anularPlato(id,detalleId,s,auth.getName());
     }
 
     @PostMapping("/{id}/detalles/{detalleId}/entregado")

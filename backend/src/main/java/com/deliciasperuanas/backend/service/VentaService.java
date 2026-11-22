@@ -93,7 +93,7 @@ public class VentaService {
             throw error(HttpStatus.CONFLICT,"PEDIDO_NO_CONFIRMADO",
                 "Confirma el pedido antes de cobrar");
         if(pedido.getDetalles().stream().anyMatch(d->
-              !List.of("LISTO","ENTREGADO").contains(d.getEstadoPreparacion())))
+              !List.of("LISTO","ENTREGADO","ANULADO").contains(d.getEstadoPreparacion())))
             throw error(HttpStatus.CONFLICT,"PLATOS_PENDIENTES",
                 "Cocina todavía tiene platos sin marcar como LISTO");
 
@@ -208,6 +208,7 @@ public class VentaService {
         int unidades=0;
         for(Venta venta:pagadas){
             for(DetallePedido detalle:venta.getPedido().getDetalles()){
+                if("ANULADO".equals(detalle.getEstadoPreparacion()))continue;
                 Long id=detalle.getProducto().getId();
                 BigDecimal precio=detalle.getPrecioUnitario();
                 String clave=id+"|"+precio.stripTrailingZeros().toPlainString();
@@ -319,10 +320,12 @@ public class VentaService {
         Pedido p=v.getPedido();
         ConfiguracionLocal local=configuracion.findById(1L).orElseGet(ConfiguracionLocal::new);
         List<PedidoRespuesta.Item> items=p.getDetalles().stream()
+            .filter(d->!"ANULADO".equals(d.getEstadoPreparacion()))
             .map(d->new PedidoRespuesta.Item(d.getId(),d.getProducto().getId(),
                 d.getProducto().getNombre(),d.getCantidad(),d.getPrecioUnitario(),
                 d.getSubtotal(),d.getEstadoPreparacion(),d.getFechaInicio(),d.getFechaListo(),
-                d.getFechaEntrega())).toList();
+                d.getFechaEntrega(),d.getObservacion(),d.getMotivoAnulacion(),
+                d.getAnuladoPor(),d.getFechaAnulacion())).toList();
         return new VentaRespuesta(v.getId(),v.getNumeroComprobante(),p.getId(),
             p.getTipoAtencion(),p.getMesaId(),local.getNombre(),local.getTelefono(),
             v.getTotal(),v.getMontoRecibido(),v.getCambio(),v.getFechaPago(),

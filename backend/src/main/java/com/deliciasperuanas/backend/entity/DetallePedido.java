@@ -33,12 +33,32 @@ public class DetallePedido {
     @Column(name="fecha_entrega")
     private LocalDateTime fechaEntrega;
 
+    @Column(name="observacion",length=240)
+    private String observacion;
+
+    @Column(name="motivo_anulacion",length=300)
+    private String motivoAnulacion;
+
+    @Column(name="anulado_por",length=150)
+    private String anuladoPor;
+
+    @Column(name="fecha_anulacion")
+    private LocalDateTime fechaAnulacion;
+
     @Column(name = "precio_unitario", nullable = false, precision = 10, scale = 2)
     private BigDecimal precioUnitario;
 
     @Column(nullable = false, precision = 12, scale = 2)
     private BigDecimal subtotal;
 
+    public String getObservacion(){return observacion;}
+    public void setObservacion(String v){observacion=v;}
+    public String getMotivoAnulacion(){return motivoAnulacion;}
+    public void setMotivoAnulacion(String v){motivoAnulacion=v;}
+    public String getAnuladoPor(){return anuladoPor;}
+    public void setAnuladoPor(String v){anuladoPor=v;}
+    public LocalDateTime getFechaAnulacion(){return fechaAnulacion;}
+    public void setFechaAnulacion(LocalDateTime v){fechaAnulacion=v;}
     public Long getId() { return id; }
     public LocalDateTime getFechaInicio(){return fechaInicio;}
     public void setFechaInicio(LocalDateTime v){fechaInicio=v;}

@@ -159,6 +159,12 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.POST,"/api/v1/pedidos/*/detalles/*/entregado")
                         .hasRole("MOZO")
 
+                        // Sólo Mozo modifica observaciones o anula platos individuales.
+                        .requestMatchers(HttpMethod.PATCH,"/api/v1/pedidos/*/detalles/*/observacion")
+                        .hasRole("MOZO")
+                        .requestMatchers(HttpMethod.DELETE,"/api/v1/pedidos/*/detalles/*")
+                        .hasRole("MOZO")
+
                         .requestMatchers(HttpMethod.POST,"/api/v1/pedidos/*/items")
                         .hasAnyRole("ADMIN","SUPERVISOR","MOZO","OPERADOR","CAJA")
 

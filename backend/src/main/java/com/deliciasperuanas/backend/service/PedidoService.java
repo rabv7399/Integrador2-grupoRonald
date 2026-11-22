@@ -14,6 +14,9 @@ import java.security.NoSuchAlgorithmException;
 import java.util.HexFormat;
 import java.util.Map;
 import java.util.TreeMap;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.time.LocalDateTime;
@@ -48,6 +51,7 @@ public class PedidoService {
         }
         Usuario solicitante = buscarUsuario(correo);
         TreeMap<Long,Integer> cantidades = normalizar(solicitud);
+        List<LineaPedidoSolicitud> lineas=normalizarConObservaciones(solicitud.items());
         String tipo = solicitud.tipoAtencion() == null || solicitud.tipoAtencion().isBlank()
                 ? "LLEVAR" : solicitud.tipoAtencion().trim().toUpperCase(Locale.ROOT);
         if (!List.of("MESA","LLEVAR").contains(tipo)) {
@@ -67,7 +71,8 @@ public class PedidoService {
                 "Un mozo o cajero registra los pedidos de mesa");
         }
 
-        String firma = firma(solicitante.getId(), cantidades, tipo, mesaId);
+        String firma = firmaConObservaciones(
+            firma(solicitante.getId(), cantidades, tipo, mesaId),lineas);
         Pedido anterior = pedidos.findByReferenciaOperacion(clave).orElse(null);
         if (anterior != null) {
             if (!anterior.getCliente().getId().equals(solicitante.getId())
@@ -102,8 +107,8 @@ public class PedidoService {
 
         BigDecimal total = BigDecimal.ZERO;
         // Orden de bloqueo fijo por producto: reduce interbloqueos de inventario.
-        for (Map.Entry<Long,Integer> linea : cantidades.entrySet()) {
-            Producto producto = productos.findById(linea.getKey()).orElseThrow(() ->
+        for (LineaPedidoSolicitud linea : lineas) {
+            Producto producto = productos.findById(linea.productoId()).orElseThrow(() ->
                 error(HttpStatus.NOT_FOUND,"PRODUCTO_NO_ENCONTRADO","El producto no existe"));
             if (!Boolean.TRUE.equals(producto.getDisponible())) {
                 throw error(HttpStatus.UNPROCESSABLE_CONTENT,"PRODUCTO_NO_DISPONIBLE",
@@ -113,14 +118,15 @@ public class PedidoService {
                 throw error(HttpStatus.UNPROCESSABLE_CONTENT,"PRECIO_INVALIDO",
                     "El producto tiene un precio no válido");
             }
-            inventario.reservar(producto.getId(),linea.getValue());
+            inventario.reservar(producto.getId(),linea.cantidad());
 
             DetallePedido detalle = new DetallePedido();
+            detalle.setObservacion(normalizarObservacion(linea.observacion()));
             detalle.setProducto(producto);
-            detalle.setCantidad(linea.getValue());
+            detalle.setCantidad(linea.cantidad());
             detalle.setEstadoPreparacion("PENDIENTE");
             detalle.setPrecioUnitario(producto.getPrecio());
-            detalle.setSubtotal(producto.getPrecio().multiply(BigDecimal.valueOf(linea.getValue())));
+            detalle.setSubtotal(producto.getPrecio().multiply(BigDecimal.valueOf(linea.cantidad())));
             pedido.agregarDetalle(detalle);
             total=total.add(detalle.getSubtotal());
         }
@@ -172,6 +178,7 @@ public class PedidoService {
         }
         pedido.getDetalles().stream()
             .sorted((a,b)->a.getProducto().getId().compareTo(b.getProducto().getId()))
+            .filter(d->!"ANULADO".equals(d.getEstadoPreparacion()))
             .forEach(d->inventario.confirmar(d.getProducto().getId(),d.getCantidad()));
         pedido.setEstado("CONFIRMADO");
         return respuesta(pedido);
@@ -206,7 +213,7 @@ public class PedidoService {
         Usuario usuario=buscarUsuario(correo);
         if(!"MOZO".equals(usuario.getRol()))
             throw error(HttpStatus.FORBIDDEN,"SOLO_MOZO",
-                "La entrega solo la registra Mozo, Supervisor o Administrador");
+                "La entrega solo la registra Mozo");
         Pedido pedido=bloquear(pedidoId);
         if(!"CONFIRMADO".equals(pedido.getEstado()))
             throw error(HttpStatus.CONFLICT,"PEDIDO_NO_CONFIRMADO",
@@ -215,6 +222,9 @@ public class PedidoService {
             .filter(d->d.getId().equals(detalleId)).findFirst().orElseThrow(() ->
                 error(HttpStatus.NOT_FOUND,"DETALLE_NO_ENCONTRADO",
                     "El plato no pertenece a este pedido"));
+        if("ANULADO".equals(detalle.getEstadoPreparacion()))
+            throw error(HttpStatus.CONFLICT,"PLATO_ANULADO",
+                "Un plato anulado no puede entregarse");
         if("PENDIENTE".equals(detalle.getEstadoPreparacion()))
             throw error(HttpStatus.CONFLICT,"PLATO_NO_LISTO",
                 "Cocina debe marcar LISTO antes de que el Mozo entregue el plato");
@@ -236,7 +246,8 @@ public class PedidoService {
         if(solicitud==null)
             throw error(HttpStatus.BAD_REQUEST,"PEDIDO_INVALIDO","Indica uno o más platos");
         TreeMap<Long,Integer> cantidades=normalizar(new CrearPedidoSolicitud(solicitud.items()));
-        String hash=firma(usuario.getId(),cantidades,"ADICION",pedidoId);
+        List<LineaPedidoSolicitud> lineas=normalizarConObservaciones(solicitud.items());
+        String hash=firmaConObservaciones(firma(usuario.getId(),cantidades,"ADICION",pedidoId),lineas);
         Pedido pedido=bloquear(pedidoId);
 
         AdicionPedido registrada=adiciones.findByClave(clave).orElse(null);
@@ -249,29 +260,30 @@ public class PedidoService {
         if(!List.of("PENDIENTE","CONFIRMADO").contains(pedido.getEstado()))
             throw error(HttpStatus.CONFLICT,"PEDIDO_CERRADO",
                 "No se pueden agregar platos después de cancelar o cobrar");
-        if(pedido.getDetalles().size()+cantidades.size()>30)
+        if(pedido.getDetalles().size()+lineas.size()>30)
             throw error(HttpStatus.BAD_REQUEST,"DEMASIADAS_LINEAS",
                 "Se permiten hasta 30 líneas por pedido");
 
         BigDecimal nuevoTotal=pedido.getTotal();
         // Bloqueo de stock por ID ascendente y bloqueo de pedido para sincronizar con Caja.
-        for(Map.Entry<Long,Integer> item:cantidades.entrySet()){
-            Producto producto=productos.findById(item.getKey()).orElseThrow(() ->
+        for(LineaPedidoSolicitud item:lineas){
+            Producto producto=productos.findById(item.productoId()).orElseThrow(() ->
                 error(HttpStatus.NOT_FOUND,"PRODUCTO_NO_ENCONTRADO","No existe el plato"));
             if(!Boolean.TRUE.equals(producto.getDisponible())||producto.getPrecio()==null||
                     producto.getPrecio().signum()<=0)
                 throw error(HttpStatus.UNPROCESSABLE_CONTENT,"PRODUCTO_NO_DISPONIBLE",
                     "Este plato no está habilitado para pedidos");
-            inventario.reservar(producto.getId(),item.getValue());
+            inventario.reservar(producto.getId(),item.cantidad());
             if("CONFIRMADO".equals(pedido.getEstado()))
-                inventario.confirmar(producto.getId(),item.getValue());
+                inventario.confirmar(producto.getId(),item.cantidad());
             DetallePedido d=new DetallePedido();
             d.setProducto(producto);
-            d.setCantidad(item.getValue());
+            d.setObservacion(normalizarObservacion(item.observacion()));
+            d.setCantidad(item.cantidad());
             d.setEstadoPreparacion("PENDIENTE");
             d.setFechaInicio(LocalDateTime.now());
             d.setPrecioUnitario(producto.getPrecio());
-            d.setSubtotal(producto.getPrecio().multiply(BigDecimal.valueOf(item.getValue())));
+            d.setSubtotal(producto.getPrecio().multiply(BigDecimal.valueOf(item.cantidad())));
             pedido.agregarDetalle(d);
             nuevoTotal=nuevoTotal.add(d.getSubtotal());
         }
@@ -282,6 +294,121 @@ public class PedidoService {
         adicion.setClave(clave);adicion.setFirma(hash);adicion.setPedido(pedido);
         adiciones.saveAndFlush(adicion);
         return new ResultadoRegistro(respuesta(pedido),true);
+    }
+
+    // Observación por línea, visible en Cocina y en la comanda. Nunca se altera una
+    // instrucción de preparación cuando Cocina ya marcó LISTO o se entregó.
+    @Transactional
+    public PedidoRespuesta cambiarObservacion(Long pedidoId,Long detalleId,
+        ObservacionPlatoSolicitud solicitud,String correo) {
+        exigirMozo(correo);
+        if(solicitud==null)
+            throw error(HttpStatus.BAD_REQUEST,"OBSERVACION_INVALIDA",
+                "Indica el texto de la observación");
+        Pedido pedido=bloquear(pedidoId);
+        verificarOrdenEditable(pedido);
+        DetallePedido detalle=buscarDetalle(pedido,detalleId);
+        exigirPlatoPendiente(detalle);
+        detalle.setObservacion(normalizarObservacion(solicitud.observacion()));
+        return respuesta(pedido);
+    }
+
+    // Baja lógica para conservar el rastro: plato, precio original, motivo y usuario.
+    // La anulación parcial libera porciones bajo bloqueo transaccional y resta sólo
+    // el importe de esa línea. No se permite tocar platos que Cocina ya terminó.
+    @Transactional
+    public PedidoRespuesta anularPlato(Long pedidoId,Long detalleId,
+        AnulacionPlatoSolicitud solicitud,String correo) {
+        Usuario mozo=exigirMozo(correo);
+        if(solicitud==null || solicitud.motivo()==null ||
+           solicitud.motivo().trim().length()<5 ||
+           solicitud.motivo().trim().length()>300)
+            throw error(HttpStatus.BAD_REQUEST,"MOTIVO_ANULACION_REQUERIDO",
+                "Explica la anulación del plato (5 a 300 caracteres)");
+        Pedido pedido=bloquear(pedidoId);
+        verificarOrdenEditable(pedido);
+        DetallePedido detalle=buscarDetalle(pedido,detalleId);
+        exigirPlatoPendiente(detalle);
+        long restantes=pedido.getDetalles().stream()
+            .filter(d->!"ANULADO".equals(d.getEstadoPreparacion())).count();
+        if(restantes==1){
+            // Sólo queda este plato: cerrar el pedido completo libera la mesa.
+            return cancelar(pedidoId,correo);
+        }
+        if("CONFIRMADO".equals(pedido.getEstado()))
+            inventario.revertirConfirmado(detalle.getProducto().getId(),detalle.getCantidad());
+        else inventario.liberar(detalle.getProducto().getId(),detalle.getCantidad());
+        detalle.setEstadoPreparacion("ANULADO");
+        detalle.setMotivoAnulacion(solicitud.motivo().trim());
+        detalle.setAnuladoPor(mozo.getCorreo());
+        detalle.setFechaAnulacion(LocalDateTime.now());
+        pedido.setTotal(pedido.getTotal().subtract(detalle.getSubtotal()));
+        return respuesta(pedido);
+    }
+
+    private Usuario exigirMozo(String correo){
+        Usuario usuario=buscarUsuario(correo);
+        if(!"MOZO".equals(usuario.getRol()))
+            throw error(HttpStatus.FORBIDDEN,"SOLO_MOZO",
+                "Solo el Mozo puede editar observaciones o anular un plato");
+        return usuario;
+    }
+    private void verificarOrdenEditable(Pedido pedido){
+        if(!List.of("PENDIENTE","CONFIRMADO").contains(pedido.getEstado()))
+            throw error(HttpStatus.CONFLICT,"PEDIDO_CERRADO",
+                "No se puede editar un pedido cancelado o ya cobrado");
+    }
+    private DetallePedido buscarDetalle(Pedido pedido,Long id){
+        return pedido.getDetalles().stream()
+            .filter(d->d.getId().equals(id)).findFirst().orElseThrow(()->
+                error(HttpStatus.NOT_FOUND,"DETALLE_NO_ENCONTRADO",
+                    "El plato no pertenece a esta orden"));
+    }
+    private void exigirPlatoPendiente(DetallePedido detalle){
+        if(!"PENDIENTE".equals(detalle.getEstadoPreparacion()))
+            throw error(HttpStatus.CONFLICT,"PLATO_EN_PREPARACION_O_ANULADO",
+                "Sólo se modifican platos PENDIENTES: Cocina debe no haberlos marcado LISTO");
+    }
+    private String normalizarObservacion(String value){
+        if(value==null||value.isBlank())return null;
+        String nota=value.strip();
+        if(nota.length()>240)
+            throw error(HttpStatus.BAD_REQUEST,"OBSERVACION_LARGA",
+                "Máximo 240 caracteres por observación");
+        return nota;
+    }
+
+    // Mantener por separado dos porciones del mismo producto con distinta preparación:
+    // p. ej., un Lomo Saltado normal y otro bajo en sal. Combinar sólo notas iguales.
+    private List<LineaPedidoSolicitud> normalizarConObservaciones(
+        List<LineaPedidoSolicitud> originales){
+        TreeMap<String,LineaPedidoSolicitud> porNota=new TreeMap<>();
+        for(LineaPedidoSolicitud linea:originales){
+            String nota=normalizarObservacion(linea.observacion());
+            String clave=String.format("%020d",linea.productoId())+"|"+(nota==null?"":nota);
+            LineaPedidoSolicitud anterior=porNota.get(clave);
+            int cantidad=anterior==null?linea.cantidad():anterior.cantidad()+linea.cantidad();
+            if(cantidad>20)
+                throw error(HttpStatus.BAD_REQUEST,"CANTIDAD_INVALIDA",
+                    "Máximo 20 porciones por línea");
+            porNota.put(clave,new LineaPedidoSolicitud(linea.productoId(),cantidad,nota));
+        }
+        return new ArrayList<>(porNota.values());
+    }
+    private String firmaConObservaciones(String base,List<LineaPedidoSolicitud> lineas){
+        boolean algunaNota=lineas.stream().anyMatch(l->l.observacion()!=null);
+        if(!algunaNota)return base;
+        StringBuilder datos=new StringBuilder(base);
+        for(LineaPedidoSolicitud l:lineas){
+            datos.append("|").append(l.productoId()).append(":").append(l.cantidad())
+                .append(":").append(l.observacion()==null?"":l.observacion());
+        }
+        try{
+            return HexFormat.of().formatHex(MessageDigest.getInstance("SHA-256")
+                .digest(datos.toString().getBytes(StandardCharsets.UTF_8)));
+        }catch(NoSuchAlgorithmException ex){
+            throw new IllegalStateException("SHA-256 no disponible",ex);
+        }
     }
 
     @Transactional
@@ -302,13 +429,14 @@ public class PedidoService {
             // No anular entregas o producción ya comenzada sin un proceso de devolución.
             verificarPersonal(usuario);
             if(pedido.getDetalles().stream().anyMatch(d ->
-                 !"PENDIENTE".equals(d.getEstadoPreparacion()))) {
+                 !List.of("PENDIENTE","ANULADO").contains(d.getEstadoPreparacion()))) {
                 throw error(HttpStatus.CONFLICT,"ORDEN_EN_PREPARACION",
                     "Cocina ya preparó platos. Solicita al supervisor una devolución controlada.");
             }
         }
         boolean confirmado="CONFIRMADO".equals(pedido.getEstado());
         pedido.getDetalles().stream()
+            .filter(d->!"ANULADO".equals(d.getEstadoPreparacion()))
             .sorted((a,b)->a.getProducto().getId().compareTo(b.getProducto().getId()))
             .forEach(d->{
                 if(confirmado)inventario.revertirConfirmado(d.getProducto().getId(),d.getCantidad());
@@ -388,7 +516,8 @@ public class PedidoService {
             .map(d->new PedidoRespuesta.Item(d.getId(),d.getProducto().getId(),
                 d.getProducto().getNombre(),d.getCantidad(),d.getPrecioUnitario(),
                 d.getSubtotal(),d.getEstadoPreparacion(),d.getFechaInicio(),d.getFechaListo(),
-                d.getFechaEntrega())).toList();
+                d.getFechaEntrega(),d.getObservacion(),d.getMotivoAnulacion(),
+                d.getAnuladoPor(),d.getFechaAnulacion())).toList();
         return new PedidoRespuesta(pedido.getId(),pedido.getReferenciaOperacion(),
             pedido.getEstado(),pedido.getCliente().getCorreo(),pedido.getTotal(),
             pedido.getFechaCreacion(),items,pedido.getTipoAtencion(),pedido.getMesaId());

@@ -17,5 +17,6 @@ public record PedidoRespuesta(
 ) {
     public record Item(Long detalleId,Long productoId,String nombre,int cantidad,
         BigDecimal precioUnitario,BigDecimal subtotal,String estadoPreparacion,
-        LocalDateTime fechaInicio,LocalDateTime fechaListo,LocalDateTime fechaEntrega) {}
+        LocalDateTime fechaInicio,LocalDateTime fechaListo,LocalDateTime fechaEntrega,
+        String observacion,String motivoAnulacion,String anuladoPor,LocalDateTime fechaAnulacion) {}
 }
