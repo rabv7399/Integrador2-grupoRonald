@@ -258,3 +258,13 @@ body{background:#f7f8f5}
 .ops-receipt-lookup button{min-height:44px}
 #cashCharge:disabled{opacity:.52;cursor:not-allowed}
 @media(max-width:660px){.ops-daily-filter,.ops-receipt-lookup{flex-direction:column;align-items:stretch}.ops-daily-filter label,.ops-receipt-lookup label{max-width:none;width:100%}}
+
+/* Operación por plato: observaciones de preparación y cancelación auditada */
+.ops-observation-editor{grid-column:1/-1;width:100%;margin-top:7px;padding:12px 14px;border-radius:10px;background:#f7faf5;border:1px solid #d9e6d6}
+.ops-observation-editor label{display:block;font-size:12px;font-weight:600;color:#315440;margin-bottom:10px}
+.ops-observation-input{width:100%;display:block;margin:6px 0 0;padding:10px 12px;border-radius:8px;border:1px solid #c6d7c4;color:#193d2c;background:#fff}
+.ops-plate-actions{display:flex;gap:9px;flex-wrap:wrap;align-items:center}
+.ops-plate-actions button{font-size:12px;padding:8px 11px}
+.ops-line-observation{font-size:12px;line-height:1.6;font-weight:700;color:#8b5421;background:#fff2db;border:1px solid #f1d4a5;border-radius:7px;padding:7px 10px;margin-top:8px}
+.ops-line-cancelled{font-size:11px;line-height:1.5;color:#a73c31;background:#fff0ee;border:1px solid #f0c7bf;border-radius:7px;padding:6px 9px;margin-top:6px}
+.ops-kitchen-observation{display:block;color:#9a4f11;background:#fff1dc;padding:7px 8px;border-radius:6px;margin-top:7px;font-size:13px}

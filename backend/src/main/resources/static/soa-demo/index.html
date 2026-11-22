@@ -146,6 +146,10 @@
           <label>Producto<select id="orderProduct"></select></label>
           <p id="orderAvailability" class="status">Selecciona un plato para comprobar sus porciones disponibles.</p>
           <label>Porciones<input id="orderQty" type="number" min="1" max="20" value="1"></label>
+          <label>Observación para Cocina (opcional, por plato)
+            <input id="orderObservation" maxlength="240" placeholder="Ej.: Bajo en sal · Sin cebolla · Poco picante" autocomplete="off">
+          </label>
+          <p class="hint">La observación se guarda con cada plato al enviar la orden o al agregar productos. Si Cocina todavía no lo ha marcado LISTO, el Mozo podrá corregirla o anular solamente ese plato.</p>
           <div class="buttons"><button type="button" id="addOrderLine" class="outline">+ Añadir plato a esta orden</button><button type="button" id="clearOrderLines" class="outline">Vaciar platos</button></div>
           <div id="orderLines" class="admin-list">Selecciona uno o varios platos. Si no agregas una línea, se usa el producto seleccionado.</div>
           <p class="ops-order-payment-note">Información de pago: POS puede aplicar recargo del 4% con redondeo hacia arriba a S/ 0.50 sobre el total de platos; el importe exacto debe informarse y aceptarse antes del cobro. Efectivo, Yape y Transferencia no llevan ese recargo en la demo.</p>

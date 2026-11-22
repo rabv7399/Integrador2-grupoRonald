@@ -217,7 +217,13 @@
     const linea=elemento('div',undefined,'ops-focused-line');
     const nombre=elemento('div',undefined,'ops-focused-description');
     nombre.append(elemento('strong',item.cantidad+' × '+item.nombre),
-      elemento('small','Precio: '+moneda(item.precioUnitario)+' · Subtotal: '+moneda(item.subtotal)));
+      elemento('small','Precio: '+moneda(item.precioUnitario)+' · Subtotal: '+
+        (item.estadoPreparacion==='ANULADO'?'S/ 0.00 (anulado)':moneda(item.subtotal))));
+    if(item.observacion)
+      nombre.append(elemento('div','OBSERVACIÓN COCINA: '+item.observacion,'ops-line-observation'));
+    if(item.estadoPreparacion==='ANULADO')
+      nombre.append(elemento('div','ANULADO · '+(item.motivoAnulacion||'Sin motivo')+
+        (item.anuladoPor?' · Por '+item.anuladoPor:''),'ops-line-cancelled'));
     const estadoPlato=badgeEstado(item.estadoPreparacion);
     const tiempo=elemento('small','Tiempo: —','ops-age');
     tiempo.dataset.inicioPlato=item.fechaInicio||p.fechaCreacion;
@@ -234,6 +240,49 @@
           await refrescarOperaciones();}
       },'primary'));
     }
+    if(rol==='MOZO'&&['PENDIENTE','CONFIRMADO'].includes(p.estado)&&
+       item.estadoPreparacion==='PENDIENTE'){
+      const editor=elemento('div',undefined,'ops-observation-editor');
+      const etiquetar=elemento('label','Observación individual para Cocina (máximo 240 caracteres)');
+      const campo=elemento('input',undefined,'ops-observation-input');
+      campo.type='text';campo.maxLength=240;campo.placeholder='Ej.: Bajo en sal, sin cebolla';
+      campo.value=item.observacion||'';
+      etiquetar.append(campo);
+      editor.append(etiquetar);
+      const acciones=elemento('div',undefined,'ops-plate-actions');
+      acciones.append(boton('Guardar observación',async()=>{
+        const nueva=campo.value.trim();
+        if(nueva.length>240)return mostrarLocal('Observación máxima: 240 caracteres.');
+        const url='/api/v1/pedidos/'+p.pedidoId+'/detalles/'+item.detalleId+'/observacion';
+        const res=await api(url,'PATCH',{observacion:nueva});
+        mostrar('PATCH '+url,res);
+        if(res.ok){
+          pedidosEnPantalla=pedidosEnPantalla.map(x=>x.pedidoId===p.pedidoId?res.data:x);
+          visualizarOrdenSeleccionada();
+          if(window.refrescarOperaciones)await refrescarOperaciones();
+        }
+      },'outline'));
+      acciones.append(boton('Anular solo este plato',async()=>{
+        const motivo=prompt('Motivo de anulación de '+item.nombre+' (mínimo 5 caracteres):');
+        if(motivo===null)return;
+        if(motivo.trim().length<5||motivo.trim().length>300)
+          return mostrarLocal('Indica un motivo entre 5 y 300 caracteres.');
+        if(!confirm('¿Anular '+item.cantidad+' × '+item.nombre+
+             '? Se ajustará el total y se liberarán sus porciones.'))return;
+        const url='/api/v1/pedidos/'+p.pedidoId+'/detalles/'+item.detalleId;
+        const res=await api(url,'DELETE',{motivo:motivo.trim()});
+        mostrar('DELETE '+url,res);
+        if(res.ok){
+          pedidosEnPantalla=pedidosEnPantalla.map(x=>x.pedidoId===p.pedidoId?res.data:x);
+          if(res.data.estado==='CANCELADO'){
+            pedidoElegido=null;editorEstado='nuevo';
+          }
+          visualizarOrdenSeleccionada();
+          if(window.refrescarOperaciones)await refrescarOperaciones();
+        }
+      },'danger'));
+      editor.append(acciones);linea.append(editor);
+    }
     return linea;
   }
   function visualizarOrdenSeleccionada(){
@@ -248,7 +297,7 @@
       ? etiquetaMesa(mesaElegida||Number(e('orderTable').value))+(mesaOcupada?' · comanda abierta':' · tomar orden')
       : (p?'Pedido para llevar #'+p.pedidoId:'Nuevo pedido para llevar');
     e('orderWorkspaceHint').textContent=p
-      ? 'Consulta el estado y total de la orden sin cobrar desde Mozo'
+      ? 'Consulta platos, observaciones, estados y total. Solo Mozo modifica/anula líneas pendientes; Caja cobra.'
       : modo==='MESA'?'Selecciona platos y envíalos directamente a Cocina':'No se asignará ninguna mesa';
     const puedeCrear=!p && !mesaOcupada;
     const agregar=!!p && editorEstado==='agregar';
@@ -293,7 +342,7 @@
         if(res.ok){pedidosEnPantalla=pedidosEnPantalla.map(x=>x.pedidoId===p.pedidoId?res.data:x);
           visualizarOrdenSeleccionada();await refrescarOperaciones();}
       }));
-      if((p.items||[]).every(x=>x.estadoPreparacion==='PENDIENTE')){
+      if((p.items||[]).every(x=>['PENDIENTE','ANULADO'].includes(x.estadoPreparacion))){
         acciones.append(boton('Cancelar orden',async()=>{
           if(!confirm('¿Cancelar la orden #'+p.pedidoId+'? Se liberará la mesa y el stock comprometido.'))return;
           const url='/api/v1/pedidos/'+p.pedidoId+'/cancelacion';
@@ -321,7 +370,8 @@
     if(mesaElegida===null && e('orderType').value==='MESA')
       mesaElegida=Number(e('orderTable').value)||Number(mesas[0]?.id)||null;
     if(moduloActual()==='orders'){
-      visualizarOrdenSeleccionada();
+      if(!document.activeElement?.classList.contains('ops-observation-input'))
+        visualizarOrdenSeleccionada();
       dibujarAgendaEnMesas();
     }
   };
@@ -356,7 +406,10 @@
     const lista=elemento('div',undefined,'ops-order-lines');
     for(const item of p.items||[]){
       const linea=elemento('div',undefined,'ops-order-line');
-      const texto=elemento('span',item.cantidad+' × '+item.nombre+' · '+moneda(item.subtotal));
+      const texto=elemento('span',item.cantidad+' × '+item.nombre+
+        ' · '+(item.estadoPreparacion==='ANULADO'?'ANULADO':moneda(item.subtotal))+
+        (item.observacion?' · Obs.: '+item.observacion:'')+
+        (item.estadoPreparacion==='ANULADO'&&item.motivoAnulacion?' · Motivo: '+item.motivoAnulacion:''));
       const estadoLinea=badgeEstado(item.estadoPreparacion);
       const tiempo=elemento('small','Tiempo: —','ops-age');
       tiempo.dataset.inicioPlato=item.fechaInicio||p.fechaCreacion;
@@ -403,7 +456,9 @@
       return;
     }
     for(const p of activos)lista.append(tarjetaPedido(p));
-    visualizarOrdenSeleccionada();
+    // No vaciar el campo que el Mozo está editando cuando llega el sondeo REST.
+    if(!document.activeElement?.classList.contains('ops-observation-input'))
+      visualizarOrdenSeleccionada();
     relojActivos();
   }
   async function actualizarPedidos(){
@@ -420,7 +475,8 @@
     const id=Number(e('orderId').value);
     if(!Number.isInteger(id)||id<=0)return mostrarLocal('Selecciona primero un pedido activo.');
     const producto=Number(e('orderProduct').value),cantidad=Number(e('orderQty').value);
-    const items=carritoPlatos.length?carritoPlatos.map(x=>({...x})):[{productoId:producto,cantidad}];
+    const items=carritoPlatos.length?carritoPlatos.map(x=>({...x})):[{
+      productoId:producto,cantidad,observacion:e('orderObservation').value.trim()}];
     if(items.some(x=>!Number.isInteger(x.productoId)||!Number.isInteger(x.cantidad)||x.cantidad<1))
       return mostrarLocal('Selecciona platos y cantidades válidas.');
     const b=e('appendOrderItems');b.disabled=true;
@@ -430,6 +486,7 @@
       mostrar('POST '+url,r);
       if(r.ok){
         carritoPlatos=[];pintarCarrito();
+        e('orderObservation').value='';
         pedidosEnPantalla=pedidosEnPantalla.map(x=>x.pedidoId===id?r.data:x);
         editorEstado='consulta';pedidoElegido=id;
         visualizarOrdenSeleccionada();
@@ -452,8 +509,13 @@
       card.append(cab);
       const ul=elemento('ul',undefined,'command-items');
       for(const item of p.items||[]){
+        if(item.estadoPreparacion==='ANULADO')continue;
         const li=elemento('li',undefined,'ops-cocina-line');
         const descripcion=elemento('span',item.cantidad+' × '+item.nombre+' · '+item.estadoPreparacion);
+        if(item.observacion){
+          const aviso=elemento('strong','OBSERVACIÓN: '+item.observacion,'ops-kitchen-observation');
+          descripcion.append(document.createTextNode(' '),aviso);
+        }
         const edad=elemento('small','Tiempo: —','ops-age');
         edad.dataset.inicioPlato=item.fechaInicio||p.fechaCreacion;
         if(item.fechaListo)edad.dataset.finPlato=item.fechaListo;
@@ -477,8 +539,9 @@
     if(r.ok&&Array.isArray(r.data)&&moduloActual()==='kitchen')dibujarCocina(r.data);
   }
   function pedidoListoParaCobro(p){
-    return p.estado==='CONFIRMADO' && Array.isArray(p.items) && p.items.length>0 &&
-      p.items.every(item=>['LISTO','ENTREGADO'].includes(item.estadoPreparacion));
+    return p.estado==='CONFIRMADO' && Array.isArray(p.items) &&
+      p.items.some(item=>item.estadoPreparacion!=='ANULADO') &&
+      p.items.every(item=>['LISTO','ENTREGADO','ANULADO'].includes(item.estadoPreparacion));
   }
   function limpiarSeleccionCaja(mensaje='Selecciona un pedido listo para cobrar.'){
     e('cashPedidoId').value='';

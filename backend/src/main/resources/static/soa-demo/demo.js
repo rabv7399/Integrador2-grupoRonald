@@ -318,7 +318,7 @@ $('createOrder').addEventListener('click',async()=>{
   const tipoAtencion=$('orderType').value;
   const mesaId=tipoAtencion==='MESA'?Number($('orderTable').value):null;
   if(tipoAtencion==='MESA' && (!Number.isInteger(mesaId)||mesaId<1))return mostrarLocal('Elige una mesa disponible.');
-  const items=carritoPlatos.length?carritoPlatos.map(i=>({...i})):[{productoId:id,cantidad}];
+  const items=carritoPlatos.length?carritoPlatos.map(i=>({...i})):[{productoId:id,cantidad,observacion:$('orderObservation').value.trim()}];
   ultimaSolicitud={items,tipoAtencion,mesaId};
   const clave=$('orderKey').value;
   const result=await api('/api/v1/pedidos/envio','POST',ultimaSolicitud,{'Idempotency-Key':clave});
@@ -328,6 +328,7 @@ $('createOrder').addEventListener('click',async()=>{
     $('cashPedidoId').value=result.data.pedidoId;
     ultimaClavePedido=clave;
     carritoPlatos=[];pintarCarrito();
+    $('orderObservation').value='';
     nuevaClave();
     if(window.pedidoEnviadoOperativo)window.pedidoEnviadoOperativo(result.data);
     cargarMesas();consultarDisponibilidad();
@@ -805,7 +806,8 @@ function pintarCarrito(){
     const row=document.createElement('div');row.className='cash-row';
     const texto=document.createElement('span');
     total+=Number(producto?.precio||0)*linea.cantidad;
-    texto.textContent=linea.cantidad+' × '+(producto?.nombre||'Producto #'+linea.productoId)+' · '+formatPrice(Number(producto?.precio||0)*linea.cantidad);
+    texto.textContent=linea.cantidad+' × '+(producto?.nombre||'Producto #'+linea.productoId)+' · '+formatPrice(Number(producto?.precio||0)*linea.cantidad)+
+      (linea.observacion?' · Obs.: '+linea.observacion:'');
     row.append(texto,crearBoton('Quitar',()=>{carritoPlatos.splice(index,1);pintarCarrito();},'danger'));
     lugar.append(row);
   }
@@ -826,7 +828,8 @@ $('addOrderLine').addEventListener('click',async()=>{
     return mostrarLocal('No hay suficientes porciones para añadir esa cantidad al pedido.');
   if(carritoPlatos.length>=20 || cantidad+yaEnCarrito>20)
     return mostrarLocal('Máximo 20 líneas y 20 porciones por producto.');
-  carritoPlatos.push({productoId:id,cantidad});
+  carritoPlatos.push({productoId:id,cantidad,observacion:$('orderObservation').value.trim()});
+  $('orderObservation').value='';
   pintarCarrito();
   $('createOrder').disabled=false;
 });
