@@ -58,6 +58,38 @@ La fecha comercial se interpreta usando la zona horaria **America/Lima** incluso
 
 **Ecuación de verificación:** suma subtotales por producto + recargos POS = total de ingresos del día; Efectivo + Yape + POS + Transferencia = mismo total. Mermas y salidas NO se contabilizan como ingreso.
 
+## CRUD por plato: observaciones, cantidades y anulación individual (Mozo)
+
+Cada línea de una orden tiene ID propio, cantidad, precio fijado cuando se creó, observación opcional de Cocina y estado `PENDIENTE`, `LISTO`, `ENTREGADO` o `ANULADO`. Ejemplo real de demostración: **Mesa #1 · 2 × Lomo Saltado**, con dos líneas independientes: «Bajo en sal» y «Sin cebolla». El backend separa líneas que tengan el mismo producto pero **distinta observación**. La observación viaja junto con `POST /api/v1/pedidos/envio`, por lo que Cocina la recibe desde el momento del envío.
+
+- **Crear:** seleccionar mesa o PARA LLEVAR, producto, cantidad y campo «Observación para Cocina». Al agregar al carrito la nota queda ligada a la línea. También aplica a adiciones del mismo pedido.
+- **Consultar:** Mozo ve estado, nota, precio y total por línea; Cocina ve la nota resaltada en las comandas.
+- **Editar:** el Mozo puede guardar una observación nueva o cambiar cantidad de **una sola línea PENDIENTE**. El backend calcula la diferencia de porciones y recalcula subtotal/total dentro de la misma transacción; mantiene el precio unitario original, sin usar precios actualizados de la carta.
+- **Anular un plato:** Mozo indica motivo (5–300 caracteres) y confirma. La línea pasa a `ANULADO`, conserva ID, motivo, autor y fecha; baja el total de la orden y devuelve las porciones comprometidas al stock. **No se borra físicamente**, para mantener auditoría. Caja no considera esa línea en tickets ni ventas del día y Cocina no vuelve a prepararla.
+- **Última línea de la mesa:** si Mozo anula el único plato activo, la orden entera pasa a `CANCELADO`, se libera la mesa y el detalle conserva motivo, autor y fecha. No se crea una orden abierta de total S/ 0.
+- **Seguridad y restricciones:** solo rol **MOZO** puede editar/anular líneas, verificadas en Spring Security y en la capa de negocio. `LISTO`, `ENTREGADO` y `ANULADO` no admiten edición/anulación (HTTP 409); una orden `PAGADO` o `CANCELADO` tampoco. El cobro y los recargos POS se calculan sobre el total vigente, descontando las anulaciones.
+- **Idempotencia:** observaciones diferentes producen firma distinta de operación; repetir una misma clave con notas cambiadas responde 409. Dos preparaciones diferentes de un mismo producto no se fusionan.
+
+Contratos REST nuevos:
+| Método | Recurso | Cuerpo de ejemplo | Permisos |
+|---|---|---|---|
+| PATCH | `/api/v1/pedidos/{id}/detalles/{detalleId}/observacion` | `{"observacion":"Bajo en sal"}` | MOZO |
+| PATCH | `/api/v1/pedidos/{id}/detalles/{detalleId}/cantidad` | `{"cantidad":2}` | MOZO |
+| DELETE | `/api/v1/pedidos/{id}/detalles/{detalleId}` | `{"motivo":"Cliente cambió de opinión"}` | MOZO |
+
+Migración para MySQL pendiente de aprobación y respaldo: `database/migrations/2026_11_22_soa_apf3_observaciones_anulacion_platos.sql`. NO aplicada a Aiven/Render; H2 `soa-demo` crea el esquema temporalmente.
+
+### Guion de evidencia por plato
+
+1. Entrar con MOZO, escoger Mesa #1 disponible y añadir **Lomo Saltado** con observación «Bajo en sal» y otro con «Sin cebolla». Enviar a Cocina.
+2. Abrir la comanda de Mesa #1 y comprobar dos líneas distintas y sus observaciones; en COCINERO comprobar que también ve las notas.
+3. Como MOZO cambiar la cantidad de uno de los lomos de 1 a 2, verificar total y stock; volver a 1.
+4. Anular **solo un** Lomo con motivo, observar que ese plato queda `ANULADO` y los otros siguen en la orden. Verificar la porción devuelta en Inventario y el nuevo total.
+5. Marcar los otros platos LISTO desde Cocina; comprobar que el plato anulado **no** ofrece el botón. Cobrar desde Caja y verificar que el ticket y la venta del día **no incluyen** la línea anulada.
+6. Intentar cambiar un plato LISTO o realizar la anulación desde CAJA: debe fallar (409 / 403). No editar estados desde navegador ni falsificar evidencia.
+
+Evidencias nuevas: `SOA_APF3_58_Observaciones_Por_Plato_Mozo.png`, `SOA_APF3_59_Nota_Visible_Cocina.png`, `SOA_APF3_60_Anulacion_Parcial_Stock_Total.png`, `SOA_APF3_61_Cobro_Sin_Plato_Anulado.png`.
+
 ## Producto CRUD e imagen pública
 
 - **Carta y productos** como módulo del panel interno solo está en ADMIN. El cliente accede a la carta virtual pública a través de `/portal/index.html#carta`.
