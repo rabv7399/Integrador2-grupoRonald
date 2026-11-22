@@ -168,6 +168,7 @@ function listaMenu(){
       element.add(new Option(p.nombre+' · '+etiqueta+(p.disponible?'':' · no disponible'),String(p.id)));
     }
   }
+  if($('orderProductSearch').value.trim())filtrarProductosParaOrden();
   if(rol!=='CLIENTE' && $('orderProduct').value) consultarDisponibilidad();
   if(!$('module-stock').hidden && $('stockProduct').value)consultarInventarioUI();
   pintarAdminProductos();
@@ -183,6 +184,21 @@ function listaMenu(){
     row.append(name,price);div.append(row);
   }
 }
+function filtrarProductosParaOrden(){
+  const buscado=$('orderProductSearch').value.trim().toLocaleLowerCase('es');
+  const select=$('orderProduct');
+  const elegido=select.value;
+  select.replaceChildren();
+  for(const p of listaProductos){
+    if(!p.disponible || Number(p.precio)<=0)continue;
+    if(buscado && !p.nombre.toLocaleLowerCase('es').includes(buscado))continue;
+    select.add(new Option(p.nombre+' · '+formatPrice(p.precio),String(p.id)));
+  }
+  if([...select.options].some(o=>o.value===elegido))select.value=elegido;
+  if(select.value)consultarDisponibilidad();
+  else $('orderAvailability').textContent='No se encontraron platos con ese nombre.';
+}
+$('orderProductSearch').addEventListener('input',filtrarProductosParaOrden);
 async function consultarCatalogo(){
   const [productos,categorias]=await Promise.all([api('/api/productos'),api('/api/categorias')]);
   mostrar('GET /api/productos',productos);
@@ -294,7 +310,8 @@ let carritoPlatos = [];
 $('createOrder').addEventListener('click',async()=>{
   if(!pedirSesion())return;
   const id=Number($('orderProduct').value),cantidad=Number($('orderQty').value);
-  if(!Number.isInteger(id)||!Number.isInteger(cantidad)||cantidad<1||cantidad>20)return mostrarLocal('Selecciona un producto y una cantidad entre 1 y 20.');
+  if(!carritoPlatos.length && (!id||!Number.isInteger(cantidad)||cantidad<1||cantidad>20))
+    return mostrarLocal('Selecciona un producto y una cantidad entre 1 y 20.');
   const tipoAtencion=$('orderType').value;
   const mesaId=tipoAtencion==='MESA'?Number($('orderTable').value):null;
   if(tipoAtencion==='MESA' && (!Number.isInteger(mesaId)||mesaId<1))return mostrarLocal('Elige una mesa disponible.');
