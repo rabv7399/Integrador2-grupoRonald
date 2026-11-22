@@ -32,6 +32,12 @@ public class VentaController {
         return servicio.cotizar(pedidoId,medioPago);
     }
 
+    @GetMapping("/detalle-diario")
+    public Map<String,Object> detalleDiario(@RequestParam(required=false)
+        @DateTimeFormat(iso=DateTimeFormat.ISO.DATE) LocalDate fecha){
+        return servicio.detalleDiario(fecha==null?LocalDate.now():fecha);
+    }
+
     @GetMapping("/resumen")
     public Map<String,Object> resumen(@RequestParam(required=false)
         @DateTimeFormat(iso=DateTimeFormat.ISO.DATE) LocalDate fecha){

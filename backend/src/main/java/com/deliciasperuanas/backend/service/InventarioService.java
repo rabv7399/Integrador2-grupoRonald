@@ -5,6 +5,8 @@ import com.deliciasperuanas.backend.dto.MovimientoInventarioRespuesta;
 import com.deliciasperuanas.backend.entity.MovimientoInventario;
 import com.deliciasperuanas.backend.repository.MovimientoInventarioRepository;
 import java.util.List;
+import java.util.Map;
+import java.util.HashMap;
 import com.deliciasperuanas.backend.entity.InventarioPlato;
 import com.deliciasperuanas.backend.entity.Producto;
 import com.deliciasperuanas.backend.repository.InventarioPlatoRepository;
@@ -26,8 +28,9 @@ public class InventarioService {
 
     @Transactional(readOnly=true)
     public List<InventarioRespuesta> listar(){
+        Map<Long,Integer> salidas=salidasAcumuladas();
         return inventarios.findAll().stream()
-            .map(this::respuesta)
+            .map(i->respuesta(i,salidas.getOrDefault(i.getProducto().getId(),0)))
             .sorted((a,b)->a.producto().compareToIgnoreCase(b.producto())).toList();
     }
 
@@ -184,8 +187,22 @@ public class InventarioService {
                 "No se encontro el inventario del pedido"));
     }
 
-    private InventarioRespuesta respuesta(InventarioPlato stock) {
-        return new InventarioRespuesta(stock.getProducto().getId(), stock.getProducto().getNombre(),
-            stock.getTotalPreparado(), stock.getReservadas(), stock.getVendidas(), stock.disponibles());
+    private Map<Long,Integer> salidasAcumuladas(){
+        Map<Long,Integer> sumas=new HashMap<>();
+        for(MovimientoInventario m:movimientos.findAll()){
+            if("SALIDA".equals(m.getTipo())){
+                sumas.merge(m.getProducto().getId(),m.getCantidad(),Integer::sum);
+            }
+        }
+        return sumas;
+    }
+
+    private InventarioRespuesta respuesta(InventarioPlato stock){
+        return respuesta(stock,salidasAcumuladas().getOrDefault(stock.getProducto().getId(),0));
+    }
+
+    private InventarioRespuesta respuesta(InventarioPlato stock,int salida){
+        return new InventarioRespuesta(stock.getProducto().getId(),stock.getProducto().getNombre(),
+            stock.getTotalPreparado(),stock.getReservadas(),stock.getVendidas(),stock.disponibles(),salida);
     }
 }

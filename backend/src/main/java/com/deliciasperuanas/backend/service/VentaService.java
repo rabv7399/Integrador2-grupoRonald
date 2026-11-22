@@ -43,6 +43,12 @@ public class VentaService {
         String metodo=medioPago==null?"EFECTIVO":medioPago.trim().toUpperCase(Locale.ROOT);
         if(!List.of("EFECTIVO","YAPE","POS","TRANSFERENCIA").contains(metodo))
             throw error(HttpStatus.BAD_REQUEST,"MEDIO_PAGO_INVALIDO","Medio de pago no reconocido");
+        if("PAGADO".equals(p.getEstado()))
+            throw error(HttpStatus.CONFLICT,"PEDIDO_YA_PAGADO",
+                "Este pedido ya está cobrado. Consulta su ticket en el historial.");
+        if(!"CONFIRMADO".equals(p.getEstado()))
+            throw error(HttpStatus.CONFLICT,"PEDIDO_NO_CONFIRMADO",
+                "Solo es posible cotizar pedidos confirmados pendientes de cobro.");
         BigDecimal total="POS".equals(metodo)?totalPos(p.getTotal()):p.getTotal();
         Map<String,Object> detalle=new LinkedHashMap<>();
         detalle.put("pedidoId",p.getId());detalle.put("estado",p.getEstado());
@@ -186,6 +192,60 @@ public class VentaService {
         datos.put("moneda","PEN");
         datos.put("fuente","Ventas efectivamente cobradas en la base de datos activa");
         return datos;
+    }
+
+    /**
+     * Ventas del día: sólo cobros efectivamente registrados, NO pedidos confirmados sin pago.
+     * Agrupa por producto y precio guardado al crear el pedido, para no reescribir ventas
+     * anteriores cuando el administrador cambie el precio de la carta.
+     */
+    @Transactional(readOnly=true)
+    public Map<String,Object> detalleDiario(LocalDate fecha){
+        LocalDate dia=fecha==null?LocalDate.now():fecha;
+        List<Venta> pagadas=ventas.findAll().stream()
+            .filter(v->v.getFechaPago().toLocalDate().equals(dia)).toList();
+        Map<String,Map<String,Object>> agrupado=new LinkedHashMap<>();
+        int unidades=0;
+        for(Venta venta:pagadas){
+            for(DetallePedido detalle:venta.getPedido().getDetalles()){
+                Long id=detalle.getProducto().getId();
+                BigDecimal precio=detalle.getPrecioUnitario();
+                String clave=id+"|"+precio.stripTrailingZeros().toPlainString();
+                Map<String,Object> linea=agrupado.computeIfAbsent(clave,k->{
+                    Map<String,Object> v=new LinkedHashMap<>();
+                    v.put("productoId",id);
+                    v.put("producto",detalle.getProducto().getNombre());
+                    v.put("precioUnitario",precio);
+                    v.put("cantidad",0);
+                    v.put("subtotal",BigDecimal.ZERO);
+                    return v;
+                });
+                linea.put("cantidad",(Integer)linea.get("cantidad")+detalle.getCantidad());
+                linea.put("subtotal",((BigDecimal)linea.get("subtotal")).add(detalle.getSubtotal()));
+                unidades+=detalle.getCantidad();
+            }
+        }
+        List<Map<String,Object>> lineas=new ArrayList<>(agrupado.values());
+        lineas.sort(Comparator.comparing(v->((String)v.get("producto")).toLowerCase(Locale.ROOT)));
+        BigDecimal subtotal=sumarBase(pagadas);
+        BigDecimal recargo=sumarRecargos(pagadas);
+        BigDecimal ingresos=sumar(pagadas);
+        BigDecimal sumaDetalle=lineas.stream().map(x->(BigDecimal)x.get("subtotal"))
+            .reduce(BigDecimal.ZERO,BigDecimal::add);
+        Map<String,Object> respuesta=new LinkedHashMap<>();
+        respuesta.put("fecha",dia.toString());
+        respuesta.put("ventasCobradas",pagadas.size());
+        respuesta.put("productosDiferentes",lineas.size());
+        respuesta.put("unidadesVendidas",unidades);
+        respuesta.put("lineas",lineas);
+        respuesta.put("subtotalPlatos",subtotal);
+        respuesta.put("recargosPos",recargo);
+        respuesta.put("totalCobrado",ingresos);
+        respuesta.put("porMedioPago",totalesMetodo(pagadas));
+        respuesta.put("cuadreDetalle",sumaDetalle.compareTo(subtotal)==0
+            && subtotal.add(recargo).compareTo(ingresos)==0);
+        respuesta.put("nota","Se incluyen únicamente pedidos PAGADOS. El subtotal usa precios guardados al crear cada pedido; el recargo POS se muestra aparte.");
+        return respuesta;
     }
 
     @Transactional
