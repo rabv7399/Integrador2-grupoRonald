@@ -245,3 +245,16 @@ body{background:#f7f8f5}
 .ops-photo-preview{width:100%;min-height:170px;max-height:260px;border:1px dashed #b8ceb9;border-radius:9px;display:flex;align-items:center;justify-content:center;text-align:center;color:#6c7b70;font-size:12px;background:#f1f6ee;overflow:hidden;padding:9px}
 .ops-photo-preview img{width:100%;height:230px;object-fit:cover;border-radius:7px}
 @media(max-width:660px){.ops-photo-editor{grid-template-columns:1fr}}
+
+/* APF3 — ventas por producto y cobro sin saldo obsoleto */
+.ops-daily-filter{display:flex;gap:14px;flex-wrap:wrap;align-items:end;padding:8px 0 19px}
+.ops-daily-filter label{min-width:230px;max-width:340px;flex:1}
+.ops-daily-filter button{min-height:44px}
+.ops-daily-filter .hint{margin-left:auto;padding-bottom:8px}
+.ops-daily-final{background:#e3f0e5;color:#18432c;font-weight:900}
+.ops-daily-final th{border-top:2px solid #a9c9b1!important;font-size:14px}
+.ops-receipt-lookup{margin:22px 0 10px;padding:14px 17px;border:1px dashed #c8d9c8;border-radius:10px;background:#fafcf9;display:flex;gap:10px;flex-wrap:wrap;align-items:end}
+.ops-receipt-lookup label{min-width:220px;max-width:420px;flex:1}
+.ops-receipt-lookup button{min-height:44px}
+#cashCharge:disabled{opacity:.52;cursor:not-allowed}
+@media(max-width:660px){.ops-daily-filter,.ops-receipt-lookup{flex-direction:column;align-items:stretch}.ops-daily-filter label,.ops-receipt-lookup label{max-width:none;width:100%}}
