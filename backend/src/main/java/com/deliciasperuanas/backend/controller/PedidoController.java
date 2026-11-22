@@ -3,6 +3,7 @@ package com.deliciasperuanas.backend.controller;
 import com.deliciasperuanas.backend.dto.CrearPedidoSolicitud;
 import com.deliciasperuanas.backend.dto.ObservacionPlatoSolicitud;
 import com.deliciasperuanas.backend.dto.AnulacionPlatoSolicitud;
+import com.deliciasperuanas.backend.dto.CantidadPlatoSolicitud;
 import com.deliciasperuanas.backend.dto.PedidoRespuesta;
 import com.deliciasperuanas.backend.service.PedidoService;
 import jakarta.validation.Valid;
@@ -55,6 +56,13 @@ public class PedidoController {
         @PathVariable Long detalleId,@Valid @RequestBody ObservacionPlatoSolicitud s,
         Authentication auth) {
         return service.cambiarObservacion(id,detalleId,s,auth.getName());
+    }
+
+    @PatchMapping("/{id}/detalles/{detalleId}/cantidad")
+    public PedidoRespuesta cambiarCantidad(@PathVariable Long id,
+        @PathVariable Long detalleId,@Valid @RequestBody CantidadPlatoSolicitud s,
+        Authentication auth) {
+        return service.cambiarCantidad(id,detalleId,s,auth.getName());
     }
 
     @DeleteMapping("/{id}/detalles/{detalleId}")

@@ -200,6 +200,9 @@ public class PedidoService {
             .filter(d->d.getId().equals(detalleId)).findFirst().orElseThrow(() ->
                 error(HttpStatus.NOT_FOUND,"DETALLE_NO_ENCONTRADO",
                     "El plato no pertenece a ese pedido"));
+        if("ANULADO".equals(detalle.getEstadoPreparacion()))
+            throw error(HttpStatus.CONFLICT,"PLATO_ANULADO",
+                "No se prepara un plato anulado");
         // No deshacer una entrega al volver a pulsar LISTO.
         if("PENDIENTE".equals(detalle.getEstadoPreparacion())){
             detalle.setEstadoPreparacion("LISTO");
@@ -313,6 +316,48 @@ public class PedidoService {
         return respuesta(pedido);
     }
 
+    // Cantidad por línea editable mientras esté pendiente: recalcula subtotal y
+    // disponibilidad; si aumenta aplica reserva/verificación; si baja libera stock.
+    @Transactional
+    public PedidoRespuesta cambiarCantidad(Long pedidoId,Long detalleId,
+        CantidadPlatoSolicitud solicitud,String correo){
+        exigirMozo(correo);
+        if(solicitud==null||solicitud.cantidad()==null||
+           solicitud.cantidad()<1||solicitud.cantidad()>20)
+            throw error(HttpStatus.BAD_REQUEST,"CANTIDAD_INVALIDA",
+                "La cantidad debe ser entre 1 y 20");
+        Pedido pedido=bloquear(pedidoId);
+        verificarOrdenEditable(pedido);
+        DetallePedido detalle=buscarDetalle(pedido,detalleId);
+        exigirPlatoPendiente(detalle);
+        int nueva=solicitud.cantidad(),anterior=detalle.getCantidad();
+        int delta=nueva-anterior;
+        if(delta==0)return respuesta(pedido);
+        if(delta>0){
+            // También se controla el límite de 20 porciones por producto.
+            int suma=pedido.getDetalles().stream()
+                .filter(d->d.getProducto().getId().equals(detalle.getProducto().getId())&&
+                    !"ANULADO".equals(d.getEstadoPreparacion()))
+                .mapToInt(DetallePedido::getCantidad).sum();
+            if(suma+delta>20)
+                throw error(HttpStatus.BAD_REQUEST,"CANTIDAD_INVALIDA",
+                    "Máximo 20 porciones del mismo producto por pedido");
+            inventario.reservar(detalle.getProducto().getId(),delta);
+            if("CONFIRMADO".equals(pedido.getEstado()))
+                inventario.confirmar(detalle.getProducto().getId(),delta);
+        }else{
+            int retiradas=-delta;
+            if("CONFIRMADO".equals(pedido.getEstado()))
+                inventario.revertirConfirmado(detalle.getProducto().getId(),retiradas);
+            else inventario.liberar(detalle.getProducto().getId(),retiradas);
+        }
+        BigDecimal nuevoSubtotal=detalle.getPrecioUnitario().multiply(BigDecimal.valueOf(nueva));
+        pedido.setTotal(pedido.getTotal().subtract(detalle.getSubtotal()).add(nuevoSubtotal));
+        detalle.setCantidad(nueva);
+        detalle.setSubtotal(nuevoSubtotal);
+        return respuesta(pedido);
+    }
+
     // Baja lógica para conservar el rastro: plato, precio original, motivo y usuario.
     // La anulación parcial libera porciones bajo bloqueo transaccional y resta sólo
     // el importe de esa línea. No se permite tocar platos que Cocina ya terminó.
@@ -332,8 +377,15 @@ public class PedidoService {
         long restantes=pedido.getDetalles().stream()
             .filter(d->!"ANULADO".equals(d.getEstadoPreparacion())).count();
         if(restantes==1){
-            // Sólo queda este plato: cerrar el pedido completo libera la mesa.
-            return cancelar(pedidoId,correo);
+            // Último plato: se cancela la orden y se desocupa la mesa, pero
+            // se conserva el motivo de anulación en el detalle auditado.
+            cancelar(pedidoId,correo);
+            detalle.setEstadoPreparacion("ANULADO");
+            detalle.setMotivoAnulacion(solicitud.motivo().trim());
+            detalle.setAnuladoPor(mozo.getCorreo());
+            detalle.setFechaAnulacion(LocalDateTime.now());
+            pedido.setTotal(BigDecimal.ZERO);
+            return respuesta(pedido);
         }
         if("CONFIRMADO".equals(pedido.getEstado()))
             inventario.revertirConfirmado(detalle.getProducto().getId(),detalle.getCantidad());
