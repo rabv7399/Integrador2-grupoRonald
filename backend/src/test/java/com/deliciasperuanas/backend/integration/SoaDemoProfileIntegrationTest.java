@@ -438,10 +438,12 @@ class SoaDemoProfileIntegrationTest {
         mvc.perform(post("/api/v1/ventas/pedidos/{id}/cobrar",id.longValue())
                 .header("Authorization","Bearer "+caja)
                 .contentType(MediaType.APPLICATION_JSON)
-                .content("{\"medioPago\":\"POS\",\"referenciaPago\":\"VOUCHER-DEMO-01\"}"))
+                .content("{\"medioPago\":\"POS\",\"referenciaPago\":\"VOUCHER-DEMO-01\",\"recargoInformadoAceptado\":true}"))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.medioPago").value("POS"))
-            .andExpect(jsonPath("$.total").value(18))
+            .andExpect(jsonPath("$.subtotalBase").value(18))
+            .andExpect(jsonPath("$.recargoPos").value(1.00))
+            .andExpect(jsonPath("$.total").value(19.00))
             .andExpect(jsonPath("$.cambio").value(0));
     }
 
@@ -594,6 +596,79 @@ class SoaDemoProfileIntegrationTest {
                 .header("Authorization","Bearer "+mozo))
             .andExpect(status().isConflict())
             .andExpect(jsonPath("$.codigo").value("ORDEN_EN_PREPARACION"));
+    }
+
+
+    @Test
+    void cotizacionPosYTransferenciaConCuadreCorrecto() throws Exception {
+        org.junit.jupiter.api.Assertions.assertEquals(new java.math.BigDecimal("27.50"),
+            com.deliciasperuanas.backend.service.VentaService.totalPos(new java.math.BigDecimal("26.00")));
+        org.junit.jupiter.api.Assertions.assertEquals(new java.math.BigDecimal("22.50"),
+            com.deliciasperuanas.backend.service.VentaService.totalPos(new java.math.BigDecimal("21.26")));
+        String mozo=iniciar("mozo.demo@delicias.local","MozoDemoTest123!");
+        String caja=iniciar("caja.demo@delicias.local","CajaDemoTest123!");
+        String cocinero=iniciar("cocinero.demo@delicias.local","CocineroDemoTest123!");
+        String cuerpo=mvc.perform(post("/api/v1/pedidos/envio")
+                .header("Authorization","Bearer "+mozo)
+                .header("Idempotency-Key","transferencia-academica-uno")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"tipoAtencion\":\"LLEVAR\",\"items\":[{\"productoId\":4,\"cantidad\":1}]}"))
+            .andExpect(status().isCreated()).andReturn().getResponse().getContentAsString();
+        Number id=JsonPath.read(cuerpo,"$.pedidoId");
+        Number itemId=JsonPath.read(cuerpo,"$.items[0].detalleId");
+        mvc.perform(get("/api/v1/ventas/pedidos/{id}/cotizacion",id.longValue())
+                .param("medioPago","POS").header("Authorization","Bearer "+caja))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.subtotalBase").value(18))
+            .andExpect(jsonPath("$.recargoPos").value(1.00))
+            .andExpect(jsonPath("$.totalCobro").value(19.00));
+        mvc.perform(post("/api/v1/pedidos/{id}/detalles/{itemId}/listo",
+                id.longValue(),itemId.longValue())
+                .header("Authorization","Bearer "+cocinero)).andExpect(status().isOk());
+        // La cuenta de Caja no puede confirmar entrega a mesa.
+        mvc.perform(post("/api/v1/pedidos/{id}/detalles/{itemId}/entregado",
+                id.longValue(),itemId.longValue())
+                .header("Authorization","Bearer "+caja)).andExpect(status().isForbidden());
+        mvc.perform(post("/api/v1/pedidos/{id}/detalles/{itemId}/entregado",
+                id.longValue(),itemId.longValue())
+                .header("Authorization","Bearer "+mozo)).andExpect(status().isOk());
+        mvc.perform(post("/api/v1/ventas/pedidos/{id}/cobrar",id.longValue())
+                .header("Authorization","Bearer "+caja).contentType(MediaType.APPLICATION_JSON)
+                .content("{\"medioPago\":\"TRANSFERENCIA\",\"referenciaPago\":\"TRANSFER-DEMO-999\"}"))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.medioPago").value("TRANSFERENCIA"))
+            .andExpect(jsonPath("$.total").value(18))
+            .andExpect(jsonPath("$.recargoPos").value(0));
+        mvc.perform(get("/api/v1/ventas/resumen").header("Authorization","Bearer "+caja))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.porMedioDia.TRANSFERENCIA").value(18))
+            .andExpect(jsonPath("$.mediosCuadrados").value(true));
+    }
+
+    @Test
+    void fotoSeGuardaYCambiaEnCartaPublicaSinDarPermisoACaja() throws Exception {
+        String admin=iniciar("admin.demo@delicias.local","AdminDemoTest123!");
+        String caja=iniciar("caja.demo@delicias.local","CajaDemoTest123!");
+        java.awt.image.BufferedImage imagen=new java.awt.image.BufferedImage(
+            90,90,java.awt.image.BufferedImage.TYPE_INT_RGB);
+        java.io.ByteArrayOutputStream salida=new java.io.ByteArrayOutputStream();
+        javax.imageio.ImageIO.write(imagen,"png",salida);
+        org.springframework.mock.web.MockMultipartFile foto=
+            new org.springframework.mock.web.MockMultipartFile("archivo","plato.png",
+                "image/png",salida.toByteArray());
+        mvc.perform(multipart("/api/productos/1/imagen").file(foto)
+                .header("Authorization","Bearer "+caja))
+            .andExpect(status().isForbidden());
+        mvc.perform(multipart("/api/productos/1/imagen").file(foto)
+                .header("Authorization","Bearer "+admin))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.imagenUrl").isNotEmpty());
+        mvc.perform(get("/api/productos/1/imagen"))
+            .andExpect(status().isOk())
+            .andExpect(content().contentType("image/png"))
+            .andExpect(content().bytes(salida.toByteArray()));
+        mvc.perform(get("/api/productos/1"))
+            .andExpect(status().isOk()).andExpect(jsonPath("$.imagenUrl").isNotEmpty());
     }
 
     private String iniciar(String correo, String pass) throws Exception {
