@@ -55,7 +55,10 @@ public class SecurityConfig {
                                 "/index.html",
                                 "/styles.css",
                                 "/app.js",
-                                "/favicon.ico"
+                                "/favicon.ico",
+                                "/incidentes.html",
+                                "/incidentes.js",
+                                "/incidentes.css"
                         ).permitAll()
 
                         // Documentación de la API; las operaciones conservan sus permisos
@@ -125,6 +128,12 @@ public class SecurityConfig {
                                 "OPERADOR",
                                 "CLIENTE"
                         )
+
+                        // Incidentes: creación y seguimiento por equipo operativo
+                        .requestMatchers(HttpMethod.GET, "/api/incidentes/**")
+                        .hasAnyRole("ADMIN", "OPERADOR")
+                        .requestMatchers(HttpMethod.POST, "/api/incidentes/**")
+                        .hasAnyRole("ADMIN", "OPERADOR")
 
                         .anyRequest().authenticated()
                 )
