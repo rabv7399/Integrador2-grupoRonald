@@ -33,14 +33,13 @@ $env:DDL_AUTO = 'update'
 $env:PORT = '8080'
 # Clave aleatoria temporal solo para esta sesion (no guardarla).
 $bytes = [byte[]]::new(48)
-[System.Security.Cryptography.RandomNumberGenerator]::Fill($bytes)
+([System.Security.Cryptography.RandomNumberGenerator]::Create()).GetBytes($bytes)
 $env:JWT_SECRET = [Convert]::ToBase64String($bytes)
 $env:SPRING_PROFILES_ACTIVE = 's14-local'
 # Cuenta OPERADOR solo para esta base MySQL de prueba.
-# Al repetir el script con el mismo contenedor, usa la clave mostrada en la primera ejecucion
-# o elimina el contenedor de laboratorio y vuelve a crearlo.
+# En cada arranque local el perfil s14-local actualiza la clave temporal del operador.
 $pwbytes = [byte[]]::new(24)
-[System.Security.Cryptography.RandomNumberGenerator]::Fill($pwbytes)
+([System.Security.Cryptography.RandomNumberGenerator]::Create()).GetBytes($pwbytes)
 $env:S14_OPERATOR_PASSWORD = [Convert]::ToBase64String($pwbytes)
 Write-Host 'Ejecutando pruebas Maven...' -ForegroundColor Yellow
 mvn -B -ntp test
