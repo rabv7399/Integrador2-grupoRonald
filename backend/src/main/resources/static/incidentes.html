@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Incidentes | Delicias Peruanas</title><link rel="stylesheet" href="/incidentes.css">
+</head>
+<body>
+<header><a href="/">← Delicias Peruanas</a><span>Integrador II · Semana 14</span></header>
+<main>
+ <h1>Gestión de incidentes</h1>
+ <p class="subtitulo">Registro, priorización y seguimiento de tickets de soporte.</p>
+ <section class="panel" id="acceso">
+  <h2>Acceso del equipo operativo</h2>
+  <form id="login">
+   <label>Correo <input id="correo" type="email" required autocomplete="username"></label>
+   <label>Contraseña <input id="clave" type="password" required autocomplete="current-password"></label>
+   <button>Iniciar sesión</button>
+  </form>
+  <p class="mensaje" id="mensajeAcceso" role="status"></p>
+ </section>
+ <section id="operacion" hidden>
+  <div class="usuario"><strong id="sesion"></strong><button id="salir" type="button" class="secundario">Cerrar sesión</button></div>
+  <section class="panel">
+   <h2>Registrar incidente</h2>
+   <form id="formTicket">
+    <label>Título del error <input id="titulo" required maxlength="150" placeholder="Ej.: Error al crear reserva"></label>
+    <label>Módulo afectado
+      <select id="modulo" required>
+       <option value="">Seleccionar módulo</option>
+       <option>Autenticación</option><option>Reservas</option><option>Mesas</option>
+       <option>Productos</option><option>Categorías</option><option>Base de datos</option><option>API</option><option>Otro</option>
+      </select>
+    </label>
+    <label class="completo">Descripción detallada
+     <textarea id="descripcion" required maxlength="3000" rows="4" placeholder="Describa el error, su impacto y los pasos para reproducirlo."></textarea>
+    </label>
+    <label>Prioridad
+     <select id="prioridad" required><option value="">Seleccionar prioridad</option>
+      <option value="P1">P1 – Crítico</option><option value="P2">P2 – Alto</option>
+      <option value="P3">P3 – Normal</option><option value="P4">P4 – Bajo</option>
+     </select>
+    </label>
+    <button type="submit">Registrar ticket</button>
+   </form>
+   <p class="mensaje" id="mensajeTicket" role="status"></p>
+  </section>
+  <section class="panel">
+   <div class="encabezado"><h2>Listado de tickets</h2><button id="actualizar" type="button" class="secundario">Actualizar</button></div>
+   <div class="tabla"><table><thead><tr><th>Código</th><th>Fecha de registro</th><th>Título</th><th>Módulo</th><th>Prioridad</th><th>Estado</th><th>Reportado por</th></tr></thead><tbody id="tickets"><tr><td colspan="7">Cargando...</td></tr></tbody></table></div>
+   <p class="mensaje" id="mensajeListado" role="status"></p>
+  </section>
+ </section>
+</main><footer>Proyecto Delicias Peruanas · Gestión de incidentes · ITIL</footer>
+<script src="/incidentes.js"></script>
+</body></html>
