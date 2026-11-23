@@ -23,8 +23,8 @@ public class IncidentesOperadorLocal {
             if (password == null || password.length() < 12) {
                 throw new IllegalStateException("Configure S14_OPERATOR_PASSWORD de al menos 12 caracteres solo para el entorno de pruebas");
             }
-            if (usuarios.findByCorreo(correo).isEmpty()) {
-                Usuario usuario = new Usuario();
+            {
+                Usuario usuario = usuarios.findByCorreo(correo).orElseGet(Usuario::new);
                 usuario.setNombre("Operador laboratorio S14");
                 usuario.setCorreo(correo);
                 usuario.setPassword(encoder.encode(password));
