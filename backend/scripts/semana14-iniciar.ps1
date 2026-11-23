@@ -21,7 +21,7 @@ if (-not $exists) {
 Write-Host 'Comprobando inicio de MySQL...'
 $ready = $false
 for ($i=0; $i -lt 60; $i++) {
-  docker exec $container mysqladmin ping -uroot "-p$localPwd" --silent *> $null
+  docker exec -e "MYSQL_PWD=$localPwd" $container mysqladmin ping -uroot --silent *> $null
   if ($LASTEXITCODE -eq 0) { $ready=$true; break }
   Start-Sleep -Seconds 2
 }
