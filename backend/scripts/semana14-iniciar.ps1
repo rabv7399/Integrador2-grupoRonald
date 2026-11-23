@@ -35,11 +35,21 @@ $env:PORT = '8080'
 $bytes = [byte[]]::new(48)
 [System.Security.Cryptography.RandomNumberGenerator]::Fill($bytes)
 $env:JWT_SECRET = [Convert]::ToBase64String($bytes)
+$env:SPRING_PROFILES_ACTIVE = 's14-local'
+# Cuenta OPERADOR solo para esta base MySQL de prueba.
+# Al repetir el script con el mismo contenedor, usa la clave mostrada en la primera ejecucion
+# o elimina el contenedor de laboratorio y vuelve a crearlo.
+$pwbytes = [byte[]]::new(24)
+[System.Security.Cryptography.RandomNumberGenerator]::Fill($pwbytes)
+$env:S14_OPERATOR_PASSWORD = [Convert]::ToBase64String($pwbytes)
 Write-Host 'Ejecutando pruebas Maven...' -ForegroundColor Yellow
 mvn -B -ntp test
 if ($LASTEXITCODE -ne 0) { throw 'Fallaron las pruebas. Copia las ultimas lineas de Maven antes de seguir.' }
 Write-Host ''
 Write-Host 'MySQL de laboratorio OK. Iniciando backend local.' -ForegroundColor Green
 Write-Host 'Cuando aparezca Started BackendApplication abre: http://localhost:8080/incidentes.html' -ForegroundColor Cyan
+Write-Host 'Usuario de laboratorio: operador.s14@prueba.local' -ForegroundColor Cyan
+Write-Host "Clave de laboratorio: $env:S14_OPERATOR_PASSWORD" -ForegroundColor Cyan
+Write-Host 'No fotografies la clave ni la uses fuera del contenedor de laboratorio.' -ForegroundColor Yellow
 Write-Host 'Conserva esta ventana abierta mientras haces las capturas.'
 mvn spring-boot:run
