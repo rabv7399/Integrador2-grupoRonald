@@ -26,7 +26,7 @@ for ($i=0; $i -lt 60; $i++) {
   Start-Sleep -Seconds 2
 }
 if (-not $ready) { throw 'MySQL no esta listo. Revisa docker logs delicias-s14-mysql.' }
-$env:DB_URL = "jdbc:mysql://127.0.0.1:3307/$db?useSSL=false&allowPublicKeyRetrieval=true"
+$env:DB_URL = "jdbc:mysql://127.0.0.1:3307/${db}?useSSL=false&allowPublicKeyRetrieval=true"
 $env:DB_USER = 'root'
 $env:DB_PASSWORD = $localPwd
 $env:DDL_AUTO = 'update'
